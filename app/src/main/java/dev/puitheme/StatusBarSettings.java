@@ -92,6 +92,8 @@ public final class StatusBarSettings {
     static {
         Map<String, Boolean> booleans = new LinkedHashMap<>(FeatureOptions.DEFAULTS);
         booleans.put(DIAGNOSTICS_ENABLED, false);
+        booleans.put(ResidentCache.INSTALLED, false);
+        booleans.put(ResidentCache.RUNNING, false);
         booleans.put(SAFE_MODE, false);
         booleans.put(NetworkIconOrder.SWAP, false);
         booleans.put(C17HighlightRemoval.ENABLED, false);
@@ -104,26 +106,43 @@ public final class StatusBarSettings {
         booleans.put(LockscreenControls.DATE_ENABLED, false);
         booleans.put(LockscreenControls.HIDE_LOCK, false);
         booleans.put(NotificationGroupStack.MASTER, false);
+        booleans.putAll(NotificationMiniStack.BOOLEANS);
         booleans.putAll(NativeStatusIcons.booleanDefaults());
         booleans.putAll(NativeNetworkBadgeControls.booleanDefaults());
         booleans.putAll(NetworkSpeedControls.BOOLEANS);
         booleans.putAll(QsTileAppearance.BOOLEANS);
+        booleans.putAll(QsTileFullFill.BOOLEANS);
         booleans.putAll(QsTileCorners.BOOLEANS);
         booleans.putAll(QsMediaAppearance.BOOLEANS);
         booleans.putAll(NotificationBigClockSettings.BOOLEANS);
+        booleans.putAll(BigClockWidgetsSettings.BOOLEANS);
+        booleans.putAll(FeatureGroups.BOOLEANS);
+        booleans.putAll(ClockBackdropSettings.GLOBAL_BOOLEANS);
         booleans.putAll(NotificationClearAppearance.BOOLEANS);
         booleans.putAll(NotificationIconArea.BOOLEANS);
         booleans.put(NotificationIconOverrides.MASTER, false);
         booleans.put(IconPackRepository.MASTER, false);
         booleans.putAll(ClassicTextSettings.BOOLEANS);
         booleans.putAll(ShadeWallpaperSettings.BOOLEANS);
+        booleans.putAll(LockNotificationSettings.BOOLEANS);
+        booleans.put(FluidCloudAccent.AOD_CUSTOM, false);
+        booleans.put(FluidCloudAccent.AOD_GRADIENT, false);
         booleans.putAll(BatteryTextStyle.BOOLEANS);
         booleans.put(BatteryControls.HIDE_CHARGE, false);
         booleans.put(FluidCloudAccent.ENABLED, false);
+        booleans.put(CapsulePersistence.ENABLED, false);
+        booleans.put(FluidCloudStyle.FOLLOW_ONLY_PLAYING, true);
+        booleans.put(FluidCloudAccent.LOCK_CUSTOM, false);
+        booleans.put(FluidCloudAccent.LOCK_GRADIENT, false);
         booleans.put(LockscreenStatusBlur.ENABLED, false);
         booleans.putAll(SpeedPosition.booleanDefaults());
+        booleans.putAll(StatusBarLayoutSettings.BOOLEANS);
         booleans.putAll(QsTileIconSize.BOOLEANS);
         booleans.putAll(StatusBarShadeIconSettings.BOOLEANS);
+        // Editing the default native tint is an explicit opt-in; old untouched
+        // defaults must retain the OEM material rather than acquire a solid fill.
+        booleans.put(FluidCloudStyle.BACKGROUND_COLOR_CUSTOMIZED, false);
+        booleans.putAll(FluidCloudScope.BOOLEANS);
         BOOLEAN_DEFAULTS = Collections.unmodifiableMap(booleans);
         Map<String, Float> numbers = new LinkedHashMap<>();
         numbers.put(WIFI_OFFSET_X, 0f);
@@ -146,10 +165,34 @@ public final class StatusBarSettings {
         numbers.put(SPEED_LINE_GAP, 0f);
         numbers.put(SPEED_WEIGHT, 600f);
         numbers.putAll(NetworkSpeedControls.NUMBERS);
+        numbers.put(FluidCloudAccent.MASK_OPACITY, FluidCloudAccent.DEFAULT_MASK_OPACITY);
+        numbers.put(FluidCloudAccent.OPACITY, FluidCloudAccent.DEFAULT_OPACITY);
+        numbers.put(FluidCloudAccent.LOCK_OPACITY, FluidCloudAccent.DEFAULT_LOCK_OPACITY);
+        numbers.put(FluidCloudAccent.LOCK_MASK_OPACITY, FluidCloudAccent.DEFAULT_LOCK_MASK_OPACITY);
+        numbers.put(FluidCloudAccent.LOCK_LIGHT, FluidCloudAccent.DEFAULT_LOCK_LIGHT);
+        numbers.put(FluidCloudAccent.AOD_OPACITY, FluidCloudAccent.DEFAULT_LOCK_OPACITY);
+        numbers.put(FluidCloudAccent.AOD_MASK_OPACITY, FluidCloudAccent.DEFAULT_LOCK_MASK_OPACITY);
+        numbers.put(FluidCloudAccent.AOD_LIGHT, FluidCloudAccent.DEFAULT_LOCK_LIGHT);
+        numbers.putAll(LockNotificationSettings.NUMBERS);
+        numbers.put(FluidCloudAccent.GRADIENT_RANGE, FluidCloudAccent.DEFAULT_GRADIENT_RANGE);
+        numbers.put(FluidCloudCapsule.GRADIENT_RANGE, FluidCloudCapsule.DEFAULT_GRADIENT_RANGE);
+        numbers.put(FluidCloudCapsule.COVER_RADIUS, FluidCloudCapsule.DEFAULT_COVER_RADIUS);
+        numbers.put(FluidCloudCapsule.COVER_SCALE, FluidCloudCapsule.DEFAULT_COVER_SCALE);
+        numbers.put(CapsuleEffects.BOUNCE, CapsuleEffects.DEFAULT_BOUNCE);
+        numbers.put(FluidCloudCapsule.FILL_OPACITY, FluidCloudCapsule.DEFAULT_FILL_OPACITY);
+        numbers.put(FluidCloudCapsule.BORDER_WIDTH, FluidCloudCapsule.DEFAULT_BORDER_WIDTH);
+        numbers.put(FluidCloudCapsule.RADIUS, FluidCloudCapsule.DEFAULT_RADIUS);
+        numbers.put(FluidCloudCapsule.BLUR_RADIUS, FluidCloudCapsule.DEFAULT_BLUR_RADIUS);
+        numbers.put(FluidCloudCapsule.MARQUEE_OPACITY, FluidCloudCapsule.DEFAULT_MARQUEE_OPACITY);
+        numbers.put(FluidCloudCapsule.MARQUEE_PERIOD, FluidCloudCapsule.DEFAULT_MARQUEE_PERIOD);
+        numbers.put(FluidCloudCapsule.SPECTRUM_SENSITIVITY, FluidCloudCapsule.DEFAULT_SPECTRUM_SENSITIVITY);
+        numbers.put(FluidCloudCapsule.MARQUEE_COLOR_COUNT, (float) FluidCloudCapsule.DEFAULT_MARQUEE_COLOR_COUNT);
+        numbers.put(FluidCloudCapsule.GLOW_DEPTH, FluidCloudCapsule.DEFAULT_GLOW_DEPTH);
         numbers.put(LockscreenStatusBlur.RADIUS, LockscreenStatusBlur.DEFAULT_RADIUS);
         numbers.put(LockscreenStatusBlur.RANGE, LockscreenStatusBlur.DEFAULT_RANGE);
         numbers.put(LockscreenStatusBlur.TRANSITION, LockscreenStatusBlur.DEFAULT_TRANSITION);
         numbers.putAll(SpeedPosition.numberDefaults());
+        numbers.putAll(StatusBarLayoutSettings.NUMBERS);
         numbers.put(NativeClockMeasurement.SCALE_BASIS_VERSION, 2f);
         numbers.put(NativeClockMeasurement.LEGACY_SCALE_FACTOR, 0f);
         numbers.putAll(NativeStatusIcons.floatDefaults());
@@ -173,10 +216,12 @@ public final class StatusBarSettings {
             numbers.put(item + "_weight", 600f);
             numbers.put(item + "_spacing", 0f);
         }
+        numbers.putAll(ClockLayoutSettings.NUMBERS);
         numbers.putAll(QsTileAppearance.NUMBERS);
         numbers.putAll(QsTileCorners.NUMBERS);
         numbers.putAll(QsMediaAppearance.NUMBERS);
         numbers.putAll(NotificationBigClockSettings.NUMBERS);
+        numbers.putAll(BigClockWidgetsSettings.NUMBERS);
         numbers.putAll(NotificationClearAppearance.NUMBERS);
         numbers.put(NotificationClearMotion.LANDSCAPE_OFFSET_X, 0f);
         numbers.put(NotificationClearMotion.LANDSCAPE_OFFSET_Y, 0f);
@@ -185,6 +230,14 @@ public final class StatusBarSettings {
         numbers.putAll(QsTileIconSize.NUMBERS);
         numbers.putAll(ClassicTextSettings.NUMBERS);
         numbers.putAll(ShadeWallpaperSettings.NUMBERS);
+        numbers.put(FluidCloudStyle.BACKGROUND_OPACITY,100f);
+        numbers.put(FluidCloudStyle.BACKGROUND_GRADIENT_RANGE,FluidCloudStyle.DEFAULT_BACKGROUND_GRADIENT_RANGE);
+        numbers.putAll(Upgrade184.DEFAULTS_NUMBERS());
+        numbers.put(FluidCloudStyle.NOTIFICATION_FOLLOW_OPACITY,FluidCloudStyle.DEFAULT_NOTIFICATION_FOLLOW_OPACITY);
+        numbers.put(NetworkSlotGeometry.OFFSET_X, 0f);
+        numbers.put(NetworkSlotGeometry.OFFSET_Y, 0f);
+        numbers.put(NetworkSlotGeometry.MARGIN_LEFT, 0f);
+        numbers.put(NetworkSlotGeometry.MARGIN_RIGHT, 0f);
         NUMERIC_DEFAULTS = Collections.unmodifiableMap(numbers);
         Map<String, Integer> colors = new LinkedHashMap<>();
         for (String item : new String[]{"wifi", "data", "label", "speed", "clock", "shade_clock", "carrier",
@@ -198,17 +251,36 @@ public final class StatusBarSettings {
         colors.putAll(QsTileAppearance.COLORS);
         colors.putAll(QsMediaAppearance.COLORS);
         colors.putAll(NotificationBigClockSettings.COLORS);
+        colors.putAll(BigClockWidgetsSettings.COLORS);
         colors.put(C17HighlightRemoval.LIGHT_BACKGROUND, C17HighlightRemoval.DEFAULT_LIGHT_BACKGROUND);
         colors.put(C17HighlightRemoval.DARK_BACKGROUND, C17HighlightRemoval.DEFAULT_DARK_BACKGROUND);
         colors.putAll(NotificationClearAppearance.COLORS);
         colors.put(NativeDataActivity.COLOR_LIGHT,0xff000000);colors.put(NativeDataActivity.COLOR_DARK,0xffffffff);
         colors.putAll(NotificationIconArea.COLORS);
         colors.putAll(ClassicTextSettings.COLORS);
+        colors.putAll(ClockLayoutSettings.COLORS);
         colors.put(LockscreenStatusBlur.MASK_COLOR, LockscreenStatusBlur.DEFAULT_MASK_COLOR);
+        colors.put(FluidCloudAccent.MASK_COLOR, FluidCloudAccent.DEFAULT_MASK_COLOR);
+        colors.putAll(ShadeWallpaperSettings.COLORS);
+        colors.put(FluidCloudAccent.LOCK_MASK_COLOR, FluidCloudAccent.DEFAULT_MASK_COLOR);
+        colors.put(FluidCloudAccent.AOD_MASK_COLOR, FluidCloudAccent.DEFAULT_MASK_COLOR);
+        colors.put(FluidCloudCapsule.FILL_COLOR, FluidCloudCapsule.DEFAULT_FILL_COLOR);
+        colors.put(FluidCloudCapsule.BORDER_COLOR, FluidCloudCapsule.DEFAULT_BORDER_COLOR);
+        colors.put(FluidCloudCapsule.GRADIENT_COLOR, FluidCloudCapsule.DEFAULT_GRADIENT_COLOR);
+        colors.put(FluidCloudCapsule.MARQUEE_COLOR_1, FluidCloudCapsule.DEFAULT_MARQUEE_COLOR_1);
+        colors.put(FluidCloudCapsule.MARQUEE_COLOR_2, FluidCloudCapsule.DEFAULT_MARQUEE_COLOR_2);
+        colors.put(FluidCloudCapsule.MARQUEE_COLOR_3, FluidCloudCapsule.DEFAULT_MARQUEE_COLOR_3);
+        colors.put(FluidCloudCapsule.MARQUEE_COLOR_4, FluidCloudCapsule.DEFAULT_MARQUEE_COLOR_4);
+        colors.put(FluidCloudCapsule.MARQUEE_COLOR_5, FluidCloudCapsule.DEFAULT_MARQUEE_COLOR_5);
+        colors.put(FluidCloudCapsule.MARQUEE_COLOR_6, FluidCloudCapsule.DEFAULT_MARQUEE_COLOR_6);
+        colors.put(FluidCloudCapsule.BLUR_MASK_COLOR, FluidCloudCapsule.DEFAULT_BLUR_MASK_COLOR);
+        colors.put(FluidCloudCapsule.SPECTRUM_COLOR, FluidCloudCapsule.DEFAULT_SPECTRUM_COLOR);
+        colors.put(FluidCloudStyle.BACKGROUND_COLOR,0xff303438);
         COLOR_DEFAULTS = Collections.unmodifiableMap(colors);
         Map<String, String> strings = new LinkedHashMap<>();
         strings.put(CLOCK_PATTERN, TimeFormat.CLOCK_DEFAULT);
         strings.put(SHADE_CLOCK_PATTERN, TimeFormat.CLOCK_DEFAULT);
+        strings.putAll(ClockLayoutSettings.STRINGS);
         strings.put(CARRIER_PATTERN, TimeFormat.CARRIER_DEFAULT);
         strings.put(CARRIER_MODE, "original");
         strings.put(CARRIER_TEXT, "更好的C17状态栏");
@@ -220,21 +292,32 @@ public final class StatusBarSettings {
         strings.put(FONT_MODE, "system");
         strings.put(FONT_REVISION, "");
         strings.put(FONT_NAME, "未导入字体");
+        strings.put(FontScopes.KEY, "{}");
+        strings.put(IconManagementSettings.KEY, IconManagementSettings.DEFAULT);
         strings.put(SIGNAL_LAYOUT, "system");
+        strings.putAll(NetworkLabelFormats.STRINGS);
         strings.putAll(NetworkSpeedControls.STRINGS);
         strings.putAll(SpeedPosition.stringDefaults());
+        strings.putAll(StatusBarLayoutSettings.STRINGS);
+        strings.put(NativeStatusIcons.LAYOUT,"{}");
         strings.put(BATTERY_STYLE, "pui");
+        strings.put(TilePageEffects.STYLE, TilePageEffects.IOS);
+        strings.put(FluidCloudStyle.COLOR_STYLE, FluidCloudStyle.SOLID);
+        strings.put(FluidCloudCapsule.GRADIENT_MODE, FluidCloudCapsule.TOP_BOTTOM);
+        strings.put(FluidCloudCapsule.MARQUEE_PRESET, FluidCloudCapsule.DEFAULT_MARQUEE_PRESET);
         strings.putAll(NotificationBigClockSettings.STRINGS);
+        strings.putAll(BigClockWidgetsSettings.STRINGS);
         strings.putAll(NotificationIconArea.STRINGS);
         strings.put(NotificationIconOverrides.RULES, "[]");
         strings.put(IconPackRepository.LAYERS, "[]");
         strings.put(IconPackAssignments.ASSIGNMENTS, "[]");
         strings.putAll(ClassicTextSettings.STRINGS);
         strings.putAll(ShadeWallpaperSettings.STRINGS);
-        strings.put("shade_wallpaper_manage", "");
+        strings.put(ShadeWallpaperSettings.LEGACY_MANAGE, "");
         strings.putAll(NativeStatusIcons.stringDefaults());
         strings.putAll(NativeNetworkBadgeControls.stringDefaults());
         strings.put(LockscreenControls.DATE_FORMAT, "M月d日 {周}");
+        strings.put(FluidCloudStyle.BACKGROUND_MODE,"native");
         STRING_DEFAULTS = Collections.unmodifiableMap(strings);
     }
 
@@ -242,19 +325,46 @@ public final class StatusBarSettings {
         return number(preferences.getAll(), key, fallback);
     }
 
+    static void markColorCustomized(SharedPreferences.Editor editor, String key) {
+        if (FluidCloudStyle.BACKGROUND_COLOR.equals(key))
+            editor.putBoolean(FluidCloudStyle.BACKGROUND_COLOR_CUSTOMIZED, true);
+    }
+
+    static void clearColorCustomization(SharedPreferences.Editor editor, String key) {
+        if (FluidCloudStyle.BACKGROUND_COLOR.equals(key))
+            editor.remove(FluidCloudStyle.BACKGROUND_COLOR_CUSTOMIZED);
+    }
+
     public static String string(Map<String, ?> values, String key) {
+        if(FluidCloudStyle.BACKGROUND_MODE.equals(key)&&values!=null&&("media".equals(values.get(key))||"notification".equals(values.get(key))))return "native";
         if (NetworkSpeedControls.DISPLAY_STYLE.equals(key)) return "system";
+        if(FluidCloudStyle.BACKGROUND_MODE.equals(key)&&Upgrade80.legacyBackground(values))return "custom";
         Object value = typedValue(values, key, String.class);
+        if(BATTERY_STYLE.equals(key)&&value instanceof String)return currentBatteryStyle((String)value);
         return value instanceof String ? (String) value : STRING_DEFAULTS.get(key);
     }
 
+    /** Retired iOS selections retain import compatibility, using the remaining PUI style. */
+    public static String currentBatteryStyle(String value) {
+        return Ios27BatteryStyle.known(value)?"pui":value;
+    }
+
     public static boolean bool(Map<String, ?> values, String key) {
+        if (FluidCloudStyle.FOLLOW_FOREGROUND.equals(key)) return false;
+        if (FluidCloudStyle.SCOPE_SHADE.equals(key)) return false;
         if (NotificationGroupStack.MASTER.equals(key)) return false;
+        if ((RadioState.BOTH_VISIBLE.equals(key) || NetworkSlotGeometry.POSITION.equals(key))
+                && (values == null || !values.containsKey(key)))
+            return Boolean.TRUE.equals(Upgrade107.from(values).get(key));
         if (NetworkSpeedControls.STYLE_ENABLED.equals(key)) return false;
         if (QsTileCorners.MASTER.equals(key)) return QsTileCorners.enabled(values);
         // Old false/malformed values cannot enable arrows; the new independent switch owns this.
         if (DATA_ACTIVITY_HIDDEN.equals(key)) return !bool(values,NativeDataActivity.MASTER);
         if (StatusBarShadeIconSettings.MASTER.equals(key)) return false;
+        if (FluidCloudStyle.MASTER.equals(key) && (values == null || !values.containsKey(key)))
+            return Upgrade79.legacyStyleEnabled(values);
+        if(FluidCloudStyle.FOLLOW_MEDIA.equals(key)&&(values==null||!values.containsKey(key)))
+            return Upgrade85.legacyMedia(values);
         Object value = typedValue(values, key, Boolean.class);
         return value instanceof Boolean ? (Boolean) value : Boolean.TRUE.equals(BOOLEAN_DEFAULTS.get(key));
     }
@@ -284,7 +394,9 @@ public final class StatusBarSettings {
         if (mode instanceof Boolean) return (Boolean) mode;
         Object color = values == null ? null : values.get(colorKey);
         // This overlay's default is intentionally translucent, including on a fresh install.
-        if (!(color instanceof Number) && LockscreenStatusBlur.MASK_COLOR.equals(colorKey)) return true;
+        if (!(color instanceof Number) && (LockscreenStatusBlur.MASK_COLOR.equals(colorKey)
+                || FluidCloudCapsule.BORDER_COLOR.equals(colorKey) || FluidCloudCapsule.BLUR_MASK_COLOR.equals(colorKey)
+                || FluidCloudCapsule.SPECTRUM_COLOR.equals(colorKey))) return true;
         // A newly selected panel color owns its alpha. Unedited panels inherit the old pair.
         if (!(color instanceof Number)) {
             String legacy = CarrierPanels.legacyKey(colorKey);
@@ -309,6 +421,10 @@ public final class StatusBarSettings {
     }
 
     public static float settingNumber(Map<String, ?> values, String key, float fallback) {
+        if(Upgrade173.DEFAULTS.containsKey(key)&&(values==null||!values.containsKey(key)))
+            return Upgrade173.inheritedOpacity(values,key);
+        if(FluidCloudStyle.BACKGROUND_OPACITY.equals(key)&&Upgrade80.legacyBackground(values)
+                &&!values.containsKey(key))return 0f;
         if (NetworkSpeedControls.INTERVAL_MILLIS.equals(key) && values != null && !values.containsKey(key)
                 && values.get(NetworkSpeedControls.INTERVAL_SECONDS) instanceof Number)
             return SettingsFrameworkMirror.migratedSpeedMillis(values.get(NetworkSpeedControls.INTERVAL_SECONDS));
@@ -316,6 +432,8 @@ public final class StatusBarSettings {
         if (NotificationBigClockSettings.VISIBLE_COUNT.equals(NotificationBigClockSettings.portraitKey(key)))
             return NotificationBigClockSettings.visibleCount(values == null ? null : values.get(key));
         if (values == null || !values.containsKey(key)) {
+            if (NetworkSlotGeometry.OFFSET_X.equals(key) || NetworkSlotGeometry.OFFSET_Y.equals(key))
+                return ((Number) Upgrade107.from(values).get(key)).floatValue();
             if(key.equals(TILES_LEFT_RANGE)||key.equals(TILES_RIGHT_RANGE))return number(values,TILES_FADE_RANGE,fallback);
             if (key.equals(WIFI_OFFSET_X) || key.equals(DATA_OFFSET_X)) return number(values, OFFSET_X, fallback);
             if (key.equals(WIFI_OFFSET_Y) || key.equals(DATA_OFFSET_Y)) return number(values, OFFSET_Y, fallback);
@@ -367,6 +485,31 @@ public final class StatusBarSettings {
             if (!Boolean.valueOf(hidden).equals(preferences.getAll().get(DATA_ACTIVITY_HIDDEN)))
                 preferences.edit().putBoolean(DATA_ACTIVITY_HIDDEN, hidden).apply();
             QsTileCorners.migrate(preferences);
+            Upgrade107.migrate(preferences);
+            Upgrade108.migrate(preferences);
+            Upgrade117.migrate(preferences);
+            Upgrade118.migrate(preferences);
+            Upgrade135.migrate(preferences);
+            Upgrade136.migrate(preferences);
+            Upgrade144.migrate(preferences);
+            Upgrade146.migrate(preferences);
+            Upgrade154.migrate(preferences);
+            Upgrade157.migrate(preferences);
+            Upgrade160.migrate(preferences);
+            Upgrade166.migrate(preferences);
+            Upgrade168.migrate(preferences);
+            Upgrade169.migrate(preferences);
+            Upgrade171.migrate(preferences);
+            Upgrade172.migrate(preferences);
+            Upgrade173.migrate(preferences);
+            Upgrade174.migrate(preferences);
+            Upgrade175.migrate(preferences);
+            Upgrade177.migrate(preferences);
+            Upgrade184.migrate(preferences);
+            Upgrade185.migrate(preferences);
+            Upgrade186.migrate(preferences);
+            Upgrade187.migrate(preferences);
+            Upgrade188.migrate(preferences);
         }
         NumericTrial.recover(deviceContext, preferences);
         NotificationClearAppearance.migrate(preferences,migration,userManager!=null&&userManager.isUserUnlocked());
@@ -375,7 +518,7 @@ public final class StatusBarSettings {
 
     @SuppressWarnings("unchecked")
     static void copyPreference(SharedPreferences.Editor editor, String key, Object value) {
-        if (NotificationGroupStack.MASTER.equals(key)) {
+        if (NotificationGroupStack.MASTER.equals(key)||FluidCloudStyle.FOLLOW_FOREGROUND.equals(key)||FluidCloudStyle.SCOPE_SHADE.equals(key)) {
             editor.putBoolean(key, false);
         } else if (DATA_ACTIVITY_HIDDEN.equals(key)) {
             editor.putBoolean(key, !(value instanceof Boolean)||(Boolean)value);

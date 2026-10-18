@@ -49,6 +49,7 @@ public final class QsNativeGlassFillCheck {
         QsNativeGlassFill fill=new QsNativeGlassFill();
         int builds=BlurDrawableShaderBaseStringKt.builds,base=DrawableShader.baseUploads;
         RuntimeShader replacement=prepare(fill,engine,style);equal(builds+1,BlurDrawableShaderBaseStringKt.builds);
+        equal(0,replacement.ints.get("c17QsKeepNativeRgb"));
         equal(true,replacement.source.contains("c17QsBase(vec4(u_multiBlendParams"));
         equal(true,replacement.source.contains("nativeGlassHighlight nativeOptics nativeInnerShadow"));
         near(15f,replacement.floats.get("c17QsSlots")[0]);near(20f,replacement.floats.get("c17QsSlots")[1]);
@@ -104,6 +105,32 @@ public final class QsNativeGlassFillCheck {
         Paint paint=engine.drawableShaderPaint;Shader prior=texture(7);paint.setShader(prior);
         QsNativeGlassFill.Swap swap=fill.prepare(engine,style);RuntimeShader nativeReplacement=new RuntimeShader("native concurrently replaced shader");
         Shader nativePaintReplacement=texture(8);nativeShader.shader=nativeReplacement;paint.setShader(nativePaintReplacement);swap.restore();equal(nativeReplacement,nativeShader.shader);equal(nativePaintReplacement,paint.getShader());
+        deviceOpacity();
         System.out.println("QsNativeGlassFillCheck passed: "+checks);
+    }
+    private static void deviceOpacity() throws Exception {
+        BlendDrawable engine=new BlendDrawable();engine.setBounds(0,0,100,200);
+        QsNativeGlassFill fill=new QsNativeGlassFill();RuntimeShader original=engine.drawableShader.shader;
+        for(int[] pair:new int[][]{{0x19404040,0x4d737373},{0x80404040,0xb2737373},{0x40404040,0x667b7b7b},{0x5a404040,0xb27b7b7b}}) {
+            engine.drawableShader.multiBlendParam.get(2).color=pair[0];engine.drawableShader.multiBlendParam.get(3).color=pair[1];
+            for(float opacity:new float[]{0,25,50,100}) {
+                QsTileAppearance.Style style=new QsTileAppearance.Style(0x80123456,0x40445566,opacity,90,true);
+                QsNativeGlassFill.Swap swap=fill.prepare(engine,style,true);equal(true,swap!=null);
+                RuntimeShader shader=engine.drawableShader.shader;equal(1,shader.ints.get("c17QsKeepNativeRgb"));
+                equal(true,shader.source.contains("vec4(value.rgb,value.a*fill.a)"));
+                LinearGradient alpha=(LinearGradient)shader.inputs.get("c17QsFill");
+                equal(QsTileAppearance.withOpacity(style.color,opacity,255),alpha.colors[0]);equal(QsTileAppearance.withOpacity(style.color2,opacity,255),alpha.colors[1]);
+                near(0,shader.floats.get("c17QsDeviceTint")[3]);
+                equal(pair[0],engine.drawableShader.multiBlendParam.get(2).color);equal(pair[1],engine.drawableShader.multiBlendParam.get(3).color);
+                swap.restore();equal(original,engine.drawableShader.shader);
+            }
+        }
+        engine.drawableShader.multiBlendParam.get(3).mode=2;equal(null,fill.prepare(engine,new QsTileAppearance.Style(-1,-1,50,0,false),true));
+        engine.drawableShader.multiBlendParam.get(3).mode=3;
+        engine.drawableShader.multiBlendParam.get(2).color=0x73e6e6e6;engine.drawableShader.multiBlendParam.get(3).color=0x40cccccc;
+        QsNativeGlassFill.Swap connected=fill.prepare(engine,new QsTileAppearance.Style(0xff123456,0xff123456,100,0,false),true);
+        equal(true,connected!=null);equal(0,engine.drawableShader.shader.ints.get("c17QsKeepNativeRgb"));
+        LinearGradient active=(LinearGradient)engine.drawableShader.shader.inputs.get("c17QsFill");equal(0xff123456,active.colors[0]);
+        near(0,engine.drawableShader.shader.floats.get("c17QsDeviceTint")[3]);connected.restore();equal(original,engine.drawableShader.shader);
     }
 }

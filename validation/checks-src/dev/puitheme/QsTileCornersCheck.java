@@ -33,6 +33,65 @@ public final class QsTileCornersCheck {
         Large(CornerOutlineProvider nativeProvider){transition=new TileTransitionDrawable(nativeProvider);}
         public Drawable getTransitionDrawable(){return transition;}
     }
+    private static final class Highlight extends com.oplus.systemui.qs.base.tile.OplusQSHighlightTileView {
+        final com.oplus.systemui.qs.base.res.drawable.TileDrawableWrapper wrapper;
+        Highlight(CornerOutlineProvider nativeProvider){
+            wrapper=new com.oplus.systemui.qs.base.res.drawable.TileDrawableWrapper(nativeProvider);mBgDrawable=wrapper;
+            getResources().getDisplayMetrics().density=2f;
+        }
+        @Override public int getWidth(){return 240;}
+        @Override public int getHeight(){return 120;}
+    }
+    private static final class DetailTile extends com.oplus.systemui.qs.slider.detail.widget.QsDetailTileBaseView {
+        final com.oplus.systemui.qs.base.res.drawable.TileDrawableWrapper wrapper;
+        final Body body=new Body();
+        DetailTile(CornerOutlineProvider nativeProvider){
+            wrapper=new com.oplus.systemui.qs.base.res.drawable.TileDrawableWrapper(nativeProvider);bgDrawable=wrapper;
+            body.width=224;body.height=224;
+        }
+        @Override public View getIvBg(){return body;}
+    }
+    /** The round buttons of the brightness / volume secondary page take the unified radius, and so does their pressed spot-light. */
+    private static void detailButtons(){
+        QSConstant.reset();QsTileCorners corners=new QsTileCorners();
+        CornerOutlineProvider nativeProvider=new CornerOutlineProvider(56f,0.82f);
+        DetailTile tile=new DetailTile(nativeProvider);
+        equal(true,QsTileCorners.isDetail(tile));equal(false,QsTileCorners.isDetail(new Body()));equal(false,QsTileCorners.isTile(tile));
+        Body spot=new Body();spot.width=224;spot.height=224;spot.parent=tile;
+        corners.onNativeUpdate(tile);equal(nativeProvider,tile.wrapper.getPathProvider());equal(0,tile.wrapper.setters);
+        near(112f,corners.detailSpotRadius(spot,112f));
+        corners.configure(settings(true,24f));
+        equal(true,tile.wrapper.getPathProvider()!=nativeProvider);equal(1,tile.wrapper.setters);
+        near(48f,((CornerOutlineProvider)tile.wrapper.getPathProvider()).getCornerRadius(tile.wrapper));
+        near(48f,corners.detailSpotRadius(spot,112f));
+        Body stranger=new Body();stranger.width=224;stranger.height=224;stranger.parent=new Body();
+        near(112f,corners.detailSpotRadius(stranger,112f));
+        int setters=tile.wrapper.setters;for(int i=0;i<100;i++)corners.onNativeUpdate(tile);equal(setters,tile.wrapper.setters);
+        corners.configure(settings(true,100f));
+        near(60f,corners.detailSpotRadius(spot,112f));
+        corners.configure(settings(false,24f));
+        equal(nativeProvider,tile.wrapper.getPathProvider());near(112f,corners.detailSpotRadius(spot,112f));
+        corners.configure(settings(true,24f));corners.detach(tile);equal(nativeProvider,tile.wrapper.getPathProvider());near(112f,corners.detailSpotRadius(spot,112f));
+    }
+    /** The highlight tiles that open a secondary page: same shape ownership, and their spot-light path follows it. */
+    private static void highlightTile(){
+        QSConstant.reset();QsTileCorners corners=new QsTileCorners();
+        CornerOutlineProvider nativeProvider=new CornerOutlineProvider(56f,0.82f);
+        Highlight tile=new Highlight(nativeProvider);
+        equal(true,QsTileCorners.isHighlight(tile));equal(false,QsTileCorners.isTile(tile));
+        corners.onNativeUpdate(tile);equal(nativeProvider,tile.wrapper.getPathProvider());equal(0,tile.wrapper.setters);
+        android.graphics.Path path=new android.graphics.Path();
+        equal(false,corners.spotLight(tile,path,"extra"));equal(false,corners.spotLight(new Body(),path,"extra"));
+        corners.configure(settings(true,24f));
+        equal(true,tile.wrapper.getPathProvider()!=nativeProvider);equal(1,tile.wrapper.setters);
+        equal(true,corners.spotLight(tile,path,"extra"));
+        equal(1,((CornerOutlineProvider)tile.wrapper.getPathProvider()).pathUpdates);equal(0,nativeProvider.pathUpdates);
+        int setters=tile.wrapper.setters;for(int i=0;i<100;i++)corners.onNativeUpdate(tile);equal(setters,tile.wrapper.setters);
+        corners.configure(settings(false,24f));
+        equal(nativeProvider,tile.wrapper.getPathProvider());equal(false,corners.spotLight(tile,path,"extra"));
+        corners.configure(settings(true,24f));corners.detach(tile);equal(nativeProvider,tile.wrapper.getPathProvider());
+        equal(false,corners.spotLight(tile,path,"extra"));
+    }
     private static Bundle settings(boolean enabled,float dp){
         Bundle b=new Bundle();b.putBoolean(QsTileCorners.MASTER,enabled);b.putFloat(QsTileCorners.RADIUS,dp);return b;
     }
@@ -161,8 +220,8 @@ public final class QsTileCornersCheck {
         String exported=ConfigTransfer.exportJson(old);equal(false,exported.contains(QsTileCorners.LEGACY_RADIUS));equal(false,exported.contains(QsTileCorners.MIGRATED));
         java.util.Map<String,Object> imported=ConfigTransfer.prepare(document("\""+QsTileCorners.MASTER+"\":false,\""+QsTileCorners.LEGACY_RADIUS+"\":27"),true).values();
         equal(false,imported.get(QsTileCorners.MASTER));near(27f,imported.get(QsTileCorners.RADIUS));equal(false,imported.containsKey(QsTileCorners.LEGACY_RADIUS));
-        imported=ConfigTransfer.prepare(document("\""+QsTileCorners.LEGACY_RADIUS+"\":37,\""+QsTileCorners.RADIUS+"\":30,\""+QsTileCorners.MASTER+"\":false"),true).values();
-        equal(false,imported.get(QsTileCorners.MASTER));near(30f,imported.get(QsTileCorners.RADIUS));
+        imported=ConfigTransfer.prepare(document("\""+QsTileCorners.LEGACY_RADIUS+"\":37,\""+QsTileCorners.RADIUS+"\":28,\""+QsTileCorners.MASTER+"\":false"),true).values();
+        equal(false,imported.get(QsTileCorners.MASTER));near(28f,imported.get(QsTileCorners.RADIUS));
         for(float bad:new float[]{-1,30.5f,80,100})try{ConfigTransfer.prepare(document("\""+QsTileCorners.RADIUS+"\":"+bad),true);throw new AssertionError("out-of-range radius accepted");}catch(java.io.IOException expected){checks++;}
         ActivationGuardPreferencesCheck.MemoryPreferences fresh=new ActivationGuardPreferencesCheck.MemoryPreferences();QsTileCorners.migrate(fresh);equal(false,fresh.values.containsKey(QsTileCorners.MASTER));equal(false,StatusBarSettings.bool(fresh.values,QsTileCorners.MASTER));equal(false,fresh.values.containsKey(QsTileCorners.RADIUS));near(24f,StatusBarSettings.settingNumber(fresh.values,QsTileCorners.RADIUS,24f));
         ActivationGuardPreferencesCheck.MemoryPreferences modern=new ActivationGuardPreferencesCheck.MemoryPreferences();modern.values.put(QsTileCorners.RADIUS,80f);modern.values.put(QsTileCorners.MASTER,false);QsTileCorners.migrate(modern);equal(false,modern.values.get(QsTileCorners.MASTER));near(80f,modern.values.get(QsTileCorners.RADIUS));
@@ -260,5 +319,32 @@ public final class QsTileCornersCheck {
         corners.setFixedTransitionAvailable(false);equal(fixed,tile.drawable().getPathProvider());near(56f,corners.viewRadius(tile,56f));
         corners.configure(settings(false,24f));tile.drawable().setBlockPathProvider(null);nativeState(tile,nativeProvider);
     }
-    public static void main(String[] args) throws Exception {ownership();generationAndSafety();failures();policy();allSizes();migration();nativeGeometry();nativeInteraction();partialHookCapability();System.out.println("QsTileCornersCheck passed: "+checks);}
+    /** Switched off, the feature leaves a tile it never owned alone: no invalidation on any native tile event,
+     * and switching it on later still reaches the tile that was seen while it was off. */
+    private static void quietWhenOff(){
+        QSConstant.reset();QsTileCorners corners=new QsTileCorners();
+        CornerOutlineProvider nativeProvider=new CornerOutlineProvider(56f,0.82f);
+        Tile tile=new Tile(nativeProvider);
+        corners.onNativeUpdate(tile);int quiet=tile.invalidations,layouts=tile.layoutRequests;
+        for(int i=0;i<200;i++)corners.onNativeUpdate(tile);
+        equal(quiet,tile.invalidations);equal(layouts,tile.layoutRequests);
+        equal(nativeProvider,tile.drawable().getPathProvider());
+        corners.configure(settings(true,24f));
+        equal(true,tile.drawable().getPathProvider()!=nativeProvider);
+        corners.configure(settings(false,24f));
+        equal(nativeProvider,tile.drawable().getPathProvider());
+        int after=tile.invalidations;for(int i=0;i<200;i++)corners.onNativeUpdate(tile);equal(after,tile.invalidations);
+    }
+    private static void thirtyDpBoundary()throws Exception{
+        near(30f,QsTileCorners.radiusDp(30f));near(29.875f,QsTileCorners.radiusDp(29.875f));
+        for(float saved:new float[]{24f,28f,29.875f,30f}) {
+            java.util.Map<String,Object> values=new java.util.HashMap<>();values.put(QsTileCorners.RADIUS,saved);values.put(QsTileCorners.MASTER,false);
+            near(saved,StatusBarSettings.settingNumber(values,QsTileCorners.RADIUS,24f));
+            near(saved,SettingsSnapshot.fromPreferences(values).get(QsTileCorners.RADIUS));
+            java.util.Map<String,Object> imported=ConfigTransfer.prepare(ConfigTransfer.exportJson(values),true).values();
+            near(saved,imported.get(QsTileCorners.RADIUS));equal(false,imported.get(QsTileCorners.MASTER));
+            near(saved,values.get(QsTileCorners.RADIUS));
+        }
+    }
+    public static void main(String[] args) throws Exception {thirtyDpBoundary();ownership();highlightTile();detailButtons();quietWhenOff();generationAndSafety();failures();policy();allSizes();migration();nativeGeometry();nativeInteraction();partialHookCapability();System.out.println("QsTileCornersCheck passed: "+checks);}
 }

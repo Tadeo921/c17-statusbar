@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 final class SettingsFrameworkMirror {
     static final String GROUP="c17_saved_settings_v1";
     static final String SCHEMA="_c17_saved_snapshot_schema", REVISION="_c17_saved_revision";
-    static final int VERSION=5;
+    static final int VERSION=48;
     private static final String MAINTENANCE_PREFS="c17_maintenance", RESET_PENDING="framework_defaults_pending";
     private static final Object LOCK=new Object();
     private static final Map<XposedService,Target> TARGETS=new IdentityHashMap<>();
@@ -217,12 +217,218 @@ final class SettingsFrameworkMirror {
 
     /** No defaults are synthesized for an absent, unknown-schema or partial framework copy. */
     static Bundle decode(Map<String,?> values) {
-        if(values==null||!(Integer.valueOf(VERSION).equals(values.get(SCHEMA))
-                ||Integer.valueOf(4).equals(values.get(SCHEMA))
-                ||Integer.valueOf(3).equals(values.get(SCHEMA))||Integer.valueOf(2).equals(values.get(SCHEMA))
-                ||Integer.valueOf(1).equals(values.get(SCHEMA)))
+        if(values==null||!(values.get(SCHEMA) instanceof Integer)
+                ||(Integer)values.get(SCHEMA)<1||(Integer)values.get(SCHEMA)>VERSION
                 ||!(values.get(REVISION) instanceof Long)||(Long)values.get(REVISION)<=0L)return null;
-        if(!Integer.valueOf(VERSION).equals(values.get(SCHEMA))) {
+        int schema=(Integer)values.get(SCHEMA);
+        if(schema<48)for(String key:Upgrade188.DEFAULTS.keySet())if(values.containsKey(key))return null;
+        if(schema<47)for(String key:Upgrade187.DEFAULTS.keySet())if(values.containsKey(key))return null;
+        if(schema<46)for(String key:Upgrade186.DEFAULTS.keySet())if(values.containsKey(key))return null;
+        if(schema<45)for(String key:Upgrade185.DEFAULTS.keySet())if(values.containsKey(key))return null;
+        if(schema<44)for(String key:Upgrade184.DEFAULTS.keySet())if(values.containsKey(key))return null;
+        if(schema<43)for(String key:Upgrade177.DEFAULTS.keySet())if(values.containsKey(key))return null;
+        if(schema<42)for(String key:Upgrade175.DEFAULTS.keySet())if(values.containsKey(key))return null;
+        if(schema<41)for(String key:Upgrade174.DEFAULTS.keySet())if(values.containsKey(key))return null;
+        if(schema<40)for(String key:Upgrade173.DEFAULTS.keySet())if(values.containsKey(key))return null;
+        if(schema<39) {
+            for(String key:Upgrade172.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade172.DEFAULTS);values=upgraded;
+        }
+        if(schema<38) {
+            for(String key:Upgrade171.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade171.DEFAULTS);values=upgraded;
+        }
+        if(schema<37) {
+            for(String key:Upgrade169.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade169.DEFAULTS);values=upgraded;
+        }
+        if(schema<36) {
+            for(String key:Upgrade168.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade168.DEFAULTS);values=upgraded;
+        }
+        if(schema<35) {
+            for(String key:Upgrade166.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade166.DEFAULTS);values=upgraded;
+        }
+        if(schema<34) {
+            // A historical copy cannot claim the later page styles or see-through options, even as null.
+            for(String key:Upgrade160.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade160.DEFAULTS);values=upgraded;
+        }
+        if(schema<33) {
+            // A historical copy cannot claim the later 2x1 fill opt-in, even as null.
+            for(String key:Upgrade157.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade157.DEFAULTS);values=upgraded;
+        }
+        if(schema<32) {
+            // Earlier copies cannot claim a later AOD opt-in, including as null.
+            for(String key:Upgrade154.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade154.DEFAULTS);values=upgraded;
+        }
+        if(schema<31) {
+            // A historical copy cannot already contain the later shared-slot option, even as null.
+            for(String key:Upgrade146.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade146.DEFAULTS);values=upgraded;
+        }
+        if(schema<30) {
+            // Older wire copies cannot carry any member of the new layout batch.
+            for(String key:Upgrade144.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade144.DEFAULTS);values=upgraded;
+        }
+        if(schema<29) {
+            // Persistence did not exist in earlier schemas; never accept a mixed or partial wire copy.
+            for(String key:Upgrade136.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade136.DEFAULTS);values=upgraded;
+        }
+        if(schema<28) {
+            // Schema 28 adds only the two big-clock switches, independently for portrait and landscape.
+            for(String key:Upgrade135.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade135.DEFAULTS);values=upgraded;
+        }
+        if(schema<27) {
+            // Schema 27 adds only the lock-screen notification options and the pull-down wallpaper's blur, pull and clock-zone settings.
+            for(String key:Upgrade118.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade118.DEFAULTS);Upgrade118.carryLockLook(upgraded,values);values=upgraded;
+        }
+        if(schema<26) {
+            // Schema 26 adds only the big clock's "no rebound" switch and the lock-screen glass style (portrait and landscape).
+            for(String key:Upgrade117.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade117.DEFAULTS);values=upgraded;
+        }
+        if(schema<25) {
+            // Schema 25 adds only the shared network host's independent left/right spacing.
+            for(String key:Upgrade108.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade108.DEFAULTS);values=upgraded;
+        }
+        if(schema<24) {
+            for(String key:Upgrade107.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade107.from(values));values=upgraded;
+        }
+        if(schema<23) {
+            // Schema 23 adds only the same-app mini stack and its count-badge switch, both off.
+            for(String key:Upgrade106.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade106.DEFAULTS);values=upgraded;
+        }
+        if(schema<22) {
+            // Schema 22 adds only "使隐藏可点击" for the control centre's hidden top buttons.
+            for(String key:Upgrade105.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade105.DEFAULTS);values=upgraded;
+        }
+        if(schema<21) {
+            for(String key:Upgrade103.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade103.DEFAULTS);values=upgraded;
+        }
+        if(schema<20) {
+            // Schema 20 adds only the code101 pair: always show the 4G/5G text, merge Wi-Fi into its slot.
+            for(String key:Upgrade101.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade101.DEFAULTS);values=upgraded;
+        }
+        if(schema<19) {
+            // Schema 19 adds only the code100 batch: gradient transition ranges, the capsule cover radius, the control-centre buttons.
+            for(String key:Upgrade100.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade100.DEFAULTS);values=upgraded;
+        }
+        if(schema<18) {
+            // Schema 18 adds only the code99 batch: blur mask colour, six running-light colours, glow, spectrum colour, rebound fade.
+            for(String key:Upgrade99.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade99.DEFAULTS);values=upgraded;
+        }
+        if(schema<17) {
+            // Schema 17 adds only the code98 batch: lock capsule switch, colour style, capsule gradient/blur/marquee/spectrum, clock rebound blur.
+            for(String key:Upgrade98.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade98.DEFAULTS);values=upgraded;
+        }
+        if(schema<16) {
+            // Schema 16 adds only the centred clock colons and the camera-area capsule batch.
+            for(String key:Upgrade96.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade96.DEFAULTS);values=upgraded;
+        }
+        if(schema<15) {
+            // Schema 15 adds only the media-accent opacity, follow-while-playing and lock-screen custom batch.
+            for(String key:Upgrade93.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade93.DEFAULTS);values=upgraded;
+        }
+        if(schema<14) {
+            // Schema 14 adds only the two-row clock's own position, spacing and colours.
+            for(String key:Upgrade91.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade91.DEFAULTS);values=upgraded;
+        }
+        if(schema<13) {
+            // Schema 13 adds only the clock digit-alignment/two-row/margin batch; a mixed batch is a partial write.
+            for(String key:Upgrade90.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade90.DEFAULTS);values=upgraded;
+        }
+        if(schema<12) {
+            for(String key:Upgrade85.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.put(FluidCloudStyle.FOLLOW_MEDIA,Upgrade85.legacyMedia(values));values=upgraded;
+        }
+        if(schema<11) {
+            for(String key:Upgrade82.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade82.DEFAULTS);values=upgraded;
+        }
+        if(schema<10) {
+            for(String key:Upgrade80.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade80.inheritedDefaults(values));
+            values=upgraded;
+        }
+        if(schema<9) {
+            for(String key:Upgrade79.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade79.inheritedDefaults(values));
+            values=upgraded;
+        }
+        if(schema<8) {
+            for(String key:Upgrade78.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade78.DEFAULTS);
+            values=upgraded;
+        }
+        if(schema<7) {
+            // Schema 7 adds only lockscreen accent participation; never reinterpret
+            // an old partial/current write as a valid historical snapshot.
+            for(String key:Upgrade77.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade77.DEFAULTS);
+            values=upgraded;
+        }
+        if(schema<6) {
+            // Schemas 1..5 predate this entire batch. Even a present null is a partial write.
+            for(String key:Upgrade76.DEFAULTS.keySet())if(values.containsKey(key))return null;
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade76.DEFAULTS);
+            values=upgraded;
+        }
+        if(schema<5) {
             for(String key:Upgrade70.DEFAULTS.keySet())if(values.containsKey(key))return null;
             Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
             upgraded.putAll(Upgrade70.DEFAULTS);
@@ -259,7 +465,9 @@ final class SettingsFrameworkMirror {
                 values=upgraded;
             }
             boolean before62=true;
-            for(String key:NotificationClearAppearance.LANDSCAPE_LEGACY.keySet())if(values.containsKey(key)){before62=false;break;}
+            // Only the code62 batch tells: the later landscape transition range (schema 19) was already added above.
+            for(String key:NotificationClearAppearance.LANDSCAPE_LEGACY.keySet())
+                if(values.containsKey(key)&&!Upgrade100.DEFAULTS.containsKey(key)){before62=false;break;}
             if(before62&&!before63)return null;
             if(before62){
                 Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
@@ -304,6 +512,42 @@ final class SettingsFrameworkMirror {
                 values=upgraded;
             }
         }
+        if(schema<40) {
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade173.inheritedDefaults(values));values=upgraded;
+        }
+        if(schema<41) {
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade174.DEFAULTS);values=upgraded;
+        }
+        if(schema<42) {
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade175.DEFAULTS);values=upgraded;
+        }
+        if(schema<43) {
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade177.DEFAULTS);values=upgraded;
+        }
+        if(schema<44) {
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade184.DEFAULTS);values=upgraded;
+        }
+        if(schema<45) {
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade185.DEFAULTS);values=upgraded;
+        }
+        if(schema<46) {
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade186.DEFAULTS);values=upgraded;
+        }
+        if(schema<47) {
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade187.DEFAULTS);values=upgraded;
+        }
+        if(schema<48) {
+            Map<String,Object> upgraded=new java.util.LinkedHashMap<>(values);
+            upgraded.putAll(Upgrade188.DEFAULTS);values=upgraded;
+        }
         Bundle result=new Bundle();
         for(String key:StatusBarSettings.NUMERIC_DEFAULTS.keySet()) {
             Object value=values.get(key);if(!(value instanceof Float)||!Float.isFinite((Float)value))return null;
@@ -318,10 +562,19 @@ final class SettingsFrameworkMirror {
             Object value=values.get(key);if(!(value instanceof String))return null;result.putString(key,(String)value);
         }
         for(String key:StatusBarSettings.BOOLEAN_DEFAULTS.keySet()) {
+            // This optional editing marker was added within schema 12. Its absence
+            // is a complete old copy; all previously required fields stay strict.
+            if(FluidCloudStyle.BACKGROUND_COLOR_CUSTOMIZED.equals(key)&&!values.containsKey(key)) {
+                result.putBoolean(key,false);continue;
+            }
             Object value=values.get(key);if(!(value instanceof Boolean))return null;result.putBoolean(key,(Boolean)value);
         }
         result.putBoolean(StatusBarSettings.DATA_ACTIVITY_HIDDEN,!result.getBoolean(NativeDataActivity.MASTER,false));
         result.putBoolean(NotificationGroupStack.MASTER,false);
+        result.putBoolean(FluidCloudStyle.FOLLOW_FOREGROUND,false);
+        result.putBoolean(FluidCloudStyle.SCOPE_SHADE,false);
+        result.putString(StatusBarSettings.BATTERY_STYLE,
+                StatusBarSettings.currentBatteryStyle(result.getString(StatusBarSettings.BATTERY_STYLE,"pui")));
         return SettingsSnapshot.complete(result)?result:null;
     }
 
@@ -335,6 +588,9 @@ final class SettingsFrameworkMirror {
     }
 
     private static boolean code58Key(String key) {
+        // Later landscape options belong to their own historical batches, never the first code58 release.
+        if(Upgrade117.DEFAULTS.containsKey(key)||Upgrade135.DEFAULTS.containsKey(key)||Upgrade160.DEFAULTS.containsKey(key)
+                ||Upgrade166.DEFAULTS.containsKey(key)||Upgrade168.DEFAULTS.containsKey(key)||Upgrade169.DEFAULTS.containsKey(key)||Upgrade171.DEFAULTS.containsKey(key)||Upgrade172.DEFAULTS.containsKey(key)||Upgrade173.DEFAULTS.containsKey(key)||Upgrade174.DEFAULTS.containsKey(key))return false;
         return key.startsWith(NotificationBigClockSettings.LANDSCAPE_PREFIX)
                 ||key.startsWith("status_hint_icons_")
                 ||NotificationGroupStack.MASTER.equals(key)||C17HighlightRemoval.BACKGROUND_ENABLED.equals(key)

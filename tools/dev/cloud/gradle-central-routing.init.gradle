@@ -1,0 +1,29 @@
+// Optional Gradle init script for rate-limited networks (pass it with -I): send Google-hosted groups straight to Google Maven instead of
+// asking Maven Central first. Central answered HTTP 429 for the shared egress of the cloud session, and every Google artifact otherwise
+// costs Central one request. It changes no project file and adds no repository; it only filters the ones settings.gradle already declares.
+def route = { RepositoryHandler repos ->
+    repos.all { repo ->
+        if (!(repo instanceof MavenArtifactRepository)) return
+        String url = repo.url.toString()
+        if (url.contains('dl.google.com/dl/android/maven2')) {
+            repo.content {
+                includeGroupByRegex 'com\\.android(\\..*)?'
+                includeGroupByRegex 'androidx(\\..*)?'
+                includeGroupByRegex 'com\\.google\\.android\\..+'
+                includeGroupByRegex 'com\\.google\\.testing\\.platform(\\..*)?'
+            }
+        } else if (url.contains('repo.maven.apache.org') || url.contains('repo1.maven.org')) {
+            repo.content {
+                excludeGroupByRegex 'com\\.android(\\..*)?'
+                excludeGroupByRegex 'androidx(\\..*)?'
+                excludeGroupByRegex 'com\\.google\\.android\\..+'
+                excludeGroupByRegex 'com\\.google\\.testing\\.platform(\\..*)?'
+            }
+        }
+    }
+}
+gradle.settingsEvaluated { Settings s ->
+    route(s.pluginManagement.repositories)
+    route(s.dependencyResolutionManagement.repositories)
+}
+gradle.beforeProject { Project p -> route(p.buildscript.repositories) }

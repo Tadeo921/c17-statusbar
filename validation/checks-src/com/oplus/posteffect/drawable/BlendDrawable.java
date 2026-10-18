@@ -2,8 +2,9 @@ package com.oplus.posteffect.drawable;
 import android.graphics.*;
 import android.graphics.drawable.Drawable;
 import com.oplus.posteffect.agsl.DrawableShader;
-public class BlendDrawable extends Drawable {
+public class BlendDrawable extends BaseDrawable {
     public final Object dataLock=new Object();
+    public Object getDataLock(){return dataLock;}
     public final DrawableShader drawableShader=new DrawableShader();
     public final Paint drawableShaderPaint=new Paint(1);
     public boolean enableShader=true,contentDirty;

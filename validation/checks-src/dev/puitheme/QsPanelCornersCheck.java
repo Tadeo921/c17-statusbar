@@ -34,7 +34,9 @@ public final class QsPanelCornersCheck {
         QsPanelCorners.DrawScope scope=corners.beginDraw(slider);
         near(saved[0],slider.mBackgroundRadius,"native background geometry field preserved");near(saved[2],slider.mCurBackgroundRadius,"native press background geometry preserved");
         near(saved[3],slider.mCurProgressRadius,"native active endpoint geometry preserved");near(saved[4],slider.mThumbOutRadius,"native thumb position preserved");
-        near(50f,corners.blurRadius(slider,slider.mCurProgressRadius),"blur keeps native press ratio and actual track half-width bound");
+        near(48f,corners.blurRadius(slider,slider.mCurProgressRadius),"blur uses the one fixed radius whatever the native press ratio is");
+        for(float nativeRadius:new float[]{1f,14f,56f,120f,280f,1000f,61.6f})
+            near(48f,corners.blurRadius(slider,nativeRadius),"press or page-transition radius "+nativeRadius+" cannot make the glass rounder than the outline");
         QsPanelCorners.DrawScope nested=corners.beginDraw(slider);nested.close();near(saved[3],slider.mCurProgressRadius,"nested scope leaves native geometry");
         scope.close();scope.close();
         near(saved[0],slider.mBackgroundRadius,"base restored");near(saved[1],slider.mProgressRadius,"active base restored");
@@ -46,7 +48,7 @@ public final class QsPanelCornersCheck {
         slider.width=0;scope=corners.beginDraw(slider);near(61.6f,slider.mCurProgressRadius,"unmeasured native fallback");scope.close();slider.width=180;
         Bundle safe=settings(true,18f);safe.putBoolean(StatusBarSettings.SAFE_MODE,true);corners.configure(safe);near(61.6f,slider.blurRadius,"safe restores original native blur");
         corners.beginDraw(slider).close();near(61.6f,slider.mCurProgressRadius,"safe leaves native path");
-        safe.putBoolean(StatusBarSettings.SAFE_MODE,false);corners.configure(safe);scope=corners.beginDraw(slider);near(61.6f,slider.mCurProgressRadius,"safe exit leaves native geometry");near(39.6f,slider.blurRadius,"safe exit rebinds animated curvature");scope.close();
+        safe.putBoolean(StatusBarSettings.SAFE_MODE,false);corners.configure(safe);scope=corners.beginDraw(slider);near(61.6f,slider.mCurProgressRadius,"safe exit leaves native geometry");near(36f,slider.blurRadius,"safe exit rebinds the fixed curvature");scope.close();
         corners.detach(slider);near(61.6f,slider.blurRadius,"detach restores blur");
         corners.configure(settings(true,12f));slider.failRadiusCalls=1;scope=corners.beginDraw(slider);scope.close();
         near(61.6f,slider.mCurProgressRadius,"partial native failure restores fields");near(61.6f,slider.blurRadius,"partial native failure restores blur");
@@ -65,25 +67,25 @@ public final class QsPanelCornersCheck {
         android.graphics.RectF rect=new android.graphics.RectF(10f,20f,190f,520f);
         Object[] progress={rect,61.6f,61.6f,new Object()};
         QsPanelCorners.ShapeScope shape=corners.shape(slider.mClipProgressPath,"addRoundRect",progress);
-        near(52.8f,shape.args[1],"final active curve uses press ratio");near(52.8f,shape.args[2],"final active curve both axes");
+        near(48f,shape.args[1],"final active curve is the fixed radius, not the native press ratio");near(48f,shape.args[2],"final active curve both axes");
         check(shape.args[0]==rect&&rect.top==20f&&rect.bottom==520f,"native final shape rectangle not altered");
         near(61.6f,progress[1],"native shape input args are not mutated");
         QsPanelCorners.ShapeScope nested=corners.shape(slider.mClipProgressPath,"addRoundRect",shape.args);
         check(nested.args==shape.args,"nested OEM/Android shape not scaled twice");nested.close();shape.close();
         Object wrapper=new Object();corners.onShapeWrapper(wrapper,slider.mBackgroundPath);
         Object[] smooth={rect,67.2f,.7f,new Object()};shape=corners.shape(wrapper,"addSmoothRoundRect",smooth);
-        near(57.6f,shape.args[1],"bound native OEM path wrapper curvature");near(.6f,shape.args[2],"legacy smooth weight shares tile continuous template");shape.close();
+        near(48f,shape.args[1],"native OEM path wrapper curvature is the fixed radius");near(.6f,shape.args[2],"legacy smooth weight shares tile continuous template");shape.close();
         Object[] standard={rect,67.2f,67.2f,slider.mBackgroundPaint};
-        shape=corners.shape(canvas,"drawRoundRect",standard);near(57.6f,shape.args[1],"native plain roundrect paint identity");shape.close();
+        shape=corners.shape(canvas,"drawRoundRect",standard);near(48f,shape.args[1],"native plain roundrect paint identity");shape.close();
         shape=corners.shape(new android.graphics.Canvas(),"drawRoundRect",standard);check(shape.args==standard,"another canvas never rewritten");shape.close();
         Object[] icon={rect,9f,9f,new android.graphics.Paint(1)};shape=corners.shape(canvas,"drawRoundRect",icon);check(shape.args==icon,"content/icon paint never rewritten");shape.close();
         shape=corners.shape(new android.graphics.Path(),"addRoundRect",progress);check(shape.args==progress,"other path never rewritten");shape.close();
         android.graphics.Rect blurRect=new android.graphics.Rect(0,12,100,400);Object material=new Object();
         Object[] config={slider,blurRect,61.6f,.9f,material,false,1.05f,true};Object[] altered=corners.blurShape("applySeekBarActiveBlurConfig",config);
-        near(50f,altered[2],"native blur factory shape bounded to native rectangle");check(altered[1]==blurRect&&altered[4]==material&&altered[6].equals(1.05f),"blur rectangle material and mirror scale retained");
+        near(48f,altered[2],"native blur factory shape uses the fixed radius");check(altered[1]==blurRect&&altered[4]==material&&altered[6].equals(1.05f),"blur rectangle material and mirror scale retained");
         Object[] initial={slider,blurRect,61.6f,.9f,false,true,material,new Object()};altered=corners.blurShape("createSeekBarBlurDrawable",initial);
-        near(50f,altered[2],"initial native factory uses custom curve without waiting for update setter");check(altered[1]==blurRect&&altered[6]==material,"initial factory keeps native geometry and light template");
-        QsPanelCorners.BlurScope setter=corners.beginBlurUpdate(slider,61.6f);config[2]=setter.radius;altered=corners.blurShape("applySeekBarActiveBlurConfig",config);near(50f,altered[2],"setter forwarding does not reapply press ratio");setter.close();
+        near(48f,altered[2],"initial native factory uses custom curve without waiting for update setter");check(altered[1]==blurRect&&altered[6]==material,"initial factory keeps native geometry and light template");
+        QsPanelCorners.BlurScope setter=corners.beginBlurUpdate(slider,61.6f);config[2]=setter.radius;altered=corners.blurShape("applySeekBarActiveBlurConfig",config);near(48f,altered[2],"setter forwarding does not reapply any ratio");setter.close();
         corners.configure(settings(true,0f));shape=corners.shape(slider.mClipProgressPath,"addRoundRect",progress);near(0f,shape.args[1],"zero final path curvature");shape.close();
         near(nativeTop,100f-slider.mCurProgressRadius,"zero keeps native top");near(nativeHeight,300f+2f*slider.mCurProgressRadius,"zero keeps full native height and icon geometry");
         corners.configure(settings(true,80f));android.graphics.RectF tiny=new android.graphics.RectF(0,0,80,16);
@@ -106,7 +108,7 @@ public final class QsPanelCornersCheck {
         corners.configure(settings(true,15f));view.transition=new OplusQsMediaBackgroundDrawable(original);corners.onNativeUpdate(view);near(58f,old.lightRadius,"retired media drawable restored");near(30f,view.transition.lightRadius,"replacement media drawable bound");
         Bundle safe=settings(true,15f);safe.putBoolean(StatusBarSettings.SAFE_MODE,true);corners.configure(safe);near(56f,view.transition.lightRadius,"safe media light native");check(view.transition.getPathProvider()==original,"safe native provider");
         OplusQsBaseMediaPanelView bornSafe=new OplusQsBaseMediaPanelView();bornSafe.body.getResources().getDisplayMetrics().density=2f;corners.onNativeUpdate(bornSafe);safe.putBoolean(StatusBarSettings.SAFE_MODE,false);corners.configure(safe);near(30f,bornSafe.transition.lightRadius,"safe boot media registered for hot exit");
-        corners.configure(settings(true,80f));near(60f,view.transition.lightRadius,"media radius bounded by height");corners.configure(settings(true,0f));near(0f,view.transition.lightRadius,"media native path square");
+        corners.configure(settings(true,80f));near(60f,view.transition.lightRadius,"legacy oversized media radius bounded by 30dp maximum");corners.configure(settings(true,0f));near(0f,view.transition.lightRadius,"media native path square");
         view.attached=false;corners.onNativeUpdate(view);near(56f,view.transition.lightRadius,"detached media native");view.attached=true;corners.onNativeUpdate(view);near(0f,view.transition.lightRadius,"reattach media path");
         corners.detach(view);near(56f,view.transition.lightRadius,"media explicit detach native");
         QsPanelCorners failure=new QsPanelCorners();OplusQsBaseMediaPanelView bad=new OplusQsBaseMediaPanelView();CornerOutlineProvider nativeProvider=bad.transition.getPathProvider();bad.transition.failCorners=1;failure.configure(settings(true,10f));failure.onNativeUpdate(bad);
@@ -129,6 +131,9 @@ public final class QsPanelCornersCheck {
             corners.configure(settings(false,10f));near(57f,replacement.radius,"off native device restored");near(57f,card.outline.radius,"off native outline restored");near(0f,card.outline.weight,"off native weight restored");
             Bundle safe=settings(true,10f);safe.putBoolean(StatusBarSettings.SAFE_MODE,true);corners.configure(safe);near(57f,replacement.radius,"safe native card retained");safe.putBoolean(StatusBarSettings.SAFE_MODE,false);corners.configure(safe);near(20f,replacement.radius,"safe hot exit card");
             corners.configure(settings(true,0f));near(0f,replacement.radius,"square device glass geometry");near(0f,card.outline.radius,"square device outline");
+            int nativeWidth=card.bodyWidth,nativeHeight=card.bodyHeight;card.bodyWidth=200;card.bodyHeight=200;
+            corners.configure(settings(true,30f));near(60f,replacement.radius,"30dp reaches a large device card's native glass");near(60f,card.outline.radius,"30dp reaches the same card's native smooth outline");
+            card.bodyWidth=nativeWidth;card.bodyHeight=nativeHeight;corners.onNativeUpdate(card);
             corners.configure(settings(true,80f));near(40f,replacement.radius,"device half-size bound");corners.detach(card);near(57f,replacement.radius,"device detach restore");
             card.bodyWidth=0;card.bodyHeight=0;corners.onNativeUpdate(card);near(57f,replacement.radius,"unmeasured body falls back native");
             check(card.getClipToOutline()&&card.body.getClipToOutline()&&card.body.getClipBounds()==null,"native clipping mode and content bounds unchanged");
@@ -142,7 +147,7 @@ public final class QsPanelCornersCheck {
         CornerOutlineProvider nativeProvider=media.transition.getPathProvider();
         corners.configure(new Bundle());corners.onNativeUpdate(media);
         check(nativeProvider==media.transition.getPathProvider(),"missing master leaves native media path");
-        corners.configure(settings(true,45.5f));near(60f,media.transition.lightRadius,"factory mapped radius normalized to actual half-height");
+        corners.configure(settings(true,45.5f));near(60f,media.transition.lightRadius,"factory mapped radius normalized to physical 30dp maximum");
         near(60f,media.transition.getPathProvider().radius,"media glass and colored path agree");
         com.oplus.systemui.plugins.qs.customize.view.viewholder.EditablePluginViewHolder$realPluginContainer$2$1 wrapper=
             new com.oplus.systemui.plugins.qs.customize.view.viewholder.EditablePluginViewHolder$realPluginContainer$2$1();
@@ -301,6 +306,42 @@ public final class QsPanelCornersCheck {
         active.cornerRadius=-1f;active.leftTopCornerRadius=-1f;active.rightTopCornerRadius=-1f;active.rightBottomCornerRadius=-1f;active.leftBottomCornerRadius=-1f;nextProxy.applyBlurConfig();
         owner.refresh(card,0f,QSConstant.weight);owner.restore();nativeCurves(uniform(-1f),active,"native blur sentinel fields restore without conversion");visibleCurves(uniform(-1f),nextProxy,"native sentinel is reapplied to actual blur proxy");
     }
+    /** The brightness mirror (a second slider shown while the first is pressed) builds its own glass; it gets the same radius. */
+    private static void mirrorSlider() throws Exception {
+        QsPanelCorners corners=new QsPanelCorners();Slider slider=new Slider();slider.getResources().getDisplayMetrics().density=2f;
+        corners.configure(settings(true,24f));
+        android.graphics.Rect rect=new android.graphics.Rect(0,0,180,500);Object material=new Object();
+        // Outside every scope the factories are still rewritten when they are made for one of our sliders.
+        check(corners.rewritesBlur(slider),"a factory called for a slider is rewritten in any state");
+        check(!corners.rewritesBlur(new Object())&&!corners.rewritesBlur(null)&&!corners.rewritesBlur(slider.getContext()),"other callers are not rewritten outside the scopes");
+        check(!corners.rewritesBlur(new COUIVerticalSeekBar()),"other COUI controls are not rewritten");
+        Object[] create={slider,rect,61.6f,.9f,false,true,material,new Object()};
+        Object[] altered=corners.blurShape("createSeekBarBlurDrawable",create);
+        near(48f,altered[2],"initial glass built outside the draw scope uses the fixed radius");check(altered[1]==rect&&altered[6]==material,"geometry and light template retained");
+        Object[] background={slider,rect,1000f,.9f,false,true,1.05f};
+        altered=corners.blurShape("getSeekBarBackground",background);near(48f,altered[2],"background factory with a full-round native radius");
+        altered=corners.blurShape("getSeekBarActiveDrawable",background);near(48f,altered[2],"active factory with a full-round native radius");
+        check(corners.blurShape("getSeekBarBackground",new Object[]{new Object(),rect,61.6f,.9f})[2].equals(61.6f),"a source that is not our slider is untouched");
+        slider.attached=false;check(!corners.rewritesBlur(slider),"a detached slider is not rewritten");slider.attached=true;
+        corners.configure(settings(false,24f));check(!corners.rewritesBlur(slider),"switched off: nothing is rewritten");
+        check(corners.blurShape("createSeekBarBlurDrawable",create)==create,"switched off: native arguments");
+        corners.configure(settings(true,24f));
+        // A glass drawable the native draw creates during the draw is corrected before the next frame.
+        QsPanelCorners.DrawScope scope=corners.beginDraw(slider);
+        int before=slider.radiusUpdates;
+        slider.baseMixColorDrawable=new android.graphics.drawable.GradientDrawable();
+        int invalidations=slider.invalidations;
+        scope.close();
+        check(slider.radiusUpdates==before+1,"a glass created during the draw is given the fixed radius when the draw ends");
+        near(48f,slider.blurRadius,"and it is the fixed radius");check(slider.invalidations>invalidations,"the slider is redrawn with it");
+        int after=slider.radiusUpdates;
+        for(int frame=0;frame<100;frame++)corners.beginDraw(slider).close();
+        check(slider.radiusUpdates==after,"nothing is resubmitted once the glass is current");
+        scope=corners.beginDraw(slider);slider.activeMixColorDrawable=new android.graphics.drawable.GradientDrawable();scope.close();
+        check(slider.radiusUpdates==after+1,"the active glass is handled the same way");
+        corners.configure(settings(false,24f));scope=corners.beginDraw(slider);slider.baseMixColorDrawable=new android.graphics.drawable.GradientDrawable();int off=slider.radiusUpdates;scope.close();
+        check(slider.radiusUpdates==off,"switched off: a new glass is left to the native code");
+    }
     private static void steadySlider() throws Exception {
         QsPanelCorners corners=new QsPanelCorners();Slider slider=new Slider();
         slider.getResources().getDisplayMetrics().density=2f;
@@ -323,7 +364,7 @@ public final class QsPanelCornersCheck {
         scope.close();
         check(((java.util.Map<?,?>)pathMap).isEmpty()&&((java.util.Map<?,?>)paintMap).isEmpty()&&((java.util.Map<?,?>)canvasMap).isEmpty(),"scope closes clear strong native path/paint/canvas references");
         slider.mCurProgressRadius=61.6f;corners.beginDraw(slider,canvas).close();
-        check(slider.radiusUpdates==++writes,"actual press curve updates native blur immediately");near(26.4f,slider.blurRadius,"press ratio reaches custom blur");
+        check(slider.radiusUpdates==++writes,"actual press curve updates native blur immediately");near(24f,slider.blurRadius,"press ratio never reaches the blur: the radius stays fixed");
         slider.mClipProgressRect.right=40;corners.beginDraw(slider,canvas).close();
         check(slider.radiusUpdates==++writes,"actual Rect resize updates native blur");near(20f,slider.blurRadius,"rect half-width limits blur after resize");
         slider.mClipProgressRect.left=4;corners.beginDraw(slider,canvas).close();check(slider.radiusUpdates==++writes,"rect position changes update its native config");
@@ -371,7 +412,7 @@ public final class QsPanelCornersCheck {
         tile.getResources().getDisplayMetrics().density=1.25f;
         panels.onNativeUpdate(slider);panels.onNativeUpdate(media);panels.onNativeUpdate(card);tiles.onNativeUpdate(tile);
         android.graphics.RectF rect=new android.graphics.RectF(0,0,180,500);
-        for(float dp:new float[]{0f,.25f,12f,30f}) {
+        for(float dp:new float[]{0f,.25f,12f,28f}) {
             panels.configure(settings(true,dp));tiles.configure(settings(true,dp));
             float radius=dp*1.25f;
             near(radius,tileDrawable.getPathProvider().radius,"tile exact physical radius without OEM design scaling");
@@ -392,12 +433,12 @@ public final class QsPanelCornersCheck {
         check(slider.radiusUpdates==nativeSetters&&QSConstant.calls==factories,"1000 steady draw frames reuse native curve and skip blur submission");
         QsPanelCorners.DrawScope draw=panels.beginDraw(slider);
         QsPanelCorners.ShapeScope shape=panels.shape(slider.mBackgroundPath,"addSmoothRoundRect",new Object[]{rect,67.2f,.84f,new Object()});
-        near(45f,shape.args[1],"native press radius ratio remains live");near(1.5f,shape.args[2],"native transient continuous-weight ratio remains live");shape.close();draw.close();
+        near(35f,shape.args[1],"native press radius ratio never reaches the shape: one fixed radius");near(1.25f,shape.args[2],"native transient continuous-weight ratio never reaches the shape either");shape.close();draw.close();
         slider.mBackgroundRoundCornerWeight=.8f;panels.onNativeUpdate(slider);near(1.25f,slider.visibleBlurWeight,"new native base coefficient still yields common resting curve");
         draw=panels.beginDraw(slider);shape=panels.shape(slider.mBackgroundPath,"addSmoothRoundRect",new Object[]{rect,56f,.96f,new Object()});
-        near(1.5f,shape.args[2],"transient coefficient follows new native theme baseline");shape.close();draw.close();near(.8f,slider.mBackgroundRoundCornerWeight,"native weight field remains untouched");
+        near(1.25f,shape.args[2],"a transient coefficient from a new native theme baseline does not change the shared weight");shape.close();draw.close();near(.8f,slider.mBackgroundRoundCornerWeight,"native weight field remains untouched");
         Object[] newApi={rect,56f,56f,.8f,new Object()};draw=panels.beginDraw(slider);shape=panels.shape(slider.mBackgroundPath,"addSmoothRoundRect",newApi);
-        near(37.5f,shape.args[1],"new OEM two-axis path radius x");near(37.5f,shape.args[2],"new OEM two-axis path radius y");near(1.25f,shape.args[3],"new OEM path weight has distinct argument");shape.close();draw.close();
+        near(35f,shape.args[1],"new OEM two-axis path radius x");near(35f,shape.args[2],"new OEM two-axis path radius y");near(1.25f,shape.args[3],"new OEM path weight has distinct argument");shape.close();draw.close();
         panels.configure(settings(false,30f));near(.8f,slider.visibleBlurWeight,"off restores latest native blur coefficient");near(.4f,mix.blur().viewBlurProxy.visibleWeight,"off restores independent native device BlurConfig weight");
         panels.configure(settings(true,12f));panels.detach(slider);near(.8f,slider.visibleBlurWeight,"detach restores native slider weight without custom re-entry");
         QSConstant.reset();
@@ -446,5 +487,5 @@ public final class QsPanelCornersCheck {
         panels.configure(settings(true,12f));panels.detach(card);scope=panels.beginSpotlight(wrapper,path,adapter);shape=panels.shape(path,"addRoundRect",nativeShape);
         check(!shape.handled,"retired device owner never rewrites spotlight");shape.close();scope.close();
     }
-    public static void main(String[] args) throws Exception {slider();sliderShapes();steadySlider();media();devices();nativeGeometry();deviceSurfaceOwnership();actualPluginBinding();deviceBlurGeometry();deviceBlurUpdatesAndRollback();uniformCurves();deviceWeightTransactions();spotlightCurve();System.out.println("QsPanelCornersCheck passed: "+checks+" (uniform native continuous curves, exact physical bounds, dynamic slider paths/blur, native restoration and steady-state submission caching)");}
+    public static void main(String[] args) throws Exception {slider();sliderShapes();mirrorSlider();steadySlider();media();devices();nativeGeometry();deviceSurfaceOwnership();actualPluginBinding();deviceBlurGeometry();deviceBlurUpdatesAndRollback();uniformCurves();deviceWeightTransactions();spotlightCurve();System.out.println("QsPanelCornersCheck passed: "+checks+" (uniform native continuous curves, exact physical bounds, dynamic slider paths/blur, native restoration and steady-state submission caching)");}
 }

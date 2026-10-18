@@ -19,6 +19,60 @@ import android.graphics.Shader;
  * software blur, bitmap scaling, timer or foreground capture is used.
  */
 final class WallpaperBlurRenderer {
+    /** One opaque plus at most 254 partially transparent coverage runs. All regions
+     * use one radius so RenderEngine can reuse one blur result within the layer.
+     * The local OEM BlurRegion wire format is 18 geometry/color fields followed by
+     * OplusBlurParam's 18 fields (audited BackgroundBlurDrawable.BlurRegion).
+     * That contract has one alpha per rectangle and no vertical alpha shader.
+     * Coarse fixed-height strips therefore produce visible horizontal steps.
+     * Sample the physical pixel centers, quantize to native 8-bit alpha, and merge
+     * contiguous equal-alpha pixels. These regions never overlap: overlapping
+     * SrcOver blur rectangles would compound their opacity and alter the curve.
+     */
+    static final int MAX_COMPOSITOR_REGIONS = 255;
+    static float[][] compositorRegions(int width, LockscreenBlurGeometry.Plan plan,
+                                      int radius, float[] nativeParameters) {
+        if (width <= 0 || plan == null || plan.end <= 0 || radius <= 0) return new float[0][];
+        if (nativeParameters == null || nativeParameters.length != 18)
+            throw new IllegalArgumentException("Unknown native wallpaper blur parameter contract");
+        // Built only for a changed radius/geometry; draw and native visibility
+        // updates reuse the resulting array. Two bounded passes avoid allocating
+        // a temporary per-pixel table or an oversized final payload.
+        int count = 0, start = 0, previous = alpha(plan, 0);
+        int scanStart = Math.max(1, plan.core);
+        for (int y = scanStart; y < plan.end; y++) {
+            int next = alpha(plan, y);
+            if (next != previous) {
+                if (previous != 0) count++;
+                previous = next;
+            }
+        }
+        if (previous != 0) count++;
+        if (count > MAX_COMPOSITOR_REGIONS) throw new IllegalStateException("Non-monotone wallpaper blur feather");
+        float[][] regions = new float[count][];
+        int at = 0;
+        previous = alpha(plan, 0);
+        for (int y = scanStart; y <= plan.end; y++) {
+            int next = y == plan.end ? -1 : alpha(plan, y);
+            if (next == previous) continue;
+            if (previous != 0) regions[at++] = compositorRegion(width, start, y, radius,
+                    previous / 255f, nativeParameters);
+            start = y; previous = next;
+        }
+        return regions;
+    }
+    private static int alpha(LockscreenBlurGeometry.Plan plan, int pixel) {
+        return Math.round(255f * plan.strength(pixel + .5f));
+    }
+    private static float[] compositorRegion(int width, int top, int bottom, int radius,
+                                           float alpha, float[] nativeParameters) {
+        float[] region = new float[36];
+        region[0] = radius; region[1] = alpha;
+        region[2] = 0f; region[3] = top; region[4] = width; region[5] = bottom;
+        // No rounded corners or native tint: the independent mask owns color.
+        System.arraycopy(nativeParameters, 0, region, 18, 18);
+        return region;
+    }
     private final RenderNode blurred = new RenderNode("C17 isolated wallpaper blur");
     private final RenderNode feathered = new RenderNode("C17 continuous wallpaper feather");
     private final Paint image = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);

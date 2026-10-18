@@ -30,7 +30,28 @@ public final class ShadeWallpaperRepositoryCheck {
             @Override public File[] listFiles(FileFilter filter){return java.util.Arrays.stream(files).filter(filter::accept).toArray(File[]::new);}
         };
     }
+    /** What the user cut out: turns are quarter turns, fractions are kept inside the picture, a sliver or a bad number is no crop. */
+    private static void crops(){
+        ShadeWallpaperRepository.Crop turned=new ShadeWallpaperRepository.Crop(-90,-1f,.2f,2f,Float.NaN);
+        equal(270,turned.rotation);equal(0f,turned.left);equal(.2f,turned.top);equal(1f,turned.right);equal(0f,turned.bottom);
+        equal(false,turned.valid());
+        equal(90,new ShadeWallpaperRepository.Crop(450,0f,0f,1f,1f).rotation);
+        equal(0,new ShadeWallpaperRepository.Crop(360,0f,0f,1f,1f).rotation);
+        equal(180,new ShadeWallpaperRepository.Crop(185,0f,0f,1f,1f).rotation);
+        equal(true,new ShadeWallpaperRepository.Crop(0,.1f,.2f,.9f,.8f).valid());
+        equal(false,new ShadeWallpaperRepository.Crop(0,.5f,.5f,.505f,.9f).valid());
+        // a picture to be cut is decoded larger than the result, and stays within its bounds either way
+        int[] large=ShadeWallpaperRepository.boundedSize(6000,4000,3072,8L*1024*1024);
+        equal(true,large[0]<=3072&&large[1]<=3072&&(long)large[0]*large[1]<=8L*1024*1024);
+        equal(true,Math.abs(large[0]/(float)large[1]-1.5f)<.01f);
+        int[] small=ShadeWallpaperRepository.boundedSize(800,600,3072,8L*1024*1024);
+        equal(800,small[0]);equal(600,small[1]);
+        int[] result=ShadeWallpaperRepository.normalizedSize(2400,5280);
+        equal(true,result[0]<=ShadeWallpaperRepository.MAX_EDGE&&result[1]<=ShadeWallpaperRepository.MAX_EDGE&&(long)result[0]*result[1]<=ShadeWallpaperRepository.MAX_PIXELS);
+        equal(true,Math.abs(result[0]/(float)result[1]-2400f/5280f)<.01f);
+    }
     public static void main(String[] args)throws Exception{
+        crops();
         Path privateRoot=Files.createTempDirectory("c17-wallpaper-check-");
         Context context=new Context(){@Override public File getFilesDir(){return privateRoot.toFile();}};
         String scene=ShadeWallpaperSettings.CLASSIC_PORTRAIT,hash="a".repeat(64);

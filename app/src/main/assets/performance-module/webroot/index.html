@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Status C17 附属模块</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="page">
+    <header class="heading"><div><p class="eyebrow">STATUS C17</p><h1>附属模块</h1></div><span class="version" id="version">附属模块</span></header>
+    <p class="demo-notice" id="demo-notice" hidden>离线演示 · 只读示例，未连接手机</p>
+
+    <section class="hero" id="status-card" data-tone="neutral" aria-labelledby="status-title">
+      <div class="ring" aria-hidden="true">
+        <svg viewBox="0 0 80 80" width="84" height="84" focusable="false"><circle class="ring-track" cx="40" cy="40" r="34"></circle><circle class="ring-arc" id="ring-arc" cx="40" cy="40" r="34" stroke-dasharray="0 214" transform="rotate(-90 40 40)"></circle></svg>
+        <span class="ring-text" id="ring-text">—</span>
+      </div>
+      <div class="hero-text">
+        <p class="hero-kicker"><span class="status-dot" aria-hidden="true"></span>系统界面编译状态</p>
+        <h2 id="status-title">正在读取</h2>
+        <p class="hero-message" id="status-message">正在连接管理器…</p>
+      </div>
+      <div class="record-line"><span id="source">暂无记录</span><time id="time">—</time></div>
+    </section>
+
+    <div class="section-heading"><h3>收益记录</h3><span id="benefit-since">尚无记录</span></div>
+    <section class="benefits" aria-label="收益记录">
+      <div class="tile"><span class="tile-label">累计编译</span><strong id="benefit-compiles">—</strong><small id="benefit-compiles-note">ART 实测耗时</small></div>
+      <div class="tile"><span class="tile-label">免去重编译</span><strong id="benefit-saved">—</strong><small id="benefit-saved-note">相比每次都重编</small></div>
+      <div class="tile"><span class="tile-label">系统界面</span><strong id="benefit-aot">—</strong><small id="benefit-aot-note">是否使用预编译产物</small></div>
+      <div class="tile"><span class="tile-label">运行时编译</span><strong id="benefit-jit">—</strong><small id="benefit-jit-note">JIT 线程占用</small></div>
+    </section>
+    <p class="benefit-note" id="benefit-note">耗时来自 ART 每次编译的返回值；“免去”按各组件上次编译耗时估算。没有做前后对比，不给出加速百分比。</p>
+
+    <div class="actions">
+      <button class="control primary" id="optimize" type="button" disabled><strong id="optimize-title">立即优化</strong><small>复用有效结果，需要时才编译</small></button>
+      <button class="control secondary" id="refresh" type="button"><strong>刷新状态</strong><small>读取真实记录</small></button>
+      <button class="control secondary" id="module-toggle" type="button" disabled><strong id="module-toggle-title">模块状态</strong><small id="module-toggle-note">读取后可操作</small></button>
+    </div>
+    <p class="action-hint" id="action-hint" aria-live="polite">读取后可操作</p>
+
+    <section class="auto-card" aria-labelledby="auto-heading">
+      <div class="auto-heading"><h3 id="auto-heading">自动规则</h3><span class="auto-tag" id="auto-tag">待确认</span></div>
+      <p>息屏或连续 10 分钟无操作 · 电量高于 15% · 电池低于 55℃，充电与否不影响。</p>
+      <button class="link" id="auto-details" type="button">查看计划与诊断 · <span id="auto-title">待确认</span></button>
+    </section>
+
+    <details class="details" id="details">
+      <summary>运行记录与诊断<span aria-hidden="true">＋</span></summary>
+      <div class="details-body">
+        <p class="notice" id="reason" hidden></p>
+        <dl>
+          <div><dt>记录</dt><dd id="record-validity">尚未读取</dd></div>
+          <div><dt>本次编译</dt><dd id="compiled">—</dd></div>
+          <div><dt>直接复用</dt><dd id="reused">—</dd></div>
+          <div><dt>延期</dt><dd id="deferred">—</dd></div>
+          <div><dt>ART 核验</dt><dd id="verified">—</dd></div>
+          <div><dt>核验结论</dt><dd id="verification">尚未核验</dd></div>
+          <div><dt>计划登记</dt><dd id="schedule">尚未读取</dd></div>
+          <div><dt>任务优先级</dt><dd id="priority">—</dd></div>
+        </dl>
+        <div class="rule"><strong>自动</strong><p>需要编译时，息屏或无操作 10 分钟再处理；电量高于 15%，电池温度低于 55℃，充电与否不影响。</p></div>
+        <div class="rule"><strong>手动</strong><p>立即执行，不等待屏幕、电量、温度或充电条件；仍保留操作超时、可靠取消和防重叠。</p></div>
+        <p class="scope">仅处理系统界面和已识别控制中心插件的主 DEX；有效结果直接复用。</p>
+      </div>
+    </details>
+    <p class="footer" id="connection">Status C17 附属模块 · 页面可见时更新状态</p>
+  </main>
+</body>
+</html>

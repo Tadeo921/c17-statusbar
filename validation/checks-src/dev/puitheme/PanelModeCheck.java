@@ -50,7 +50,17 @@ public final class PanelModeCheck {
         System.out.println(checks + " native panel mode, saved-config isolation and classic text restoration checks passed");
     }
     private static void unavailableWallpaper(Bundle saved) {
+        // Shelved: the saved switches stay as they are, but none of them reaches the runtime.
+        ShadeWallpaperSettings.openForCheck(false);
         for (String key : ShadeWallpaperSettings.BOOLEANS.keySet()) saved.putBoolean(key,true);
+        for (String mode : new String[]{PanelMode.CLASSIC,PanelMode.SEPARATE,PanelMode.UNKNOWN,null}) {
+            Bundle runtime=PanelMode.runtimeSettings(saved,mode);
+            for (String key : ShadeWallpaperSettings.BOOLEANS.keySet()) { equal(false,runtime.getBoolean(key,false));equal(true,saved.getBoolean(key,false)); }
+            equal(true,runtime.getBoolean("tiles_enabled",false));
+        }
+        equal(false,PanelMode.freezeReason(ShadeWallpaperSettings.MASTER).isEmpty());
+        // Opened again (the author's switch): a live feature, whatever the panel mode, its saved switches and pictures reach the runtime as they are.
+        ShadeWallpaperSettings.openForCheck(true);
         for (String scene : ShadeWallpaperSettings.SCENES) {
             saved.putString(ShadeWallpaperSettings.revisionKey(scene),"a".repeat(64));
             saved.putFloat(ShadeWallpaperSettings.brightnessKey(scene),134f);
@@ -58,7 +68,7 @@ public final class PanelModeCheck {
         for (String mode : new String[]{PanelMode.CLASSIC,PanelMode.SEPARATE,PanelMode.UNKNOWN,null}) {
             Bundle runtime=PanelMode.runtimeSettings(saved,mode);
             for (String key : ShadeWallpaperSettings.BOOLEANS.keySet()) {
-                equal(false,runtime.getBoolean(key,true));equal(true,saved.getBoolean(key,false));
+                equal(true,runtime.getBoolean(key,false));equal(true,saved.getBoolean(key,false));
             }
             for (String scene : ShadeWallpaperSettings.SCENES) {
                 equal("a".repeat(64),runtime.getString(ShadeWallpaperSettings.revisionKey(scene)));
@@ -66,9 +76,10 @@ public final class PanelModeCheck {
             }
             equal(true,runtime.getBoolean("tiles_enabled",false));
         }
-        PanelMode.report(false);equal("未完成的开发",PanelMode.freezeReason(ShadeWallpaperSettings.MASTER));
-        PanelMode.report(true);equal("未完成的开发",PanelMode.freezeReason(ShadeWallpaperSettings.MASTER));
-        PanelMode.query(key -> null);equal("未完成的开发",PanelMode.freezeReason(ShadeWallpaperSettings.MASTER));
+        PanelMode.report(false);equal("",PanelMode.freezeReason(ShadeWallpaperSettings.MASTER));
+        PanelMode.report(true);equal("",PanelMode.freezeReason(ShadeWallpaperSettings.MASTER));
+        PanelMode.query(key -> null);equal("",PanelMode.freezeReason(ShadeWallpaperSettings.MASTER));
+        ShadeWallpaperSettings.openForCheck(false);
     }
     private static void classicText() {
         Context context=new Context(); TextControls text=new TextControls(new Handler(Looper.getMainLooper()));

@@ -119,7 +119,7 @@ public final class ModuleDiagnosticsCheck {
         equal(2,pending.size());JSONObject staged=new JSONObject(pending.peekLast());
         equal("prepare",staged.getJSONObject("details").getString("phase"));
         equal(2,staged.getJSONObject("details").getJSONObject("metrics").length());
-        equal(false,staged.toString().contains("private network"));equal(false,staged.toString().contains("528"));
+        equal(false,staged.toString().contains("private network"));equal(false,staged.getJSONObject("details").getJSONObject("metrics").has("pin"));
         ModuleDiagnostics.stage("media","prepare",counters,null);equal(2,pending.size());
         ModuleDiagnostics.stage("media","private phase",counters,null);equal(2,pending.size());
         ModuleDiagnostics.configure(disabled);equal(0, pending.size());

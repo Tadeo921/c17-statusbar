@@ -99,7 +99,7 @@ public final class NotificationClockStyle {
             Context system = SYSTEM_UI.equals(context.getPackageName()) ? context
                     : context.createPackageContext(SYSTEM_UI, Context.CONTEXT_IGNORE_SECURITY);
             Resources resources = system.getResources();
-            int style = resources.getIdentifier("clock_time_style", "style", SYSTEM_UI);
+            int style = ResourceIds.get(resources, "clock_time_style", "style", SYSTEM_UI);
             if (style != 0) {
                 TextView sample = new TextView(system, null, 0, style);
                 // SingleClockView's XML excludes font padding even though the shared style does not.

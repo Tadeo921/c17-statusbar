@@ -11,6 +11,10 @@ public final class ProjectContact {
     public static final String AUTHOR = "aiingjie";
     public static final String GITHUB = "sanwu5";
     public static final String COOLAPK = "konwo";
+    /** The author's Coolapk profile; the Coolapk app opens it when installed, otherwise the browser does. */
+    public static final String COOLAPK_URL = "https://www.coolapk.com/u/745949";
+    /** Shown with the donation entries. */
+    public static final String DONATION_NOTE = "捐赠金额不限。捐赠后可以联系作者，申请加入测试群；更新会先在测试群测试，稳定后再发布正式版。";
     public static final String QQ = "2726344450";
     private ProjectContact() { }
     public static boolean copyQq(Context context) {

@@ -3,8 +3,10 @@ public class Uri {
     private final String value;
     private Uri(String value){this.value=value;}
     public static Uri parse(String value){return new Uri(value);}
+    public static Uri withAppendedPath(Uri base,String path){return parse(base.toString()+"/"+path);}
     private java.net.URI parsed(){return java.net.URI.create(value);}
     public String getScheme(){return parsed().getScheme();}
+    public String getSchemeSpecificPart(){return parsed().getSchemeSpecificPart();}
     public String getAuthority(){return parsed().getAuthority();}
     public String getQuery(){return parsed().getRawQuery();}
     public String getFragment(){return parsed().getRawFragment();}

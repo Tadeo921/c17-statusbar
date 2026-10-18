@@ -3,15 +3,25 @@ public class Paint {
     public static final int ANTI_ALIAS_FLAG=1,FILTER_BITMAP_FLAG=2;
     public enum Align { LEFT, CENTER, RIGHT }
     public enum Style { FILL, STROKE, FILL_AND_STROKE }
+    public Paint() { }
     public enum Join { MITER, ROUND, BEVEL }
     public enum Cap { BUTT, ROUND, SQUARE }
+    private Join strokeJoin=Join.MITER;
+    private Cap strokeCap=Cap.BUTT;
+    private float strokeMiter=4;
+    public void setStrokeMiter(float value){strokeMiter=value;}
+    public float getStrokeMiter(){return strokeMiter;}
     public static class FontMetrics { public float top,ascent,descent,bottom,leading; }
     public static class FontMetricsInt { public int top,ascent,descent,bottom,leading; }
     private int alpha=255,color;
     private float textSize=14;
     private float letterSpacing;
+    private float textScaleX=1f,textSkewX;
+    public float getTextScaleX(){return textScaleX;}public void setTextScaleX(float value){textScaleX=value;}
+    public float getTextSkewX(){return textSkewX;}public void setTextSkewX(float value){textSkewX=value;}
     private Typeface typeface;
     private String variationSettings;
+    private String featureSettings;
     /** Android 36+ can store axes on Paint without changing its Typeface. */
     public static boolean fontVariationOnPaint;
     public static boolean includeLetterSpacingInMeasure;
@@ -21,17 +31,24 @@ public class Paint {
     public float strokeWidth;
     public PathEffect pathEffect;
     public Shader shader;
+    public float shadowRadius,shadowDx,shadowDy;
+    public int shadowColor;
     private ColorFilter colorFilter;
     public Paint(int flags) { }
-    public void set(Paint source) {alpha=source.alpha;color=source.color;textSize=source.textSize;mode=source.mode;letterSpacing=source.letterSpacing;typeface=source.typeface;fakeBold=source.fakeBold;variationSettings=source.variationSettings;colorFilter=source.colorFilter;}
+    public void set(Paint source) {alpha=source.alpha;color=source.color;textSize=source.textSize;mode=source.mode;letterSpacing=source.letterSpacing;textScaleX=source.textScaleX;textSkewX=source.textSkewX;featureSettings=source.featureSettings;typeface=source.typeface;fakeBold=source.fakeBold;variationSettings=source.variationSettings;colorFilter=source.colorFilter;shader=source.shader;style=source.style;strokeWidth=source.strokeWidth;strokeMiter=source.strokeMiter;strokeCap=source.strokeCap;strokeJoin=source.strokeJoin;pathEffect=source.pathEffect;shadowRadius=source.shadowRadius;shadowDx=source.shadowDx;shadowDy=source.shadowDy;shadowColor=source.shadowColor;}
     public void setAlpha(int value) {alpha=value;}
+    public void setShadowLayer(float radius,float dx,float dy,int color){shadowRadius=radius;shadowDx=dx;shadowDy=dy;shadowColor=color;}
     public int getAlpha() {return alpha;}
     public void setColor(int value) {color=value;alpha=value>>>24;}
     public int getColor() {return color;}
     public Xfermode setXfermode(Xfermode value) {Xfermode old=mode;mode=value;return old;}
     public void setStyle(Style value) {style=value;}
-    public void setStrokeJoin(Join value) { }
-    public void setStrokeCap(Cap value) { }
+    public Style getStyle(){return style;}
+    public float getStrokeWidth(){return strokeWidth;}
+    public Join getStrokeJoin(){return strokeJoin;}
+    public Cap getStrokeCap(){return strokeCap;}
+    public void setStrokeJoin(Join value) {strokeJoin=value;}
+    public void setStrokeCap(Cap value) {strokeCap=value;}
     public void setStrokeWidth(float value) {strokeWidth=value;}
     public PathEffect setPathEffect(PathEffect value) {PathEffect old=pathEffect;pathEffect=value;return old;}
     public Shader setShader(Shader value) {Shader old=shader;shader=value;return old;}
@@ -46,10 +63,12 @@ public class Paint {
                 ?.2f+.8f*typeface.variationHeight/70f:1f);
         bounds.left=0;bounds.right=(int)((end-start)*textSize*.6f);bounds.top=-(int)ink;bounds.bottom=0;
     }
+    public void getTextBounds(CharSequence value,int start,int end,Rect bounds){getTextBounds(value.toString(),start,end,bounds);}
     public float measureText(CharSequence text,int start,int end) {
         return Math.max(0f, (end-start)*textSize*.6f
                 + (includeLetterSpacingInMeasure ? Math.max(0,end-start-1)*letterSpacing*textSize : 0f));
     }
+    public float measureText(String text) { return text == null ? 0f : measureText(text, 0, text.length()); }
     public Typeface getTypeface() {return typeface;}
     public Typeface setTypeface(Typeface face) {Typeface old=typeface;typeface=face;return old;}
     public String getFontVariationSettings() {return variationSettings;}
@@ -70,9 +89,13 @@ public class Paint {
         return base.effectiveWeight();
     }
     public float getLetterSpacing() {return letterSpacing;}
+    public String getFontFeatureSettings(){return featureSettings;}
+    public void setFontFeatureSettings(String value){featureSettings=value;}
     public void setLetterSpacing(float value) {letterSpacing=value;}
     public void setFakeBoldText(boolean bold) {fakeBold=bold;}
     public void setTextAlign(Align align) { }
-    public float getFontMetrics(FontMetrics metrics) {metrics.ascent=-textSize*.8f;metrics.descent=textSize*.2f;return textSize;}
+    public static int fontMetricsObjectsForCheck;
+    public FontMetrics getFontMetrics(){fontMetricsObjectsForCheck++;FontMetrics metrics=new FontMetrics();getFontMetrics(metrics);return metrics;}
+    public float getFontMetrics(FontMetrics metrics) {metrics.ascent=-textSize*.8f;metrics.descent=textSize*.2f;metrics.top=-textSize*.9f;metrics.bottom=textSize*.25f;return textSize;}
     public int getFontMetricsInt(FontMetricsInt metrics){metrics.top=metrics.ascent=(int)Math.floor(-textSize*.8f);metrics.bottom=metrics.descent=(int)Math.ceil(textSize*.2f);metrics.leading=0;return metrics.descent-metrics.ascent;}
 }

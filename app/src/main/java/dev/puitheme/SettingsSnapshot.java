@@ -100,6 +100,8 @@ public final class SettingsSnapshot {
     static Bundle runtimeCopy(Bundle supplied) {
         Bundle result=new Bundle(supplied);
         result.putBoolean(NotificationGroupStack.MASTER,false);
+        result.putBoolean(FluidCloudStyle.FOLLOW_FOREGROUND,false);
+        result.putBoolean(FluidCloudStyle.SCOPE_SHADE,false);
         result.putBoolean(StatusBarSettings.DATA_ACTIVITY_HIDDEN,!result.getBoolean(NativeDataActivity.MASTER,false));
         return result;
     }

@@ -37,19 +37,26 @@ public final class ConfigTransfer {
         private final Map<String, Object> values;
         public final int count;
         public final boolean fontFallback;
+        public final int skippedLegacyIcons;
         public final String warning;
         private PreparedImport(Map<String, Object> values, boolean fontFallback) {
+            this(values,fontFallback,0);
+        }
+        private PreparedImport(Map<String,Object> values,boolean fontFallback,int skippedLegacyIcons){
             this.values = Collections.unmodifiableMap(new LinkedHashMap<>(values));
             this.count = values.size();
             this.fontFallback = fontFallback;
-            String warning = fontFallback ? "当前设备没有导入的自选字体，将使用系统字体。字体文件不会随配置传输。" : "";
-            if ((values.containsKey(IconPackRepository.LAYERS) && !"[]".equals(values.get(IconPackRepository.LAYERS)))
-                    || (values.containsKey(IconPackAssignments.ASSIGNMENTS) && !"[]".equals(values.get(IconPackAssignments.ASSIGNMENTS))))
-                warning += (warning.isEmpty() ? "" : "\n") + "图标库文件不会随配置传输；未导入对应图标库时使用现有图标。";
+            this.skippedLegacyIcons=skippedLegacyIcons;
+            String warning = fontFallback ? "当前设备缺少配置所引用的自选字体，相关范围将使用系统字体。字体文件不会随配置传输。" : "";
+            if(skippedLegacyIcons>0)warning+=(warning.isEmpty()?"":"\n")+"已跳过 "+skippedLegacyIcons+" 项旧图标字段；其余合法模块设置保留。";
+            if(values.containsKey(IconManagementSettings.KEY))try{
+                if(!IconManagementSelection.referencedPacks(IconManagementSettings.parse((String)values.get(IconManagementSettings.KEY))).isEmpty())
+                    warning+=(warning.isEmpty()?"":"\n")+"图标库文件不会随配置传输；请在本机导入对应 v3 图标库，来源缺失时恢复默认图案。";
+            }catch(IOException malformed){/* Prepared values were already validated. */}
             for (String scene : ShadeWallpaperSettings.SCENES) {
                 Object revision = values.get(ShadeWallpaperSettings.revisionKey(scene));
                 if (revision instanceof String && !((String) revision).isEmpty()) {
-                    warning += (warning.isEmpty() ? "" : "\n") + "下拉面板壁纸为未完成的开发，当前强制停用。场景配置会保留，图片文件不会随配置传输。";
+                    warning += (warning.isEmpty() ? "" : "\n") + "下拉面板壁纸的图片文件不会随配置传输；场景配置会保留，在本机重新选择图片后生效。";
                     break;
                 }
             }
@@ -57,6 +64,16 @@ public final class ConfigTransfer {
         }
         public int count() { return count; }
         public Map<String, Object> values() { return values; }
+        /** The keys the file carries, in file order. */
+        public java.util.Set<String> keys() { return values.keySet(); }
+        /** The same import limited to some keys (the user's choice of pages); an empty result is for the caller to refuse. */
+        public PreparedImport only(java.util.Collection<String> keep) {
+            Map<String, Object> subset = new LinkedHashMap<>();
+            boolean font = false;
+            for (Map.Entry<String, Object> entry : values.entrySet())
+                if (keep != null && keep.contains(entry.getKey())) { subset.put(entry.getKey(), entry.getValue()); font |= entry.getKey().contains("font"); }
+            return new PreparedImport(subset, fontFallback && font,skippedLegacyIcons);
+        }
         public boolean hasCustomFontFallback() { return fontFallback; }
         public String warning() { return warning; }
     }
@@ -65,8 +82,11 @@ public final class ConfigTransfer {
     private static Map<String, Type> registry() {
         Map<String, Type> result = new LinkedHashMap<>();
         for (String key : StatusBarSettings.BOOLEAN_DEFAULTS.keySet())
-            if (!StatusBarSettings.DIAGNOSTICS_ENABLED.equals(key) && !StatusBarSettings.SAFE_MODE.equals(key))
+            if (!StatusBarSettings.DIAGNOSTICS_ENABLED.equals(key) && !StatusBarSettings.SAFE_MODE.equals(key)
+                    &&!IconManagementSettings.LEGACY_KEYS.contains(key)
+                    && !ResidentCache.INSTALLED.equals(key) && !ResidentCache.RUNNING.equals(key)) // this phone's own state
                 result.put(key, Type.BOOLEAN);
+        // Music cover size belongs to the portable capsule page, including its enable switch.
         for (String key : StatusBarSettings.NUMERIC_DEFAULTS.keySet()) result.put(key, Type.NUMBER);
         for (String key : StatusBarSettings.COLOR_DEFAULTS.keySet()) {
             result.put(key, Type.COLOR);
@@ -80,11 +100,19 @@ public final class ConfigTransfer {
     public static Map<String, Type> types() { return TYPES; }
 
     private static boolean portableString(String key) {
-        if (SpeedPosition.POSITION.equals(key) || NotificationIconOverrides.RULES.equals(key)
+        if(IconManagementSettings.LEGACY_KEYS.contains(key))return false;
+        if(IconManagementSettings.KEY.equals(key))return true;
+        if(FontScopes.KEY.equals(key))return true;
+        if (StatusBarLayoutSettings.sideKey(key) || TilePageEffects.STYLE.equals(key) || NativeStatusIcons.LAYOUT.equals(key)) return true;
+        if (SpeedPosition.POSITION.equals(key) || FluidCloudStyle.BACKGROUND_MODE.equals(key) || NotificationIconOverrides.RULES.equals(key)
                 || IconPackRepository.LAYERS.equals(key) || IconPackAssignments.ASSIGNMENTS.equals(key)
-                || ClassicTextSettings.STRINGS.containsKey(key) || ShadeWallpaperSettings.STRINGS.containsKey(key)
-                || NativeNetworkBadgeSettings.STRINGS.containsKey(key)) return true;
+                || ClassicTextSettings.STRINGS.containsKey(key) || ClockLayoutSettings.STRINGS.containsKey(key)
+                || BigClockWidgetsSettings.STRINGS.containsKey(key)
+                || ShadeWallpaperSettings.STRINGS.containsKey(key)
+                || NativeNetworkBadgeSettings.STRINGS.containsKey(key) || NetworkLabelFormats.owns(key)) return true;
         if (LockscreenControls.DATE_FORMAT.equals(key)) return true;
+        if (FluidCloudStyle.COLOR_STYLE.equals(key) || FluidCloudCapsule.GRADIENT_MODE.equals(key)
+                || FluidCloudCapsule.MARQUEE_PRESET.equals(key)) return true;
         if (NotificationIconArea.MODE.equals(key) || NotificationIconArea.TEXT.equals(key)) return true;
         if (key.equals(StatusBarSettings.FONT_MODE) || key.equals(NativeNetworkBadgeControls.FONT) || key.equals(StatusBarSettings.SIGNAL_LAYOUT)
                 || key.equals(NetworkSpeedControls.DISPLAY_STYLE)
@@ -100,11 +128,16 @@ public final class ConfigTransfer {
     }
 
     /** Export a complete effective snapshot, resolving old shared values and alpha inheritance. */
-    public static String exportJson(Map<String, ?> stored) throws IOException {
+    public static String exportJson(Map<String, ?> stored) throws IOException { return exportJson(stored, null); }
+
+    /** The same snapshot limited to {@code only} (null: everything). A document is a valid, partial configuration: importing it
+     * touches nothing but the keys it carries. */
+    public static String exportJson(Map<String, ?> stored, java.util.Collection<String> only) throws IOException {
         Map<String, ?> source = stored == null ? Collections.emptyMap() : stored;
         Map<String, Object> snapshot = new LinkedHashMap<>();
         for (Map.Entry<String, Type> item : TYPES.entrySet()) {
             String key = item.getKey();
+            if (only != null && !only.contains(key)) continue;
             Object value;
             switch (item.getValue()) {
                 case BOOLEAN:
@@ -123,12 +156,13 @@ public final class ConfigTransfer {
                 case COLOR: value = StatusBarSettings.color(source, key); break;
                 default:
                     String text = StatusBarSettings.string(source, key);
-                    if (key.endsWith("_text")) text = portableText(text);
+                    if (key.endsWith("_text")) text = portableText(text, BigClockWidgetsSettings.textKey(key) ? BigClockWidgetsSettings.MAX_TEXT : TimeFormat.MAX_TEXT);
                     try { value = validateString(key, text); }
                     catch (IOException invalidStoredValue) { value = StatusBarSettings.STRING_DEFAULTS.get(key); }
             }
             snapshot.put(key, value);
         }
+        if (snapshot.isEmpty()) throw invalid("没有选择任何设置");
         StringBuilder json = new StringBuilder();
         json.append("{\n  \"package\": "); quote(json, PACKAGE_NAME);
         json.append(",\n  \"schema\": ").append(SCHEMA_VERSION).append(",\n  \"settings\": {\n");
@@ -151,13 +185,22 @@ public final class ConfigTransfer {
     }
 
     /** Streams belong to the caller and are not closed by these helpers. */
-    public static void write(OutputStream output, Map<String, ?> stored) throws IOException {
+    public static void write(OutputStream output, Map<String, ?> stored) throws IOException { write(output, stored, null); }
+
+    public static void write(OutputStream output, Map<String, ?> stored, java.util.Collection<String> only) throws IOException {
         if (output == null) throw invalid("无法打开保存位置");
-        byte[] bytes = exportJson(stored).getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = exportJson(stored, only).getBytes(StandardCharsets.UTF_8);
         output.write(bytes);
     }
 
     public static PreparedImport read(InputStream input, boolean customFontAvailable) throws IOException {
+        return read(input,customFontAvailable,hash->false);
+    }
+    /** App imports verify each immutable font reference on the worker preparing the document. */
+    public static PreparedImport read(InputStream input,Context context)throws IOException{
+        return read(input,customFontAvailable(context),hash->FontLibrary.contains(context,hash));
+    }
+    private static PreparedImport read(InputStream input,boolean customFontAvailable,java.util.function.Predicate<String> available)throws IOException{
         if (input == null) throw invalid("无法读取配置文件");
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096]; int count;
@@ -175,12 +218,16 @@ public final class ConfigTransfer {
         try {
             String json = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(output.toByteArray())).toString();
-            return prepare(json, customFontAvailable);
+            return prepare(json, customFontAvailable,available);
         } catch (CharacterCodingException malformed) { throw invalid("配置文件需要使用 UTF-8 编码"); }
     }
 
     /** Strict JSON, exact types and all keys are checked before producing an applicable object. */
     public static PreparedImport prepare(String json, boolean customFontAvailable) throws IOException {
+        // A Boolean only describes the old current.font; it cannot prove an arbitrary hash is present.
+        return prepare(json,customFontAvailable,hash->false);
+    }
+    public static PreparedImport prepare(String json,boolean customFontAvailable,java.util.function.Predicate<String> available)throws IOException{
         if (json == null || json.length() > MAX_BYTES || json.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES)
             throw invalid("配置文件为空或超过 256 KB");
         Map<String, Object> document = new JsonReader(json).document();
@@ -195,9 +242,10 @@ public final class ConfigTransfer {
         if (!(raw instanceof Map)) throw invalid("配置文件缺少设置对象");
         Map<?, ?> settings = (Map<?, ?>) raw;
         if (settings.isEmpty()) throw invalid("配置文件没有可导入的设置");
-        Map<String, Object> validated = new LinkedHashMap<>();
+        Map<String, Object> validated = new LinkedHashMap<>();int skippedLegacyIcons=0;
         for (Map.Entry<?, ?> entry : settings.entrySet()) {
             String key = (String) entry.getKey();
+            if(IconManagementSettings.LEGACY_KEYS.contains(key)){skippedLegacyIcons++;continue;}
             if (QsTileCorners.LEGACY_RADIUS.equals(key)) {
                 if (settings.containsKey(QsTileCorners.RADIUS)) continue;
                 key = QsTileCorners.RADIUS;
@@ -227,7 +275,7 @@ public final class ConfigTransfer {
                     String numericError = SettingsCatalog.numericInputError(key, (BigDecimal) value);
                     if (numericError != null) throw invalid(numericError);
                     if (QsTileCorners.RADIUS.equals(key) && (number < 0f || number > QsTileCorners.MAX_RADIUS))
-                        throw invalid("圆角半径应为 0 到 30 dp");
+                        throw invalid("圆角半径应为 0 到 " + (int) QsTileCorners.MAX_RADIUS + " dp");
                     if ((NativeStatusIcons.MAX.equals(key)||NotificationIconArea.MAX_COUNT.equals(key)) && (number < 0f || number != Math.floor(number)))
                         throw invalid("图标数量应为非负整数，0 表示不显示");
                     // Persist finite user values verbatim; rendering has separate physical guards.
@@ -248,8 +296,14 @@ public final class ConfigTransfer {
                     if (!(value instanceof String)) throw invalid("文本设置类型不正确");
                     value = validateString(key, (String) value);
             }
-            validated.put(key, NotificationGroupStack.MASTER.equals(key) ? false : value);
+            validated.put(key, NotificationGroupStack.MASTER.equals(key)||FluidCloudStyle.FOLLOW_FOREGROUND.equals(key)
+                    ||FluidCloudStyle.SCOPE_SHADE.equals(key) ? false : value);
         }
+        Upgrade107.importLegacy(validated);
+        if(!validated.containsKey(FluidCloudStyle.FOLLOW_MEDIA)
+                &&"media".equals(validated.get(FluidCloudStyle.BACKGROUND_MODE)))
+            validated.put(FluidCloudStyle.FOLLOW_MEDIA,Upgrade85.legacyMedia(validated));
+        if("media".equals(validated.get(FluidCloudStyle.BACKGROUND_MODE)))validated.put(FluidCloudStyle.BACKGROUND_MODE,"native");
         if(validated.containsKey(NativeDataActivity.MASTER)||validated.containsKey(StatusBarSettings.DATA_ACTIVITY_HIDDEN))
             validated.put(StatusBarSettings.DATA_ACTIVITY_HIDDEN,!StatusBarSettings.bool(validated,NativeDataActivity.MASTER));
         // Older exports use seconds. Explicitly import the matching millisecond value even
@@ -272,7 +326,12 @@ public final class ConfigTransfer {
             String landscapeFont = NotificationBigClockSettings.landscapeKey(NotificationBigClockSettings.FONT);
             if ("custom".equals(validated.get(landscapeFont))) validated.put(landscapeFont, "system");
         }
-        return new PreparedImport(validated, fallback);
+        if(validated.containsKey(FontScopes.KEY)){
+            String current=(String)validated.get(FontScopes.KEY);
+            String resolved=FontScopes.fallbackMissing(current,available);
+            if(!resolved.equals(current)){validated.put(FontScopes.KEY,resolved);fallback=true;}
+        }
+        return new PreparedImport(validated, fallback,skippedLegacyIcons);
     }
 
     /**
@@ -282,6 +341,7 @@ public final class ConfigTransfer {
      */
     public static boolean commit(SharedPreferences preferences, PreparedImport prepared) {
         if (preferences == null || prepared == null) throw new IllegalArgumentException("Missing validated configuration");
+        if(prepared.values.isEmpty())return false;
         SharedPreferences.Editor editor = preferences.edit();
         for (Map.Entry<String, Object> item : prepared.values.entrySet()) {
             Object value = item.getValue(); String key = item.getKey();
@@ -294,6 +354,8 @@ public final class ConfigTransfer {
         editor.putBoolean(StatusBarSettings.DATA_ACTIVITY_HIDDEN,!StatusBarSettings.bool(arrowState,NativeDataActivity.MASTER));
         // A partial import must also stop a retired switch already saved on this device.
         editor.putBoolean(NotificationGroupStack.MASTER, false);
+        editor.putBoolean(FluidCloudStyle.FOLLOW_FOREGROUND, false);
+        editor.putBoolean(FluidCloudStyle.SCOPE_SHADE, false);
         return editor.commit();
     }
 
@@ -310,10 +372,10 @@ public final class ConfigTransfer {
         } catch (Exception inaccessible) { return false; }
     }
 
-    private static String portableText(String value) {
+    private static String portableText(String value, int limit) {
         if (value == null) return null;
         String text = value.replace('\n', ' ').replace('\r', ' ');
-        int end = Math.min(TimeFormat.MAX_TEXT, text.length());
+        int end = Math.min(limit, text.length());
         if (end > 0 && end < text.length() && Character.isHighSurrogate(text.charAt(end - 1))) end--;
         return text.substring(0, end);
     }
@@ -321,7 +383,26 @@ public final class ConfigTransfer {
     private static String validateString(String key, String value) throws IOException {
         String clockKey = NotificationBigClockSettings.portraitKey(key);
         if (value == null || !validUnicode(value)) throw invalid("文本包含无效字符");
-        if (NotificationIconOverrides.RULES.equals(key)) {
+        if(IconManagementSettings.KEY.equals(key))return IconManagementSettings.encode(IconManagementSettings.parse(value));
+        if(FontScopes.KEY.equals(key))try{return FontScopes.encode(FontScopes.parse(value));}
+        catch(IllegalArgumentException malformed){throw invalid(malformed.getMessage());}
+        if(BigClockWidgetsSettings.launchAppKey(key)) {
+            String error=BigClockWidgetsSettings.launchAppValidationError(value);
+            if(error!=null)throw invalid(error);return value;
+        }
+        if(BigClockWidgetsSettings.textKey(key)) {
+            String error=BigClockWidgetsSettings.textValidationError(value);
+            if(error!=null)throw invalid(error);return value;
+        }
+        if(BigClockWidgetsSettings.LEFT_PROVIDER.equals(key)||BigClockWidgetsSettings.RIGHT_PROVIDER.equals(key)) {
+            if(!BigClockWidgetsSettings.validProvider(value))throw invalid("组件来源格式不正确，请重新选择组件");
+            return value;
+        }
+        if (NativeStatusIcons.LAYOUT.equals(key)) {
+            new JsonReader(value).document();
+            try { return NativeStatusIconLayout.validate(value); }
+            catch(IllegalArgumentException malformed) { throw invalid(malformed.getMessage()); }
+        } else if (NotificationIconOverrides.RULES.equals(key)) {
             new JsonReader(value).arrayDocument();
             String error=NotificationIconOverrides.validationError(value);
             if(error!=null)throw invalid(error);
@@ -336,6 +417,18 @@ public final class ConfigTransfer {
             IconPackRepository.layers(value);
         } else if (SpeedPosition.POSITION.equals(key)) {
             requireChoice(value,SpeedPosition.NATIVE,SpeedPosition.CELLULAR_LEFT,SpeedPosition.RIGHT_START,SpeedPosition.CLOCK_LEFT,SpeedPosition.CLOCK_RIGHT);
+        } else if (StatusBarLayoutSettings.sideKey(key)) {
+            requireChoice(value, StatusBarLayoutSettings.NATIVE, StatusBarLayoutSettings.LEFT, StatusBarLayoutSettings.RIGHT);
+        } else if (FluidCloudStyle.BACKGROUND_MODE.equals(key)) {
+            requireChoice(value,"native","notification","media","custom");
+        } else if (FluidCloudStyle.COLOR_STYLE.equals(key)) {
+            requireChoice(value, FluidCloudStyle.SOLID, FluidCloudStyle.GRADIENT);
+        } else if (FluidCloudCapsule.GRADIENT_MODE.equals(key)) {
+            requireChoice(value, FluidCloudCapsule.TOP_BOTTOM, FluidCloudCapsule.BOTTOM_TOP, FluidCloudCapsule.CENTER);
+        } else if (FluidCloudCapsule.MARQUEE_PRESET.equals(key)) {
+            requireChoice(value, FluidCloudCapsule.MARQUEE_PRESETS);
+        } else if (ClockLayoutSettings.DUAL_ALIGN.equals(key)) {
+            requireChoice(value, ClockLayoutSettings.ALIGN_CENTER, ClockLayoutSettings.ALIGN_LEFT, ClockLayoutSettings.ALIGN_RIGHT);
         } else if (NotificationIconArea.MODE.equals(key)) {
             requireChoice(value, "native", "heart", "text", "image");
         } else if (NotificationIconArea.TEXT.equals(key)) {
@@ -352,8 +445,13 @@ public final class ConfigTransfer {
                 throw invalid("自定义文字需要单行且不超过 120 个字符");
             for (int i = 0; i < value.length(); i++) if (Character.isISOControl(value.charAt(i)))
                 throw invalid("自定义文字包含控制字符");
+        } else if(NetworkLabelFormats.owns(key)) {
+            if(value.length()>TimeFormat.MAX_TEXT||value.indexOf('\n')>=0||value.indexOf('\r')>=0)
+                throw invalid("网络制式显示内容需要单行且不超过 120 个字符");
+            for(int i=0;i<value.length();i++)if(Character.isISOControl(value.charAt(i)))
+                throw invalid("网络制式显示内容包含控制字符");
         } else if (NotificationBigClockSettings.FONT.equals(clockKey)) {
-            requireChoice(value, "native", "system", "pingfang", "custom");
+            requireChoice(value, NotificationBigClockSettings.FONT_VALUES);
         } else if (NotificationBigClockSettings.ALIGNMENT.equals(clockKey)||NotificationBigClockSettings.DATE_ALIGNMENT.equals(clockKey)
                 ||NotificationBigClockSettings.FOOTER_ALIGNMENT.equals(clockKey)) {
             requireChoice(value, "left", "center", "right");
@@ -365,8 +463,11 @@ public final class ConfigTransfer {
             requireChoice(value, "system", "single");
         } else if (key.equals(NetworkSpeedControls.DISPLAY_STYLE)) {
             requireChoice(value, "system", "stacked", "inline", "number");
+        } else if (TilePageEffects.STYLE.equals(key)) {
+            requireChoice(value, TilePageEffects.STYLES);
         } else if (key.equals(StatusBarSettings.BATTERY_STYLE)) {
-            requireChoice(value, "pui", "native");
+            requireChoice(value, "pui", "native", Ios27BatteryStyle.STYLE, Ios27BatteryStyle.NUMBER, Ios27BatteryStyle.PLAIN);
+            return StatusBarSettings.currentBatteryStyle(value);
         } else if (key.endsWith("_mode")) requireChoice(value, "original", "text", "time");
         return value;
     }

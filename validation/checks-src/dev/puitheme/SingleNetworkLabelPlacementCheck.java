@@ -17,8 +17,10 @@ public final class SingleNetworkLabelPlacementCheck {
         }
     }
     private static final class Label extends TextView {
+        int direction;
         private final R resources=new R();Label(){super(null);setId(LABEL);setGravity(81);}
         @Override public android.content.res.Resources getResources(){return resources;}
+        @Override public int getLayoutDirection(){return direction;}
     }
     private static LayoutParams labelParams(){LayoutParams p=new LayoutParams(-2,-2);p.endToEnd=0;p.bottomToBottom=0;
         p.bottomMargin=4;p.setMarginEnd(3);return p;}
@@ -34,9 +36,10 @@ public final class SingleNetworkLabelPlacementCheck {
         LayoutParams l=(LayoutParams)label.getLayoutParams(),s=(LayoutParams)signal.getLayoutParams(),r=(LayoutParams)roam.getLayoutParams();
         check(l!=nativeLabel&&s!=nativeSignal&&r!=nativeRoam,"native LP objects never mutated");
         check(nativeLabel.endToEnd==0&&nativeSignal.startToEnd==-1&&nativeRoam.startToStart==0,"OEM baseline intact");
-        check(l.startToStart==0&&l.endToStart==ROAM&&l.endToEnd==-1,"label owns first slot");
-        check(r.startToEnd==LABEL&&r.endToStart==SIGNAL&&r.startToStart==-1&&r.endToEnd==-1,"R has a separate slot");
-        check(s.startToEnd==ROAM&&s.endToEnd==0&&s.endToStart==-1,"signal owns final slot");
+        check(l.startToEnd==SIGNAL&&l.endToEnd==0&&l.startToStart==-1,"default label follows the same logical signal as Compose");
+        check(r.startToStart==0&&r.endToStart==SIGNAL&&r.startToEnd==-1&&r.endToEnd==-1,"R remains before signal in its own slot");
+        check(s.startToEnd==ROAM&&s.endToStart==LABEL&&s.endToEnd==-1,"default signal precedes independent label");
+        check(r.horizontalChainStyle==2&&s.horizontalChainStyle==2,"roaming and signal chain heads retain packed alignment");
         check(l.horizontalChainStyle==2&&l.horizontalBias==1f,"packed reciprocal chain is anchored");
         check(l.width==-2&&l.height==-2&&l.topToTop==0&&l.bottomToBottom==0,"label wraps without badge vertical pin");
         check(l.bottomMargin==0&&l.getMarginEnd()==0&&label.getGravity()==17,"old badge offsets cleared");
@@ -50,7 +53,13 @@ public final class SingleNetworkLabelPlacementCheck {
         check(label.getGravity()==81&&roam.getVisibility()==View.GONE,"restore doesn't overwrite OEM visibility");
         parent.removeView(roam);check(placement.apply(),"two-item variant works");
         l=(LayoutParams)label.getLayoutParams();s=(LayoutParams)signal.getLayoutParams();
-        check(l.endToStart==SIGNAL&&s.startToEnd==LABEL,"no roaming dependency when absent");
+        check(l.startToEnd==SIGNAL&&s.endToStart==LABEL,"default Compose order has no roaming dependency when absent");
+        for(int[] scenario:new int[][]{{0,0,1},{1,0,0},{0,1,0},{1,1,0},{0,2,1},{1,2,1}}){
+            label.direction=scenario[0];placement.configure(scenario[1],0,0);check(placement.apply(),"default/physical order applies in both directions");
+            l=(LayoutParams)label.getLayoutParams();boolean physicallyAfter=label.direction==View.LAYOUT_DIRECTION_RTL?l.endToStart==SIGNAL:l.startToEnd==SIGNAL;
+            check(physicallyAfter==(scenario[2]==1),"default follows Compose logical direction; explicit left/right stays physical");
+        }
+        label.direction=0;placement.configure(0,0,0);check(placement.apply(),"default restores after physical order choices");
         LayoutParams foreign=labelParams();label.setLayoutParams(foreign);placement.restore();
         check(label.getLayoutParams()==foreign&&signal.getLayoutParams()==nativeSignal,"new OEM LP never overwritten");
         label.setLayoutParams(new ViewGroup.LayoutParams(-2,-2));check(!placement.apply(),"unsupported container fails closed");

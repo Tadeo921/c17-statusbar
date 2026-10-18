@@ -1,2 +1,4 @@
 package android.graphics;
-public class Shader {public enum TileMode {CLAMP,REPEAT,MIRROR,DECAL}public float alpha(float x,float y){return 1f;}}
+public class Shader {public enum TileMode {CLAMP,REPEAT,MIRROR,DECAL}public float alpha(float x,float y){return 1f;}
+    public Matrix localMatrix;public int localMatrixSets;
+    public void setLocalMatrix(Matrix matrix){localMatrix=matrix;localMatrixSets++;}}

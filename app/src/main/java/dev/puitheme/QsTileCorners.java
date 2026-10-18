@@ -37,6 +37,13 @@ public final class QsTileCorners {
             "com.oplus.systemui.plugins.qs.customize.view.tile.OplusQSResizeableThreeStageView"
     };
     private static final String LAYER_CLASS = "com.oplus.systemui.qs.base.res.drawable.TileLayerDrawable";
+    /** The "highlight" tiles (WLAN, Bluetooth, mobile data, hotspot...) that open a secondary page. Their background is a
+     * TileDrawableWrapper with the same path-provider interface as the layer drawable, set from a shared native outline. */
+    public static final String HIGHLIGHT_CLASS = "com.oplus.systemui.qs.base.tile.OplusQSHighlightTileView";
+    /** The round buttons of the brightness / volume secondary page: a TileDrawableWrapper behind an ImageView, shaped by the
+     * shared native tile outline. They take the same unified radius, and their press spot-light follows it. */
+    public static final String DETAIL_CLASS = "com.oplus.systemui.qs.slider.detail.widget.QsDetailTileBaseView";
+    private static final String WRAPPER_CLASS = "com.oplus.systemui.qs.base.res.drawable.TileDrawableWrapper";
     private static final String OUTLINE_CLASS = "com.oplusos.systemui.common.outline.CornerOutlineProvider";
     private static final String FACTORY_CLASS = "com.oplus.systemui.qs.base.res.util.QSConstant";
     private static final String DEFORM_CLASS = "com.oplus.systemui.plugins.qs.customize.view.animation.deform.tile.fixed.TileDeformOutlineProvider";
@@ -75,6 +82,19 @@ public final class QsTileCorners {
     private boolean loggedError, loggedApplied;
 
     public static boolean isTile(View view) { return QsTileAppearance.type(view, TILE_CLASS); }
+    public static boolean isHighlight(View view) { return QsTileAppearance.type(view, HIGHLIGHT_CLASS); }
+    public static boolean isDetail(View view) { return QsTileAppearance.type(view, DETAIL_CLASS); }
+    /** Every view whose background this class can own. */
+    private static boolean ownable(View view) { return isTile(view) || isHighlight(view) || isDetail(view); }
+    /** The drawable whose path provider draws this view's shape. */
+    private static Object backgroundOf(View view) {
+        if (isDetail(view)) return QsTileAppearance.call(view, "getBgDrawable");
+        return isHighlight(view) ? QsTileAppearance.field(view, "mBgDrawable") : QsTileAppearance.call(view, "getTransitionDrawable");
+    }
+    /** The view whose measured size bounds the radius: the tile's background body, or the detail button's circle image. */
+    private static Object bodyObject(View view) {
+        return isDetail(view) ? QsTileAppearance.call(view, "getIvBg") : QsTileAppearance.call(view, "getBg");
+    }
     public static float radiusDp(Object value) {
         return Math.max(0f, Math.min(MAX_RADIUS, QsTileAppearance.number(value, DEFAULT_RADIUS)));
     }
@@ -129,7 +149,7 @@ public final class QsTileCorners {
 
     /** Run after the native method once; its latest provider remains the restoration source. */
     public void onNativeUpdate(View view) {
-        if (!isTile(view)) return;
+        if (!ownable(view)) return;
         if (Looper.myLooper() != Looper.getMainLooper()) {
             WeakReference<View> target = new WeakReference<>(view);
             main.post(() -> { View current = target.get(); if (current != null) onNativeUpdate(current); });
@@ -140,7 +160,7 @@ public final class QsTileCorners {
 
     /** Release ownership before a recycled tile is reused, or after its native detach. */
     public void detach(View view) {
-        if (!isTile(view)) return;
+        if (!ownable(view)) return;
         if (Looper.myLooper() != Looper.getMainLooper()) {
             WeakReference<View> target = new WeakReference<>(view);
             main.post(() -> { View current = target.get(); if (current != null) detach(current); });
@@ -184,11 +204,11 @@ public final class QsTileCorners {
         }
     }
     private Owned owned(View view) {
-        if (!policy.enabled || !isTile(view)) return null;
+        if (!policy.enabled || !ownable(view)) return null;
         Owned state = tiles.get(view);
         if (state == null || state.customProvider == null || state.restorePending) return null;
         Drawable drawable = state.drawable == null ? null : state.drawable.get();
-        return drawable != null && drawable == QsTileAppearance.call(view, "getTransitionDrawable")
+        return drawable != null && drawable == backgroundOf(view)
                 && baseProvider(drawable) == state.customProvider
                 && (blockProvider(drawable) == null || blockProvider(drawable) == state.customBlock) ? state : null;
     }
@@ -196,10 +216,13 @@ public final class QsTileCorners {
     private void refresh(View view) {
         Owned state = tiles.get(view);
         if (state == null) { state = new Owned(); tiles.put(view, state); }
-        observe(view, state);
-        Object candidate = QsTileAppearance.call(view, "getTransitionDrawable");
-        if (!(candidate instanceof Drawable) || !QsTileAppearance.type(candidate, LAYER_CLASS)) {
-            if (state != null) { restore(state); invalidate(view); }
+        // While the feature is off a tile is only remembered (so switching it on reaches it live): no layout listener,
+        // and no invalidation of a tile that never carried anything of ours.
+        if (policy.enabled) observe(view, state);
+        Object candidate = backgroundOf(view);
+        if (!(candidate instanceof Drawable)
+                || !(QsTileAppearance.type(candidate, LAYER_CLASS) || QsTileAppearance.type(candidate, WRAPPER_CLASS))) {
+            if (owns(state)) { restore(state); invalidate(view); }
             return;
         }
         Drawable drawable = (Drawable) candidate;
@@ -220,7 +243,10 @@ public final class QsTileCorners {
             state.cachedProvider = null; state.restorePending = false;
         }
         if (!policy.enabled || !view.isAttachedToWindow()) {
-            restore(state); invalidate(view); return;
+            boolean owned = owns(state);
+            restore(state);
+            if (owned) invalidate(view);
+            return;
         }
         // Finish a failed restoration before creating another custom provider.
         if (state.restorePending && !restore(state)) return;
@@ -267,8 +293,13 @@ public final class QsTileCorners {
         }
     }
 
+    /** Whether this tile currently carries something of ours that a restore would change. */
+    private static boolean owns(Owned state) {
+        return state.customProvider != null || state.customBlock != null || state.restorePending;
+    }
+
     private static float pixels(View view, Drawable drawable, float dp) {
-        Object object = QsTileAppearance.call(view, "getBg");
+        Object object = bodyObject(view);
         View body = object instanceof View ? (View) object : view;
         int width = body.getMeasuredWidth(), height = body.getMeasuredHeight();
         if (width <= 0) width = body.getWidth();
@@ -311,7 +342,7 @@ public final class QsTileCorners {
     }
     private static void invalidate(View view) {
         view.invalidate(); view.invalidateOutline();
-        Object body = QsTileAppearance.call(view, "getBg");
+        Object body = bodyObject(view);
         if (body instanceof View) ((View) body).invalidateOutline();
     }
     /** All owned QS surfaces use the same native continuous-corner template.
@@ -421,6 +452,38 @@ public final class QsTileCorners {
             }
         }
     }
+    /** The highlight tile's pressed spot-light path comes from the shared native provider, not from its own background.
+     * Once the tile owns its shape, build that path from the same provider so the interaction layer is as round as the tile.
+     * Returns true when the native path update must be skipped. */
+    public boolean spotLight(View view, Object path, Object extra) {
+        if (!isHighlight(view) || !(path instanceof android.graphics.Path)) return false;
+        synchronized (lock) {
+            Owned state = owned(view);
+            Drawable drawable = state == null || state.drawable == null ? null : state.drawable.get();
+            if (state == null || drawable == null || state.customProvider == null) return false;
+            try {
+                for (Method method : state.customProvider.getClass().getMethods()) {
+                    if (!method.getName().equals("updatePath") || method.getParameterCount() != 4) continue;
+                    method.invoke(state.customProvider, drawable, path, null, extra);
+                    return true;
+                }
+            } catch (ReflectiveOperationException | RuntimeException failure) { error(failure); }
+            return false;
+        }
+    }
+    /** The press spot-light of a secondary-page button is a circle sized from the button (min side / 2). Once the button owns
+     * a unified shape, the spot-light takes that radius, so the pressed layer is as round as the button itself. */
+    public Object detailSpotRadius(View spot, Object nativeResult) {
+        if (!(spot.getParent() instanceof View)) return nativeResult;
+        View tile = (View) spot.getParent();
+        if (!isDetail(tile)) return nativeResult;
+        synchronized (lock) {
+            Owned state = owned(tile);
+            if (state == null || !(nativeResult instanceof Number)) return nativeResult;
+            float radius = Math.min(state.radius, Math.min(spot.getWidth(), spot.getHeight()) / 2f);
+            return Float.isFinite(radius) && radius >= 0f ? (Object) radius : nativeResult;
+        }
+    }
     private static boolean validRadius(Object radius) {
         return radius instanceof Number && Float.isFinite(((Number) radius).floatValue())
                 && ((Number) radius).floatValue() >= 0f;
@@ -444,7 +507,7 @@ public final class QsTileCorners {
             };
             view.addOnLayoutChangeListener(state.layout);
         }
-        Object candidate = QsTileAppearance.call(view, "getBg");
+        Object candidate = bodyObject(view);
         View body = candidate instanceof View && candidate != view ? (View) candidate : null;
         View old = state.body.get();
         if (old == body) return;

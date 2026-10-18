@@ -744,7 +744,7 @@ public final class MainActivity extends Activity {
         addAction(card,"时间格式",string(NotificationBigClockSettings.PATTERN),()->editFormat(NotificationBigClockSettings.PATTERN));
         addAction(card,"常用时间格式","时分、秒、上午下午与时段",()->chooseFormat(NotificationBigClockSettings.PATTERN));
         addHint(card,"字体只用于通知栏大时钟、日期和底部内容。自选字体使用“文字字体”中已经导入的文件。");
-        addChoice(card,NotificationBigClockSettings.FONT,new String[]{"native","system","pingfang","custom"},new String[]{"原生","系统","苹方","自选"});
+        addChoice(card,NotificationBigClockSettings.FONT,NotificationBigClockSettings.FONT_VALUES,NotificationBigClockSettings.FONT_LABELS);
         addAction(card,"管理自选字体",string(StatusBarSettings.FONT_NAME),()->selectGroup(6));
         addBigClockNumbers(card,
                 new Setting("展开字号上限",NotificationBigClockSettings.MAX_SIZE," dp",48,240,.01f),
@@ -754,6 +754,8 @@ public final class MainActivity extends Activity {
                 new Setting("时间字体粗细",NotificationBigClockSettings.WEIGHT,"",100,900,1),
                 new Setting("时间字距",NotificationBigClockSettings.LETTER_SPACING," em",-.15f,.5f,.01f));
         addHint(card,"展开与收起使用同一粗细，滑动只改变高度与布局。");
+        addToggle(card,NotificationBigClockSettings.PROPORTIONAL_DIGITS,"等宽字距限制解除（可配合时间字距调整）");
+        addToggle(card,NotificationBigClockSettings.TIME_ANIMATION_DISABLED,"关闭时间变动动画");
         addSection(card,"时间颜色与玻璃边框");
         addToggle(card,NotificationBigClockSettings.GLASS,"液态玻璃文字");
         addHint(card,"填充与边框分别调色。点击浅色或深色卡片，进入 HSB 调色盘调整颜色与透明度；默认跟随原生透明度。");
@@ -985,7 +987,9 @@ public final class MainActivity extends Activity {
         private android.graphics.Paint textPaint(String value,float size,int weight,float spacing,boolean timeText,boolean fitWidth,Typeface nativeFace) {
             TextView source=letterSpacingProbe;source.setText(value);source.setIncludeFontPadding(false);
             source.setTypeface(nativeFace!=null?nativeFace:FontRepository.typefaceForMode(MainActivity.this,string(NotificationBigClockSettings.FONT),timeText?nativePreviewStyle.typeface:Typeface.DEFAULT,weight));
-            source.setLetterSpacing(NumericPolicy.drawPixels(spacing));source.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,NumericPolicy.textPixels(size));source.setFontFeatureSettings(nativePreviewStyle.fontFeatureSettings==null?"tnum":nativePreviewStyle.fontFeatureSettings);
+            source.setLetterSpacing(NumericPolicy.drawPixels(spacing));source.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,NumericPolicy.textPixels(size));
+            source.setFontFeatureSettings(NotificationBigClockSettings.timeFontFeatures(nativePreviewStyle.fontFeatureSettings,
+                    timeText&&enabled(NotificationBigClockSettings.PROPORTIONAL_DIGITS)));
             android.graphics.Paint paint=new android.graphics.Paint(source.getPaint());
             float measured=paint.measureText(value);if(fitWidth&&measured>352)paint.setTextSize(paint.getTextSize()*352/measured);
             return paint;
@@ -1077,8 +1081,10 @@ public final class MainActivity extends Activity {
         addAction(box,"检查更新","SANWU5 / c17-statusbar",()->checkUpdates(true));
         addAction(box,"打开 GitHub 项目","查看源码与正式发布版本",()->openUpdateUrl(GitHubUpdates.REPO_URL));
         addAction(box,"作者 GitHub",ProjectContact.GITHUB,()->openUpdateUrl("https://github.com/"+ProjectContact.GITHUB));
-        addAction(box,"作者酷安",ProjectContact.COOLAPK+" · 点击复制",()->
-                Toast.makeText(this,ProjectContact.copyCoolapk(this)?"酷安用户名已复制":"复制失败，请手动复制用户名",Toast.LENGTH_SHORT).show());
+        addAction(box,"作者酷安",ProjectContact.COOLAPK+" · 点击打开主页",()->{
+            try{startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse(ProjectContact.COOLAPK_URL)));}
+            catch(RuntimeException unavailable){Toast.makeText(this,"没有可用的浏览器",Toast.LENGTH_SHORT).show();}
+        });
         addAction(box,"合作与捐赠","QQ："+ProjectContact.QQ+" · 点击复制",()->
                 Toast.makeText(this,ProjectContact.copyQq(this)?"QQ号已复制":"复制失败，请手动复制QQ号",Toast.LENGTH_SHORT).show());
         addAction(box,"开源许可证","GNU GPLv3",()->showLicense());parent.addView(box,matchWrap());
@@ -1290,17 +1296,24 @@ public final class MainActivity extends Activity {
     }
     private void addChoice(LinearLayout card,String key,String[] values,String[] labels) {
         LinearLayout choices=row();String stored=string(key);
+        boolean nativeBattery=StatusBarSettings.BATTERY_STYLE.equals(key)&&!BatteryNativeStyle.percentEnabled(this);
+        if(nativeBattery)stored="native";
         for(int i=0;i<values.length;i++) {
             final String value=values[i];TextView choice=text(labels[i],12,value.equals(stored)?ACCENT:MUTED,true);
             choice.setGravity(Gravity.CENTER);choice.setPadding(dp(7),dp(13),dp(7),dp(13));choice.setMinHeight(dp(48));
             pressable(choice,rounded(value.equals(stored)?SOFT:SURFACE,12,true));choice.setSelected(value.equals(stored));
+            if(nativeBattery&&"pui".equals(value)){choice.setEnabled(false);choice.setAlpha(.4f);}
             choice.setOnClickListener(v->{
+                if(StatusBarSettings.BATTERY_STYLE.equals(key)&&"pui".equals(value)&&!BatteryNativeStyle.percentEnabled(this)) {
+                    Toast.makeText(this,"系统已关闭电池百分比，使用系统原生样式",Toast.LENGTH_SHORT).show();return;
+                }
                 if(key.equals(StatusBarSettings.FONT_MODE)&&value.equals("custom")&&string(StatusBarSettings.FONT_REVISION).isEmpty()) { pickFont();return; }
                 preferences.edit().putString(key,value).apply();changed();selectGroup(selected);
             });
             LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(0,-2,1);if(i>0)params.leftMargin=dp(5);choices.addView(choice,params);
         }
         LinearLayout.LayoutParams params=matchWrap();params.topMargin=dp(6);card.addView(choices,params);
+        if(nativeBattery)addHint(card,"系统已关闭电池百分比，PUI 不可选；开启百分比后可选。");
     }
     private void addFonts(LinearLayout card) {
         addChoice(card,StatusBarSettings.FONT_MODE,new String[]{"system","pingfang","custom"},new String[]{"跟随系统","苹方","自选字体"});
@@ -1373,7 +1386,7 @@ public final class MainActivity extends Activity {
         return key.equals(NotificationBigClockSettings.FOOTER_PATTERN)?NotificationBigClockSettings.formatFooter(pattern,string(NotificationBigClockSettings.FOOTER_TEXT),now):TimeFormat.format(pattern,now);
     }
     private void editText(String key) {
-        EditText field=input();field.setFilters(new InputFilter[]{new InputFilter.LengthFilter(TimeFormat.MAX_TEXT)});field.setText(string(key));
+        EditText field=input();field.setFilters(new InputFilter[]{new InputFilter.LengthFilter(BigClockWidgetsSettings.textKey(key)?BigClockWidgetsSettings.MAX_TEXT:TimeFormat.MAX_TEXT)});field.setText(string(key));
         new AlertDialog.Builder(this).setTitle("编辑自定义文本").setView(field).setNegativeButton("取消",null).setPositiveButton("应用",(dialog,which)->{
             preferences.edit().putString(key,field.getText().toString().replace('\n',' ').replace('\r',' ')).apply();changed();selectGroup(selected);
         }).show();
@@ -1460,7 +1473,7 @@ public final class MainActivity extends Activity {
                     final ConfigTransfer.PreparedImport prepared;
                     try(java.io.InputStream input=getContentResolver().openInputStream(uri)) {
                         if(input==null)throw new java.io.IOException("Input unavailable");
-                        prepared=ConfigTransfer.read(input,ConfigTransfer.customFontAvailable(this));
+                        prepared=ConfigTransfer.read(input,this);
                     }
                     runOnUiThread(()->{
                         transferringConfig=false;if(isFinishing()||isDestroyed())return;
@@ -1647,7 +1660,9 @@ public final class MainActivity extends Activity {
     private void editColor(String key, String title) {
         ColorPickerDialog.show(this, groups[selected].title + " · " + title, color(key),
                 StatusBarSettings.customAlpha(preferences.getAll(), key), (color, customAlpha) -> {
-                    preferences.edit().putInt(key, color).putBoolean(StatusBarSettings.alphaKey(key), customAlpha).apply();
+                    SharedPreferences.Editor editor=preferences.edit().putInt(key, color).putBoolean(StatusBarSettings.alphaKey(key), customAlpha);
+                    StatusBarSettings.markColorCustomized(editor,key);
+                    editor.apply();
                     changed(); selectGroup(selected);
                 });
     }

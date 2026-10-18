@@ -1,0 +1,1 @@
+package com.android.systemui.statusbar.notification.stack; public class NotificationChildrenContainer extends android.view.ViewGroup {public NotificationChildrenContainer(android.content.Context context){super(context);}}

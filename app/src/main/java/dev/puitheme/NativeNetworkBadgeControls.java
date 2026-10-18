@@ -71,7 +71,7 @@ public final class NativeNetworkBadgeControls {
             String key=group+"_font";Object value=b==null?null:b.get(key);
             if(!(value instanceof String)&&b!=null){String legacy=NativeNetworkBadgeSettings.legacyKey(key);if(legacy!=null)value=b.get(legacy);}
             String selected=value instanceof String?(String)value:"native";
-            font="global".equals(selected)||"system".equals(selected)||"pingfang".equals(selected)||"custom".equals(selected)?selected:"native";
+            font=FontRepository.modeForScope("global".equals(selected)||"system".equals(selected)||"pingfang".equals(selected)||"custom".equals(selected)?selected:"native",FontScopes.NETWORK_TYPE);
         }
         boolean same(Style other){return enabled==other.enabled&&hidden==other.hidden&&x==other.x&&y==other.y&&scale==other.scale&&weight==other.weight&&font.equals(other.font);}
     }
@@ -87,7 +87,7 @@ public final class NativeNetworkBadgeControls {
             // Include the selected global source in the independent family cache identity.
             // A switch system→bundled can otherwise retain a cached "global" family.
             revision=b==null?"":b.getString(StatusBarSettings.FONT_REVISION,"")+':'
-                    +(b.getBoolean("font_enabled",false)?b.getString(StatusBarSettings.FONT_MODE,"system"):"system");
+                    +(b.getBoolean("font_enabled",false)?b.getString(StatusBarSettings.FONT_MODE,"system")+':'+b.getString(FontScopes.KEY,"{}"):"system");
         }
         boolean same(Settings other){return enabled==other.enabled&&explicitParts==other.explicitParts&&legacy.same(other.legacy)&&parts[0].same(other.parts[0])
                 &&parts[1].same(other.parts[1])&&revision.equals(other.revision);}
@@ -450,7 +450,7 @@ public final class NativeNetworkBadgeControls {
             // Native/configuration events refresh at most the ancestor chain, never draw.
             OverflowControls.shared().acquire(view,false);state.overflowOwned=true;
         }else if(state.overflowOwned){OverflowControls.shared().release(view);state.overflowOwned=false;}
-        if(ownsText(view,state)&&state.appliedSettings==configured&&state.fontRevision==revision)return;
+        if(ownsText(view,state)&&state.appliedSettings==configured&&state.fontRevision==revision&&!FontRepository.retryDue(FontScopes.NETWORK_TYPE))return;
         SpannableStringBuilder styled=new SpannableStringBuilder(state.nativeText);
         for(BadgePartSpan span:styled.getSpans(0,styled.length(),BadgePartSpan.class))styled.removeSpan(span);
         if(styled.length()==0){restoreTextView(view,state);return;}
@@ -458,8 +458,8 @@ public final class NativeNetworkBadgeControls {
             Typeface selected=null;
             if(!style.hidden){
                 selected="native".equals(style.font)?FontWeight.typeface(state.face,style.weight)
-                        :FontRepository.typefaceForMode(view.getContext(),style.font,state.face,style.weight);
-                selected=NativeNetworkBadgeFont.axisFace(selected,FontRepository.weightForMode(style.font,style.weight));
+                        :FontRepository.typefaceForMode(view.getContext(),style.font,state.face,style.weight,FontScopes.NETWORK_TYPE);
+                selected=NativeNetworkBadgeFont.axisFace(selected,FontRepository.weightForMode(style.font,style.weight,FontScopes.NETWORK_TYPE));
             }
             // Preserve native relative sizes and suffix baseline. Both runs receive
             // the one real subscription row's style, including the '+' suffix.
@@ -561,17 +561,24 @@ public final class NativeNetworkBadgeControls {
         @Override public Object family(Context context,Object nativeFamily,String mode,String revision,int requested)throws ReflectiveOperationException{
             // OEM AndroidTypefaceWrapper ignores FontWeight and returns a pre-varied Typeface.
             // Rebuild the real wght instance before wrapping, rather than changing metadata.
-            Object cacheOwner=nativeFamily==null?modifier:nativeFamily;String key=mode+':'+revision+':'+requested;
-            Map<String,Object> cache=families.get(cacheOwner);if(cache!=null&&cache.containsKey(key))return cache.get(key);
+            Object cacheOwner=nativeFamily==null?modifier:nativeFamily;String key=mode+':'+revision+':'+requested+':'+FontRepository.styleRevision();
+            Map<String,Object> cache=families.get(cacheOwner);if(cache!=null&&cache.containsKey(key)&&!FontRepository.retryDue(FontScopes.NETWORK_TYPE))return cache.get(key);
             Typeface nativeFace=null;if(loadedFamily.isInstance(nativeFamily)){
                 Object loaded=familyFace.invoke(nativeFamily);if(wrapper.isInstance(loaded))nativeFace=(Typeface)wrapperFace.invoke(loaded);
             }
-            Typeface selected="native".equals(mode)?FontWeight.typeface(nativeFace,requested):FontRepository.typefaceForMode(context,mode,nativeFace,requested);
-            int actual=FontRepository.weightForMode(mode,requested);
+            Typeface selected="native".equals(mode)?FontWeight.typeface(nativeFace,requested):FontRepository.typefaceForMode(context,mode,nativeFace,requested,FontScopes.NETWORK_TYPE);
+            int actual=FontRepository.weightForMode(mode,requested,FontScopes.NETWORK_TYPE);
             selected=NativeNetworkBadgeFont.axisFace(selected,actual);
             Object result=wrapFamily.invoke(null,selected);
-            if(cache==null){if(families.size()>=32)families.clear();cache=new LinkedHashMap<>();families.put(cacheOwner,cache);}
-            if(cache.size()>=48)cache.clear();cache.put(key,result);return result;
+            // code100: least recently used entries go one at a time; clearing everything at the limit rebuilt every badge font.
+            if(cache==null){
+                if(families.size()>=32){java.util.Iterator<?> oldest=families.keySet().iterator();oldest.next();oldest.remove();}
+                cache=new LinkedHashMap<String,Object>(16,.75f,true){
+                    @Override protected boolean removeEldestEntry(Map.Entry<String,Object> eldest){return size()>48;}
+                };
+                families.put(cacheOwner,cache);
+            }
+            cache.put(key,result);return result;
         }
     }
 }

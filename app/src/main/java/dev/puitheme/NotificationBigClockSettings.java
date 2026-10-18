@@ -36,6 +36,43 @@ public final class NotificationBigClockSettings {
     public static final String ENTRY_FADE_STRENGTH="notification_big_clock_entry_fade_strength";
     public static final String ENTRY_COMPLETION="notification_big_clock_entry_completion";
     public static final String ENTRY_TRAVEL="notification_big_clock_entry_travel";
+    /** Portrait only: the clock blurs while the list's native overscroll spring has pushed it away and sharpens as it settles. */
+    public static final String REBOUND_BLUR_ENABLED="notification_big_clock_rebound_blur_enabled";
+    public static final String REBOUND_BLUR_RADIUS="notification_big_clock_rebound_blur_radius";
+    public static final float DEFAULT_REBOUND_BLUR_RADIUS=14f;
+    /** How far the clock also fades (percent of its opacity) at the fullest push; 0 is blur only. */
+    public static final String REBOUND_FADE="notification_big_clock_rebound_fade";
+    public static final float DEFAULT_REBOUND_FADE=45f;
+    /** Portrait only: once the clock is at its smallest, the list's overscroll no longer carries it upward and back. */
+    public static final String REBOUND_LOCK="notification_big_clock_rebound_lock_enabled";
+    /** Turning "no rebound" on turns "blur while rebounding" off in the same save; the reverse is refused while it is on. */
+    public static String turnsOff(String key) { return REBOUND_LOCK.equals(key) ? REBOUND_BLUR_ENABLED : null; }
+    /**
+     * The lock screen's milky glass material on the notification page's clock: a rounded silhouette, a body that is densest at the
+     * top, a bright rim lit from one side, an inner shade and a faint outer glow. Strengths are percentages (100 is the lock screen).
+     * Portrait and landscape keep their own copies.
+     */
+    public static final String LOCK_STYLE="notification_big_clock_lock_style_enabled";
+    public static final String LOCK_STYLE_BODY="notification_big_clock_lock_style_body";
+    public static final String LOCK_STYLE_GRADIENT="notification_big_clock_lock_style_gradient";
+    public static final String LOCK_STYLE_RIM="notification_big_clock_lock_style_rim";
+    public static final String LOCK_STYLE_RIM_DEPTH="notification_big_clock_lock_style_rim_depth";
+    public static final String LOCK_STYLE_ROUND="notification_big_clock_lock_style_round";
+    public static final String LOCK_STYLE_SHADE="notification_big_clock_lock_style_shade";
+    public static final String LOCK_STYLE_GLOW="notification_big_clock_lock_style_glow";
+    public static final String LOCK_STYLE_ANGLE="notification_big_clock_lock_style_angle";
+    /** Borrow the lock screen's own glass effect while it is available; the approximation below is the fallback. */
+    public static final String LOCK_STYLE_NATIVE="notification_big_clock_lock_style_native";
+    /** Let the shade background show through: less scrim dimming over the clock area, and see-through digits. */
+    public static final String REVEAL_ENABLED="notification_big_clock_reveal_enabled";
+    public static final String REVEAL_AMOUNT="notification_big_clock_reveal_amount";
+    public static final String REVEAL_FEATHER="notification_big_clock_reveal_feather";
+    public static final String DIGIT_REVEAL_ENABLED="notification_big_clock_digit_reveal_enabled";
+    public static final String DIGIT_REVEAL_AMOUNT="notification_big_clock_digit_reveal_amount";
+    public static final String FOLLOW_STYLE="notification_big_clock_follow_style_enabled";
+    public static final String REVEAL_MASK_COLOR="notification_big_clock_reveal_mask_color";
+    public static final String REVEAL_MASK_OPACITY="notification_big_clock_reveal_mask_opacity";
+    public static final float LOCK_STYLE_STRENGTH_MAX=200f;
     public static final String NOTIFICATION_EDGE_ENABLED="notification_big_clock_notification_edge_enabled";
     public static final String NOTIFICATION_EDGE_SAFE_DISTANCE="notification_big_clock_notification_edge_safe_distance";
     public static final String NOTIFICATION_EDGE_RANGE="notification_big_clock_notification_edge_range";
@@ -48,9 +85,20 @@ public final class NotificationBigClockSettings {
     public static final String COMPACT_OFFSET_X="notification_big_clock_compact_offset_x";
     public static final String COMPACT_OFFSET_Y="notification_big_clock_compact_offset_y";
     public static final String LETTER_SPACING="notification_big_clock_letter_spacing";
+    /** Release the owned numeral slots' fixed width; the user's letter spacing is independent. */
+    public static final String PROPORTIONAL_DIGITS="notification_big_clock_proportional_digits";
+    /** Immediate time changes only; panel gestures and rebound keep their own motion. */
+    public static final String TIME_ANIMATION_DISABLED="notification_big_clock_time_animation_disabled";
+    private static final String PROPORTIONAL_FEATURES="'tnum' 0, 'pnum' 1";
+    private static final java.util.regex.Pattern NUMERAL_FEATURE=java.util.regex.Pattern.compile(
+            "(?i)['\"]?(tnum|pnum)['\"]?(?:\\s+(on|off|[01]))?");
     public static final String ALIGNMENT="notification_big_clock_alignment";
     public static final String FONT="notification_big_clock_font";
     public static final String DATE_ENABLED="notification_big_clock_date_enabled";
+    public static final String CLOCK_CLICK_ENABLED="notification_big_clock_clock_click_enabled";
+    public static final String DATE_CLICK_ENABLED="notification_big_clock_date_click_enabled";
+    public static final String CLOCK_LAUNCH_APP="notification_big_clock_clock_launch_app";
+    public static final String DATE_LAUNCH_APP="notification_big_clock_date_launch_app";
     public static final String DATE_SIZE="notification_big_clock_date_size";
     public static final String DATE_WEIGHT="notification_big_clock_date_weight";
     public static final String DATE_OFFSET_X="notification_big_clock_date_offset_x";
@@ -96,8 +144,15 @@ public final class NotificationBigClockSettings {
         booleans.put(NOTIFICATION_EDGE_ENABLED,true);
         booleans.put(NOTIFICATION_GAP_ENABLED,true);
         booleans.put(STATUS_ICONS_FIXED,true);
+        booleans.put(LOCK_STYLE,false);booleans.put(LOCK_STYLE_NATIVE,true);
+        booleans.put(PROPORTIONAL_DIGITS,false);booleans.put(TIME_ANIMATION_DISABLED,false);
+        booleans.put(REVEAL_ENABLED,false);booleans.put(DIGIT_REVEAL_ENABLED,false);booleans.put(FOLLOW_STYLE,false);
+        booleans.putAll(ClockBackdropSettings.BOOLEANS);
         copyLandscape(booleans);
         booleans.put(LANDSCAPE_NOTIFICATION_WIDTH_ENABLED,false);
+        // These launch actions belong to the portrait replacement, never its landscape copy.
+        booleans.put(CLOCK_CLICK_ENABLED,true);booleans.put(DATE_CLICK_ENABLED,true);
+        booleans.put(REBOUND_BLUR_ENABLED,false);booleans.put(REBOUND_LOCK,false);
         BOOLEANS=Collections.unmodifiableMap(booleans);
         Map<String,Float> numbers=new LinkedHashMap<>();
         numbers.put(SCALE,100f);numbers.put(COMPACT_SCALE,36f);
@@ -116,15 +171,24 @@ public final class NotificationBigClockSettings {
         numbers.put(ENTRY_TRAVEL,32f);
         numbers.put(NOTIFICATION_EDGE_SAFE_DISTANCE,18f);numbers.put(NOTIFICATION_EDGE_RANGE,24f);
         numbers.put(NOTIFICATION_EDGE_BLUR_RADIUS,8f);
+        numbers.put(LOCK_STYLE_BODY,100f);numbers.put(LOCK_STYLE_GRADIENT,100f);numbers.put(LOCK_STYLE_RIM,100f);
+        numbers.put(LOCK_STYLE_RIM_DEPTH,100f);numbers.put(LOCK_STYLE_ROUND,100f);numbers.put(LOCK_STYLE_SHADE,100f);
+        numbers.put(LOCK_STYLE_GLOW,100f);numbers.put(LOCK_STYLE_ANGLE,300f);
+        numbers.put(REVEAL_AMOUNT,100f);numbers.put(REVEAL_FEATHER,48f);numbers.put(DIGIT_REVEAL_AMOUNT,60f);
+        numbers.put(REVEAL_MASK_OPACITY,20f);
+        numbers.putAll(ClockBackdropSettings.NUMBERS);
         copyLandscape(numbers);
         numbers.put(SCREEN_PADDING,24f);
         numbers.put(LANDSCAPE_NOTIFICATION_WIDTH,100f);
+        numbers.put(REBOUND_BLUR_RADIUS,DEFAULT_REBOUND_BLUR_RADIUS);numbers.put(REBOUND_FADE,DEFAULT_REBOUND_FADE);
         NUMBERS=Collections.unmodifiableMap(numbers);
         Map<String,Integer> colors=new LinkedHashMap<>();
         colors.put(COLOR_LIGHT,0xffffffff);colors.put(COLOR_DARK,0xffffffff);
         colors.put(DATE_COLOR_LIGHT,0xffffffff);colors.put(DATE_COLOR_DARK,0xffffffff);
         colors.put(FOOTER_COLOR_LIGHT,0xffffffff);colors.put(FOOTER_COLOR_DARK,0xffffffff);
         colors.put(GLASS_BORDER_COLOR_LIGHT,0xffffffff);colors.put(GLASS_BORDER_COLOR_DARK,0xffffffff);
+        colors.put(REVEAL_MASK_COLOR,0xffffffff);
+        colors.putAll(ClockBackdropSettings.COLORS);
         copyLandscape(colors);
         COLORS=Collections.unmodifiableMap(colors);
         Map<String,String> strings=new LinkedHashMap<>();
@@ -132,6 +196,8 @@ public final class NotificationBigClockSettings {
         strings.put(ALIGNMENT,"center");strings.put(FONT,"native");strings.put(DATE_ALIGNMENT,"center");
         strings.put(FOOTER_PATTERN,"{text}");strings.put(FOOTER_TEXT,"");strings.put(FOOTER_ALIGNMENT,"center");
         copyLandscape(strings);
+        // These launch targets belong only to the portrait clock. Empty retains the native app.
+        strings.put(CLOCK_LAUNCH_APP,"");strings.put(DATE_LAUNCH_APP,"");
         STRINGS=Collections.unmodifiableMap(strings);
     }
     /** Independent defaults: upgrading never enables landscape from the portrait switch. */
@@ -155,6 +221,29 @@ public final class NotificationBigClockSettings {
     public static boolean enabled(android.os.Bundle source,boolean landscape) {
         return source!=null&&Boolean.TRUE.equals(source.get(landscape?LANDSCAPE_MASTER:MASTER));
     }
+    /** Pausing background reveal never rewrites the user's saved follow preference. */
+    public static boolean effectiveFollowStyle(android.os.Bundle source,boolean landscape) {
+        return source!=null&&Boolean.TRUE.equals(source.get(landscape?landscapeKey(DIGIT_REVEAL_ENABLED):DIGIT_REVEAL_ENABLED))
+                &&Boolean.TRUE.equals(source.get(landscape?landscapeKey(FOLLOW_STYLE):FOLLOW_STYLE));
+    }
+    public static boolean effectiveFollowStyle(Map<String,?> source,boolean landscape) {
+        return source!=null&&Boolean.TRUE.equals(source.get(landscape?landscapeKey(DIGIT_REVEAL_ENABLED):DIGIT_REVEAL_ENABLED))
+                &&Boolean.TRUE.equals(source.get(landscape?landscapeKey(FOLLOW_STYLE):FOLLOW_STYLE));
+    }
+    /** Keep native typography by default; explicit proportional figures override only numeral features. */
+    public static String timeFontFeatures(String original,boolean proportional) {
+        String nativeFeatures=original==null?"tnum":original;
+        if(!proportional)return nativeFeatures;
+        if("tnum".equals(nativeFeatures)||nativeFeatures.isEmpty())return PROPORTIONAL_FEATURES;
+        StringBuilder features=new StringBuilder();
+        for(String item:nativeFeatures.split(",")) {
+            String value=item.trim();
+            if(value.isEmpty()||NUMERAL_FEATURE.matcher(value).matches())continue;
+            if(features.length()>0)features.append(", ");features.append(value);
+        }
+        if(features.length()>0)features.append(", ");
+        return features.append(PROPORTIONAL_FEATURES).toString();
+    }
     private NotificationBigClockSettings(){}
 
     /** Complete cards are bounded by the actual native rows, never by the slider suggestion. */
@@ -168,9 +257,24 @@ public final class NotificationBigClockSettings {
         key=portraitKey(key);
         return MAX_SIZE.equals(key)||COMPACT_MAX_SIZE.equals(key)||DATE_SIZE.equals(key)||FOOTER_SIZE.equals(key);
     }
-    /** Only the phone's native clock family has the verified HGHT axis. */
+    /** The lock-screen clock plugin bundles three variable families, all with the verified HGHT and wght axes. */
+    public static final String FONT_NATIVE_SANS = "native_sans";
+    public static final String FONT_NATIVE_DIGIT = "native_digit";
+    public static final String FONT_NATIVE_SERIF = "native_serif";
+    public static final String[] FONT_VALUES = {"native", FONT_NATIVE_SANS, FONT_NATIVE_DIGIT, FONT_NATIVE_SERIF, "system", "pingfang", "custom"};
+    public static final String[] FONT_LABELS = {"原生（跟随锁屏）", "原生 · OPPO Sans", "原生 · OPPO Digit", "原生 · OPPO Serif", "系统", "苹方", "自选"};
+
+    /** The phone's native clock families have the verified HGHT axis: the lock screen's current one, or one of the three. */
     public static boolean nativeHeightFont(Object mode) {
-        return "native".equals(mode);
+        return "native".equals(mode) || nativeFamily(mode) != null;
+    }
+
+    /** File name of the bundled family a native mode asks for; null for "native" (the lock screen's own) and other sources. */
+    public static String nativeFamily(Object mode) {
+        if (FONT_NATIVE_SANS.equals(mode)) return "OPPOSans4.0.ttf";
+        if (FONT_NATIVE_DIGIT.equals(mode)) return "OPPODigit00.ttf";
+        if (FONT_NATIVE_SERIF.equals(mode)) return "OPPOSerif.ttf";
+        return null;
     }
     /** Pure user text is passed as content, never interpreted as a date pattern. */
     public static String formatFooter(String pattern,String text,long now) {

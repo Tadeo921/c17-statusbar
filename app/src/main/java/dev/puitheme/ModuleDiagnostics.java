@@ -94,6 +94,35 @@ public final class ModuleDiagnostics {
 
     public static void info(String source, String message) { emit(source, message, null, false); }
     public static void error(String source, String message, Throwable error) { emit(source, message, error, true); }
+    /** A problem that did not throw: the feature is degraded or unavailable. */
+    public static void warn(String source, String message) { emitLevel(source, message, null, "warn"); }
+    /** One structured state record. Pass alternating names and values; only whitelisted names survive,
+     * values must be booleans, numbers or short identifier-like words. Skipped when logging is off. */
+    public static void fact(String source,String topic,String message,Object... pairs) {
+        if(!enabled())return;
+        try {
+            JSONObject values=new JSONObject();
+            for(int i=0;pairs != null && i+1<pairs.length;i+=2) {
+                if(!(pairs[i] instanceof String)||pairs[i+1] == null)continue;
+                values.put((String)pairs[i],pairs[i+1]);
+            }
+            JSONObject details=DiagnosticReport.validateDetails(new JSONObject().put("kind","fact").put("topic",topic).put("values",values));
+            if(details == null)return;
+            JSONObject payload=event(source,message,null).put("details",details);
+            enqueue(payload,safeSource(source)+"|"+details.toString());
+        }catch(Throwable ignored){ }
+    }
+
+    /** App-only: one structured record about the settings app itself (its look, its bottom bar), only while logging is on. */
+    public static void appFact(Context context,String topic,String message,Object... pairs) {
+        if(context == null || !PACKAGE_NAME.equals(context.getPackageName()))return;
+        try {
+            if(!loggingEnabled(context))return;
+            Bundle options=new Bundle();options.putBoolean(KEY_ENABLED,true);configure(context,options);
+            fact("ui",topic,message,pairs);
+        }catch(Throwable ignored){ }
+    }
+
     /** Fast opt-in gate for structural probes, before any strings or reflection are allocated. */
     public static boolean enabled() { return enabled && !ModuleLifecycle.removed(); }
 
@@ -130,7 +159,20 @@ public final class ModuleDiagnostics {
         try {
             JSONObject details=new JSONObject().put("kind","runtime_applied")
                     .put("runtime",ModuleRuntimeStatus.BUILD_TOKEN).put("sequence",APPLY_SEQUENCE.incrementAndGet())
-                    .put("setting_count",settings == null?0:settings.keySet().size()).put("display",DiagnosticReport.display(context));
+                    .put("setting_count",settings == null?0:settings.keySet().size()).put("display",DiagnosticReport.display(context))
+                    .put("pid",android.os.Process.myPid()).put("schema",SettingsFrameworkMirror.VERSION)
+                    .put("process_start_ms",System.currentTimeMillis()-(android.os.SystemClock.elapsedRealtime()-android.os.Process.getStartElapsedRealtime()))
+                    .put("uptime_ms",android.os.SystemClock.elapsedRealtime()-android.os.Process.getStartElapsedRealtime());
+            try {
+                android.content.pm.PackageInfo own=context.getPackageManager().getPackageInfo(context.getPackageName(),0);
+                details.put("systemui_version",DiagnosticReport.safeBuild(own.versionName))
+                        .put("systemui_code",Build.VERSION.SDK_INT>=28?own.getLongVersionCode():own.versionCode);
+            } catch(Exception unavailable) { }
+            try {
+                android.content.pm.PackageInfo plugin=context.getPackageManager().getPackageInfo("com.oplus.systemui.plugins",0);
+                details.put("plugin_version",DiagnosticReport.safeBuild(plugin.versionName))
+                        .put("plugin_code",Build.VERSION.SDK_INT>=28?plugin.getLongVersionCode():plugin.versionCode);
+            } catch(Exception absent) { }
             JSONObject payload=event("setting","系统界面配置应用成功",null).put("details",details);
             enqueue(payload,"runtime_applied|"+details.toString());
         }catch(Throwable ignored){ }
@@ -154,11 +196,15 @@ public final class ModuleDiagnostics {
     }
 
     private static void emit(String source, String message, Throwable error, boolean failure) {
+        emitLevel(source, message, error, failure ? "error" : "info");
+    }
+
+    private static void emitLevel(String source, String message, Throwable error, String level) {
         try {
             synchronized (STATE_LOCK) { if (configured && !enabled) return; }
             JSONObject payload = event(source, message, error);
-            payload.put("level", failure ? "error" : "info");
-            enqueue(payload,(failure ? "error|" : "info|") + valueKey(source, message, error));
+            payload.put("level", level);
+            enqueue(payload, level + "|" + valueKey(source, message, error));
         } catch (Throwable ignored) { }
     }
 
@@ -315,7 +361,7 @@ public final class ModuleDiagnostics {
         String at = input.optString("timestamp", "");
         safe.put("timestamp", TIMESTAMP.matcher(at).matches() ? at : timestamp());
         safe.put("source", safeSource(input.optString("source", "app")));
-        safe.put("level", "error".equals(input.optString("level")) ? "error" : "info");
+        String level = input.optString("level"); safe.put("level", "error".equals(level) ? "error" : "warn".equals(level) ? "warn" : "info");
         safe.put("message", sanitizeMessage(input.optString("message", "")));
         JSONObject details=DiagnosticReport.validateDetails(input.optJSONObject("details"));
         if(details != null)safe.put("details",details);
@@ -374,7 +420,9 @@ public final class ModuleDiagnostics {
         if ("settings".equals(value)) return "setting";
         if ("tiles".equals(value)) return "tile";
         if ("qs_style".equals(value) || "bigclock".equals(value) || "native-stack".equals(value)
-                || "status_hints".equals(value) || "acrylic".equals(value) || "media".equals(value)) return value;
+                || "status_hints".equals(value) || "acrylic".equals(value) || "media".equals(value)
+                || "scene".equals(value) || "clock".equals(value) || "fluid".equals(value)
+                || "notification".equals(value) || "ui".equals(value) || "environment".equals(value)) return value;
         return "hook".equals(value) || "setting".equals(value) || "update".equals(value)
                 || "tile".equals(value) || "app".equals(value) || "radio".equals(value)
                 || "font".equals(value) || "export".equals(value) || "config".equals(value) ? value : "app";
@@ -551,16 +599,76 @@ public final class ModuleDiagnostics {
         return new File(directory, "c17.log").length() > 0 || new File(directory, "c17.log.1").length() > 0;
     }
 
+    /** What the last runtime probe said, so an export can include the hook state without asking SystemUI again. */
+    private static volatile Bundle lastHookHealth;
+    private static volatile boolean lastRuntimeActive;
+    private static volatile String lastRuntimeMessage = "";
+    static void noteRuntime(boolean active, String message, Bundle hookHealth) {
+        lastRuntimeActive = active; lastRuntimeMessage = message == null ? "" : message; lastHookHealth = hookHealth;
+    }
+    static Bundle hookHealth() { return lastHookHealth; }
+    static boolean runtimeActive() { return lastRuntimeActive; }
+    static String runtimeMessage() { return lastRuntimeMessage; }
+
     private static byte[] snapshotBytes(Context context) throws IOException {
         byte[] report;
         try {
-            JSONObject value=DiagnosticReport.report(context,StatusBarSettings.preferences(context).getAll());
-            report=("设备与脱敏配置报告（JSON）\n"+value.toString(2)+"\n\n近期事件（JSONL）\n").getBytes(StandardCharsets.UTF_8);
+            Map<String, ?> values = StatusBarSettings.preferences(context).getAll();
+            DiagnosticCenter.Result result = DiagnosticCenter.analyze(recentEvents(context), lastHookHealth, lastRuntimeActive,
+                    lastRuntimeMessage, values, DiagnosticReport.app(context), DiagnosticReport.packages(context), loggingEnabled(context));
+            String text = DiagnosticCenter.exportText(result, DiagnosticReport.device(context), DiagnosticReport.app(context),
+                    DiagnosticReport.packages(context), lastHookHealth, values, System.currentTimeMillis())
+                    + "\n附录  原始事件（JSONL，供作者的分析工具使用）\n";
+            report = text.getBytes(StandardCharsets.UTF_8);
             if(report.length>DiagnosticReport.MAX_REPORT_BYTES)throw new IOException("Diagnostic report exceeds limit");
         }catch(JSONException unavailable){throw new IOException("Cannot prepare diagnostic report",unavailable);}
         synchronized (FILE_LOCK) { return snapshotBytes(logDirectory(context), installedVersion(context),report); }
     }
 
+    /** The newest saved events (oldest first), parsed only for the report's diagnosis. */
+    static java.util.List<JSONObject> recentEvents(Context context) {
+        java.util.ArrayList<JSONObject> result=new java.util.ArrayList<>();
+        synchronized (FILE_LOCK) {
+            try {
+                File directory=logDirectory(context);
+                for(String name:new String[]{"c17.log.1","c17.log"}) {
+                    byte[] bytes=readTail(new File(directory,name),MAX_FILE_BYTES);
+                    for(String line:new String(bytes,StandardCharsets.UTF_8).split("\n")) {
+                        if(line.isEmpty())continue;
+                        try { result.add(new JSONObject(line)); } catch(JSONException ignored) { }
+                    }
+                }
+            } catch(IOException ignored) { }
+        }
+        int extra=result.size()-4000;
+        return extra > 0?new java.util.ArrayList<>(result.subList(extra,result.size())):result;
+    }
+
+    /** For the export card: time span, event and line counts, file size and the size an export would have. Read on a worker thread. */
+    static DiagnosticCenter.Stats stats(Context context, java.util.List<JSONObject> events) {
+        long bytes = 0L, first = 0L, last = 0L; int lines = 0;
+        synchronized (FILE_LOCK) {
+            File directory = logDirectory(context);
+            for (String name : new String[]{"c17.log.1", "c17.log"}) {
+                File file = new File(directory, name);
+                if (!file.isFile()) continue;
+                bytes += file.length();
+                try (FileInputStream input = new FileInputStream(file)) {
+                    byte[] buffer = new byte[8192]; int read;
+                    while ((read = input.read(buffer)) != -1) for (int i = 0; i < read; i++) if (buffer[i] == '\n') lines++;
+                } catch (IOException unreadable) { }
+            }
+        }
+        if (events != null) for (JSONObject event : events) {
+            long time = DiagnosticCenter.millis(event.optString("timestamp", ""));
+            if (time <= 0L) continue;
+            if (first == 0L || time < first) first = time;
+            if (time > last) last = time;
+        }
+        long export = 0L;
+        try { export = snapshotBytes(context).length; } catch (IOException unavailable) { }
+        return new DiagnosticCenter.Stats(events == null ? 0 : events.size(), lines, bytes, export, first, last);
+    }
     static byte[] snapshotBytes(File directory, String version) throws IOException {
         return snapshotBytes(directory,version,new byte[0]);
     }
@@ -568,9 +676,7 @@ public final class ModuleDiagnostics {
     static byte[] snapshotBytes(File directory,String version,byte[] report) throws IOException {
         if(report == null || report.length>DiagnosticReport.MAX_REPORT_BYTES)throw new IOException("Diagnostic report exceeds limit");
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        output.write(("C17 状态栏诊断日志\n版本：" + safeVersion(version)
-                + "\n包含设备、显示参数、脱敏配置、近期阶段与异常位置；不记录通知正文、密码、网络名或文件路径。"
-                + "\n复现时请补充方向、步骤、操作快慢与录屏；日志不能精确重放任意手势。\n\n").getBytes(StandardCharsets.UTF_8));
+        output.write(("C17 状态栏诊断日志\n版本：" + safeVersion(version) + "\n\n").getBytes(StandardCharsets.UTF_8));
         output.write(report);
         byte[] buffer = new byte[4096];
         boolean content = false;

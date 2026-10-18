@@ -14,10 +14,34 @@ public final class Upgrade70Check {
     }
     private static Map<String,Object> wire(Bundle snapshot,int schema){
         Map<String,Object> values=new LinkedHashMap<>();for(String key:snapshot.keySet())values.put(key,snapshot.get(key));
+        if(schema<13)for(String key:Upgrade90.DEFAULTS.keySet())values.remove(key);
+        if(schema<14)for(String key:Upgrade91.DEFAULTS.keySet())values.remove(key);
+        if(schema<21)for(String key:Upgrade103.DEFAULTS.keySet())values.remove(key);
+        if(schema<22)for(String key:Upgrade105.DEFAULTS.keySet())values.remove(key);
+        if(schema<23)for(String key:Upgrade106.DEFAULTS.keySet())values.remove(key);
+        if(schema<24)for(String key:Upgrade107.DEFAULTS.keySet())values.remove(key);
+        if(schema<25)for(String key:Upgrade108.DEFAULTS.keySet())values.remove(key); if(schema<26)for(String key:Upgrade117.DEFAULTS.keySet())values.remove(key); if(schema<27)for(String key:Upgrade118.DEFAULTS.keySet())values.remove(key); if(schema<28)for(String key:Upgrade135.DEFAULTS.keySet())values.remove(key); if(schema<29)for(String key:Upgrade136.DEFAULTS.keySet())values.remove(key); if(schema<37)for(String key:Upgrade169.DEFAULTS.keySet())values.remove(key); if(schema<38)for(String key:Upgrade171.DEFAULTS.keySet())values.remove(key); if(schema<39)for(String key:Upgrade172.DEFAULTS.keySet())values.remove(key); if(schema<40)for(String key:Upgrade173.DEFAULTS.keySet())values.remove(key); if(schema<41)for(String key:Upgrade174.DEFAULTS.keySet())values.remove(key); if(schema<42)for(String key:Upgrade175.DEFAULTS.keySet())values.remove(key); if(schema<44)for(String key:Upgrade184.DEFAULTS.keySet())values.remove(key); if(schema<45)for(String key:Upgrade185.DEFAULTS.keySet())values.remove(key); if(schema<46)for(String key:Upgrade186.DEFAULTS.keySet())values.remove(key); if(schema<47)for(String key:Upgrade187.DEFAULTS.keySet())values.remove(key); if(schema<48)for(String key:Upgrade188.DEFAULTS.keySet())values.remove(key); if(schema<43)for(String key:Upgrade177.DEFAULTS.keySet())values.remove(key); if(schema<36)for(String key:Upgrade168.DEFAULTS.keySet())values.remove(key); if(schema<35)for(String key:Upgrade166.DEFAULTS.keySet())values.remove(key); if(schema<34)for(String key:Upgrade160.DEFAULTS.keySet())values.remove(key); if(schema<33)for(String key:Upgrade157.DEFAULTS.keySet())values.remove(key); if(schema<32)for(String key:Upgrade154.DEFAULTS.keySet())values.remove(key); if (schema < 31) for (String key : Upgrade146.DEFAULTS.keySet()) values.remove(key);
+        if(schema<30)for(String key:Upgrade144.DEFAULTS.keySet())values.remove(key);
+        if(schema<20)for(String key:Upgrade101.DEFAULTS.keySet())values.remove(key);
+        if(schema<19)for(String key:Upgrade100.DEFAULTS.keySet())values.remove(key);
+        if(schema<18)for(String key:Upgrade99.DEFAULTS.keySet())values.remove(key);
+        if(schema<17)for(String key:Upgrade98.DEFAULTS.keySet())values.remove(key);
+        if(schema<16)for(String key:Upgrade96.DEFAULTS.keySet())values.remove(key);
+        if(schema<15)for(String key:Upgrade93.DEFAULTS.keySet())values.remove(key);
+        if(schema<11)for(String key:Upgrade82.DEFAULTS.keySet())values.remove(key);
+        if(schema<10)for(String key:Upgrade80.DEFAULTS.keySet())values.remove(key);
+        if(schema<12)values.remove(FluidCloudStyle.FOLLOW_MEDIA);
+        if(schema<12)values.remove(FluidCloudStyle.BACKGROUND_COLOR_CUSTOMIZED);
         values.put(SettingsFrameworkMirror.SCHEMA,schema);values.put(SettingsFrameworkMirror.REVISION,7001L);return values;
     }
     private static Map<String,Object> historical(Bundle current){
-        Map<String,Object> values=wire(current,4);for(String key:Upgrade70.DEFAULTS.keySet())values.remove(key);return values;
+        Map<String,Object> values=wire(current,4);
+        for(String key:Upgrade76.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade77.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade78.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade79.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade80.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade70.DEFAULTS.keySet())values.remove(key);return values;
     }
     private static Object changed(String key,Object value){
         if(NativeClockMeasurement.SCALE_BASIS_VERSION.equals(key))return 1f;
@@ -43,7 +67,7 @@ public final class Upgrade70Check {
         equal(true,Collections.disjoint(Upgrade70.DEFAULTS.keySet(),Upgrade67.DEFAULTS.keySet()),"code 67 batch unchanged");
     }
     public static void main(String[] args)throws Exception{
-        equal(5,SettingsFrameworkMirror.VERSION,"wire schema");
+        equal(48,SettingsFrameworkMirror.VERSION,"wire schema");
         Bundle defaults=SettingsSnapshot.fromPreferences(Collections.emptyMap());
         equal(true,SettingsSnapshot.complete(defaults),"new complete defaults");manifest(defaults);
         Bundle current=new Bundle(defaults);current.putFloat(StatusBarSettings.CLOCK_SCALE,147.125f);
@@ -53,7 +77,9 @@ public final class Upgrade70Check {
         Map<String,Object> old=historical(current),unchanged=new LinkedHashMap<>(old);
         Bundle migrated=SettingsFrameworkMirror.decode(old);equal(true,SettingsSnapshot.complete(migrated),"complete schema 4 is migrated");
         equal(unchanged,old,"migration never mutates source wire map");
-        for(String key:current.keySet())if(!Upgrade70.DEFAULTS.containsKey(key))equal(current.get(key),migrated.get(key),"historical value "+key);
+        for(String key:current.keySet())if(!Upgrade70.DEFAULTS.containsKey(key))equal(
+                !old.containsKey(key)&&Upgrade90.DEFAULTS.containsKey(key)?Upgrade90.DEFAULTS.get(key):current.get(key),
+                migrated.get(key),"historical value or frozen later default "+key);
         for(String key:Upgrade70.DEFAULTS.keySet())equal(Upgrade70.DEFAULTS.get(key),migrated.get(key),"schema 4 migration default "+key);
         Map<String,Object> oldPreferences=new LinkedHashMap<>();oldPreferences.put(StatusBarSettings.CLOCK_SCALE,650.25f);
         Bundle oldSnapshot=SettingsSnapshot.fromPreferences(oldPreferences);
@@ -81,7 +107,7 @@ public final class Upgrade70Check {
                 equal(null,SettingsFrameworkMirror.decode(mixed),"schema 4 rejects rotated batch "+count+"/"+start);
             }
         }
-        Map<String,Object> modern=wire(current,5);equal(true,SettingsSnapshot.complete(SettingsFrameworkMirror.decode(modern)),"complete schema 5 retained");
+        Map<String,Object> modern=wire(current,SettingsFrameworkMirror.VERSION);equal(true,SettingsSnapshot.complete(SettingsFrameworkMirror.decode(modern)),"complete current schema retained");
         for(String key:keys){
             Map<String,Object> missing=new LinkedHashMap<>(modern);missing.remove(key);
             equal(null,SettingsFrameworkMirror.decode(missing),"schema 5 missing "+key);
@@ -103,7 +129,7 @@ public final class Upgrade70Check {
         for(String key:keys)stored.put(key,changed(key,defaults.get(key)));
         Bundle customized=SettingsSnapshot.fromPreferences(stored);
         equal(true,SettingsSnapshot.complete(customized),"new typed values accepted");
-        Bundle loaded=SettingsFrameworkMirror.decode(wire(customized,5));
+        Bundle loaded=SettingsFrameworkMirror.decode(wire(customized,SettingsFrameworkMirror.VERSION));
         equal(true,SettingsSnapshot.complete(loaded),"new customized complete wire accepted");
         for(String key:keys){equal(stored.get(key),customized.get(key),"saved override "+key);equal(stored.get(key),loaded.get(key),"wire override "+key);}
         Map<String,Object> imported=ConfigTransfer.prepare(ConfigTransfer.exportJson(stored),true).values();
@@ -115,7 +141,9 @@ public final class Upgrade70Check {
         Bundle boot=reader.read(false,()->{providerReads[0]++;throw new IllegalStateException("Provider must stay asleep");});
         equal(true,SettingsSnapshot.complete(boot),"old framework copy works on cold boot");equal(0,providerReads[0],"cold boot does not need app provider");
         equal(unchanged,daemon.values,"reader doesn't rewrite historical framework state");
-        for(String key:current.keySet())if(!Upgrade70.DEFAULTS.containsKey(key))equal(current.get(key),boot.get(key),"boot historical value "+key);
+        for(String key:current.keySet())if(!Upgrade70.DEFAULTS.containsKey(key))equal(
+                !old.containsKey(key)&&Upgrade90.DEFAULTS.containsKey(key)?Upgrade90.DEFAULTS.get(key):current.get(key),
+                boot.get(key),"boot historical value or frozen later default "+key);
         reader.stop();System.out.println("Upgrade70Check: "+checks+" checks passed");
     }
 }

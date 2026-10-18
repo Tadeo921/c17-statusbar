@@ -81,5 +81,45 @@ public final class WallpaperBlurRendererCheck {
         source.recycle();rejected=false;try{renderer.record(source,1440,plan,48,0);}catch(IllegalArgumentException expected){rejected=true;}check(rejected,"recycled source cannot reach GPU recording");
         renderer.release();
     }
-    public static void main(String[] args){gradients();gpuCommandsAndRelease();zeroAndFailureContracts();System.out.println(checks+" continuous wallpaper GPU renderer checks passed");}
+    private static void boundedCompositorFeather() {
+        float[] parameters=new float[18];parameters[2]=1f;parameters[16]=3f;
+        for(float density:new float[]{.25f,1f,3f,8f})for(float core:new float[]{0f,1f,56f,640f})for(float tail:new float[]{0f,1f,32f,320f}) {
+            LockscreenBlurGeometry.Plan plan=LockscreenBlurGeometry.plan(3168,density,30f,core,tail);
+            float[][] regions=WallpaperBlurRenderer.compositorRegions(1440,plan,plan.radius,parameters);
+            check(regions.length<=255,"8-bit external feather has a fixed coverage-run budget");
+            if(plan.end==0){equal(0,regions.length,"empty geometry has no compositor work");continue;}
+            int bottom=0;float previous=1f;
+            for(float[] region:regions) {
+                equal(36,region.length,"native local wire format is exact");near(plan.radius,region[0],0f,"all regions share one blur pass radius");
+                near(bottom,region[3],0f,"bounded transition does not leave gaps");check(region[5]>region[3],"regions are never empty");bottom=(int)region[5];
+                check(Float.isFinite(region[1])&&region[1]<=previous&&region[1]>0f,"sampled alpha decreases with no nonfinite values");previous=region[1];
+                near(1440f,region[4],0f,"compositor width matches wallpaper screen mapping");near(1f,region[20],0f,"OEM sampling zoom is preserved");
+                near(3f,region[34],0f,"audited native corner policy is copied without guessed values");
+            }
+            check(bottom<=plan.end,"owned blur cannot extend below configured transition");
+            int regionAt=0;
+            for(int y=0;y<plan.end;y++) {
+                while(regionAt<regions.length&&regions[regionAt][5]<=y)regionAt++;
+                float coverage=regionAt<regions.length&&regions[regionAt][3]<=y?regions[regionAt][1]:0f;
+                double p=plan.end==plan.core?0d:Math.max(0d,Math.min(1d,(y+.5d-plan.core)/(plan.end-plan.core)));
+                float expected=(float)(1d-p*p*(3d-2d*p));
+                near(expected,coverage,.5001f/255f,"every physical pixel matches the smooth curve at native alpha precision");
+            }
+        }
+        LockscreenBlurGeometry.Plan plan=LockscreenBlurGeometry.plan(3168,3f,30f,56f,32f);
+        equal(0,WallpaperBlurRenderer.compositorRegions(1440,plan,0,parameters).length,"cross-window power policy can remove all blur work");
+        boolean rejected=false;try{WallpaperBlurRenderer.compositorRegions(1440,plan,48,new float[17]);}catch(IllegalArgumentException expected){rejected=true;}
+        check(rejected,"unknown OEM wire layouts cannot be submitted to compositor");
+        plan=LockscreenBlurGeometry.plan(1,1f,30f,0f,1f);
+        float[][] regions=WallpaperBlurRenderer.compositorRegions(1,plan,plan.radius,parameters);
+        equal(1,regions.length,"one-pixel transition needs one finite coverage run");
+        near(128f/255f,regions[0][1],0f,"one-pixel transition samples its midpoint instead of becoming opaque");
+        near(1f,regions[0][5],0f,"one-pixel transition covers the full pixel");
+        plan=LockscreenBlurGeometry.plan(3,8f,30f,640f,320f);
+        regions=WallpaperBlurRenderer.compositorRegions(1,plan,plan.radius,parameters);
+        equal(1,regions.length,"clamped short display and absent tail stay one opaque run");
+        near(1f,regions[0][1],0f,"clamped core stays fully blurred");
+        near(3f,regions[0][5],0f,"clamped core cannot leave display bounds");
+    }
+    public static void main(String[] args){gradients();gpuCommandsAndRelease();zeroAndFailureContracts();boundedCompositorFeather();System.out.println(checks+" wallpaper renderer and bounded compositor checks passed");}
 }

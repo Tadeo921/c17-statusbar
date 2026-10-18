@@ -40,6 +40,7 @@ public final class BatteryControlsCheck {
         public Charge getBatteryCharge() {return charge;}
     }
     public static void main(String[] args) throws Exception {
+        android.provider.Settings.System.values.put("display_power_percent",1);
         Handler handler=new Handler(Looper.getMainLooper());
         BatteryControls controller=new BatteryControls(handler,Meter.class,Horizontal.class,Charge.class);
         Meter meter=new Meter(new Context());Horizontal battery=new Horizontal();meter.drawable=battery;battery.setCallback(meter);

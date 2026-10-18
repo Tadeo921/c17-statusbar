@@ -38,8 +38,8 @@ public final class QsTileIconSize {
         float ratio = 1f;
         Binding(View tile, View icon) {
             this.tile = new WeakReference<>(tile);
-            entryId = icon.getResources().getIdentifier("std_1x1_entry_icon_size", "dimen", "com.android.systemui");
-            switchId = icon.getResources().getIdentifier("std_1x1_switch_icon_size", "dimen", "com.android.systemui");
+            entryId = ResourceIds.get(icon.getResources(), "std_1x1_entry_icon_size", "dimen", "com.android.systemui");
+            switchId = ResourceIds.get(icon.getResources(), "std_1x1_switch_icon_size", "dimen", "com.android.systemui");
             Method getter = null;
             try { getter = icon.getClass().getMethod("getIconScaleRatio"); }
             catch (ReflectiveOperationException | RuntimeException unavailable) { }

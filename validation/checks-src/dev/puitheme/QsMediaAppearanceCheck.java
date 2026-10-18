@@ -238,7 +238,7 @@ public final class QsMediaAppearanceCheck {
         check((pixel(draw(appearance,card,blur))&0xffffff)==0xcc2200&&Bitmap.scales==scales&&clock.jobs.isEmpty(),"initial artwork immediately shows its own solid color while expensive preparation waits");
         clock.advance(1);check(clock.jobs.size()==1&&Bitmap.scales==scales+1,"exactly the configured 1000ms quiet deadline schedules one capture and worker");
         check((pixel(draw(appearance,card,blur))&0xffffff)==0xcc2200,"initial preparation remains on the new solid fill until blur is ready");
-        clock.runJobs();clock.advance(QsMediaAppearance.FADE_MS);RuntimeShader complete=draw(appearance,card,blur);
+        clock.runJobs();clock.advance(Math.max(QsMediaAppearance.FADE_MS,QsMediaTransition.DIRECT_MS));RuntimeShader complete=draw(appearance,card,blur);
         check((pixel(complete)&0xffffff)==0xcc2200,"first completed red material is committed atomically");
         BitmapDrawable blue=image(card,0xff0044cc);card.coverImg.setImageDrawable(blue);appearance.onCoverChanged(card.coverImg);
         int scheduled=clock.schedules,invalidations=card.invalidations;scales=Bitmap.scales;reads=Bitmap.reads;
@@ -268,7 +268,7 @@ public final class QsMediaAppearanceCheck {
                 "the single final commit contains the latest artwork and latest style together");
         // One content-dirty drawable callback and one owner invalidation at the single commit.
         check(card.invalidations==invalidations+4,"one real green event and one worker commit invalidate, never duplicate binding callbacks");
-        clock.advance(QsMediaAppearance.FADE_MS);draw(appearance,card,blur);
+        clock.advance(Math.max(QsMediaAppearance.FADE_MS,QsMediaTransition.DIRECT_MS));draw(appearance,card,blur);
         int steadyTimers=clock.schedules,steadyReads=Bitmap.reads,steadyUploads=committed.uploadCount;
         for(int i=0;i<1000;i++){clock.advance(1);appearance.onNativeUpdate(card,"onDrawableUpdate");draw(appearance,card,blur);}
         check(clock.schedules==steadyTimers&&Bitmap.reads==steadyReads&&committed.uploadCount==steadyUploads,
@@ -281,7 +281,7 @@ public final class QsMediaAppearanceCheck {
         clock.advance(QsMediaAppearance.DEBOUNCE_MS*3/10);check(draw(appearance,card,blur)==committed,"native default-cover stage remains on the old completed background");
         card.defaultCover=false;card.coverImg.setImageDrawable(image(card,0xff9955aa));appearance.onNativeUpdate(card,"bindCoverImg");
         clock.advance(QsMediaAppearance.DEBOUNCE_MS-1);check((pixel(draw(appearance,card,blur))&0xffffff)==0x9955aa,"new artwork after a transient null/default stage immediately gets its own color");
-        clock.advance(1);clock.runJobs();clock.advance(QsMediaAppearance.FADE_MS);check((pixel(draw(appearance,card,blur))&0xffffff)==0x9955aa,"rebinding burst switches once to final artwork");
+        clock.advance(1);clock.runJobs();clock.advance(Math.max(QsMediaAppearance.FADE_MS,QsMediaTransition.DIRECT_MS));check((pixel(draw(appearance,card,blur))&0xffffff)==0x9955aa,"rebinding burst switches once to final artwork");
         RuntimeShader last=draw(appearance,card,blur);
         card.coverImg.setImageDrawable(null);appearance.onCoverChanged(card.coverImg);clock.advance(QsMediaAppearance.DEBOUNCE_MS-1);
         check(draw(appearance,card,blur)==last,"permanently missing artwork also keeps the completed backdrop during debounce");
@@ -347,7 +347,7 @@ public final class QsMediaAppearanceCheck {
         clock.advance(200);card.defaultCover=false;card.coverImg.setImageDrawable(image(card,0xff0044cc));appearance.onNativeUpdate(card,"bindCoverImg");
         clock.advance(QsMediaAppearance.DEBOUNCE_MS-1);check((pixel(draw(appearance,card,replacement))&0xffffff)==0x0044cc&&Bitmap.scales==scales,
                 "current-source ownership accepts the new immediate solid fill while blur waits");
-        clock.advance(1);clock.runJobs();clock.advance(QsMediaAppearance.FADE_MS);check((pixel(draw(appearance,card,replacement))&0xffffff)==0x0044cc,
+        clock.advance(1);clock.runJobs();clock.advance(Math.max(QsMediaAppearance.FADE_MS,QsMediaTransition.DIRECT_MS));check((pixel(draw(appearance,card,replacement))&0xffffff)==0x0044cc,
                 "only a successful new result replaces the retained image on the new native engine");
         appearance.releaseRuntime();
     }
@@ -404,7 +404,7 @@ public final class QsMediaAppearanceCheck {
         check(rendered(draw(appearance,card,rebound),0xff000000)==before&&Bitmap.scales==scales,"native engine rebinding preserves the current incoming blend without new sampling or blur");
         card.coverImg.setImageDrawable(image(card,0xffffff00));appearance.onCoverChanged(card.coverImg);
         check(rendered(draw(appearance,card,rebound),0xff000000)==0xffffff00&&clock.jobs.isEmpty(),"a genuinely newer artwork cancels the old fade and immediately displays its own yellow color");
-        clock.advance(QsMediaAppearance.DEBOUNCE_MS);clock.runJobs();clock.advance(QsMediaAppearance.FADE_MS);
+        clock.advance(QsMediaAppearance.DEBOUNCE_MS);clock.runJobs();clock.advance(Math.max(QsMediaAppearance.FADE_MS,QsMediaTransition.DIRECT_MS));
         check(rendered(draw(appearance,card,rebound),0xff000000)==0xffffff00&&clock.timers.isEmpty(),"latest artwork is the sole settled cache after debounce and incoming fade");
         creations=Bitmap.creations;reads=Bitmap.reads;scales=Bitmap.scales;
         settings.putFloat("qs_media_light_background_opacity",35);appearance.configure(settings);clock.advance(QsMediaAppearance.DEBOUNCE_MS);
@@ -438,6 +438,61 @@ public final class QsMediaAppearanceCheck {
         appearance.releaseRuntime();
     }
 
+    static Bitmap backgroundBitmap(RuntimeShader shader){return ((BitmapShader)shader.inputs.get("c17MediaCover")).bitmap;}
+    /** Where the music card's background comes from and the colour laid over it. */
+    static void fills() throws Throwable {
+        check(QsMediaAppearance.over(0xff102030,0)==0xff102030,"no tint leaves the colour as it is");
+        check(QsMediaAppearance.over(0xff102030,0xff405060)==0xff405060,"a full-strength tint replaces the colour");
+        int half=QsMediaAppearance.over(0xff000000,0x80ffffff);
+        check((half>>>24)==255&&Math.abs(((half>>16)&255)-128)<=1&&Math.abs((half&255)-128)<=1,"half a white tint over black is mid grey: "+Integer.toHexString(half));
+        int onNothing=QsMediaAppearance.over(0,0x80ffffff);
+        check((onNothing>>>24)==0x80&&(onNothing&0xffffff)==0xffffff,"a tint over nothing is the tint: "+Integer.toHexString(onNothing));
+        Queue worker=new Queue();QsMediaAppearance appearance=new QsMediaAppearance(worker,worker);Card card=new Card();AutoBlurDrawable blur=material(card);
+        card.coverImg.setImageDrawable(image(card,0xffcc2200));appearance.onNativeUpdate(card,"bindCoverImg");
+        Bundle settings=values(true);appearance.configure(settings);worker.run();
+        RuntimeShader picture=draw(appearance,card,blur);
+        check(backgroundBitmap(picture).getWidth()>1&&(pixel(picture)&0xffffff)==0xcc2200,"by default the background is the cover picture");
+        // a black tint at half strength darkens the picture
+        settings.putFloat("qs_media_light_background_tint_opacity",50);settings.putInt("qs_media_light_background_tint_color",0xff000000);
+        appearance.configure(settings);worker.run();
+        RuntimeShader tinted=draw(appearance,card,blur);int dark=pixel(tinted);
+        check(backgroundBitmap(tinted).getWidth()>1&&(dark>>>24)==255&&Math.abs(((dark>>16)&255)-102)<=3&&Math.abs(((dark>>8)&255)-17)<=3,"a half-strength black tint darkens the picture: "+Integer.toHexString(dark));
+        // the cover's main colour, one flat pixel
+        settings.putBoolean("qs_media_light_background_solid_enabled",true);settings.putFloat("qs_media_light_background_tint_opacity",0);
+        appearance.configure(settings);worker.run();
+        RuntimeShader solid=draw(appearance,card,blur);
+        check(backgroundBitmap(solid).getWidth()==1&&backgroundBitmap(solid).getHeight()==1&&pixel(solid)==0xffcc2200,"the main-colour background is the cover's colour in one pixel");
+        settings.putFloat("qs_media_light_background_tint_opacity",50);appearance.configure(settings);worker.run();
+        int solidTint=pixel(draw(appearance,card,blur));
+        check(Math.abs(((solidTint>>16)&255)-102)<=3,"the tint also covers the main colour: "+Integer.toHexString(solidTint));
+        // a colour of the user's own wins over both, and the tint is not laid over it
+        settings.putBoolean("qs_media_light_background_custom_enabled",true);settings.putInt("qs_media_light_background_color",0xff123456);
+        appearance.configure(settings);worker.run();
+        RuntimeShader custom=draw(appearance,card,blur);
+        check(backgroundBitmap(custom).getWidth()==1&&pixel(custom)==0xff123456,"a custom colour wins over the cover's colour and takes no tint: "+Integer.toHexString(pixel(custom)));
+        settings.putInt("qs_media_light_background_color",0x80123456);appearance.configure(settings);worker.run();
+        check(pixel(draw(appearance,card,blur))==0xff123456,"without its transparency switch a custom colour is opaque");
+        settings.putBoolean("qs_media_light_background_color_custom_alpha",true);appearance.configure(settings);worker.run();
+        check(pixel(draw(appearance,card,blur))==0x80123456,"with the switch it keeps its own transparency");
+        // back to the picture: nothing of the fills is left
+        settings.putBoolean("qs_media_light_background_custom_enabled",false);settings.putBoolean("qs_media_light_background_solid_enabled",false);settings.putFloat("qs_media_light_background_tint_opacity",0);
+        appearance.configure(settings);worker.run();
+        RuntimeShader again=draw(appearance,card,blur);
+        check(backgroundBitmap(again).getWidth()>1&&(pixel(again)&0xffffff)==0xcc2200,"turning them off brings the cover picture back");
+        // changing only the opacity never prepares the picture again
+        int scales=Bitmap.scales;settings.putFloat("qs_media_light_background_opacity",40);appearance.configure(settings);worker.run();
+        check(Bitmap.scales==scales&&draw(appearance,card,blur).floats.get("c17MediaOpacity")[0]==.4f,"opacity alone still only changes the uniform");
+        // The wait after a new cover and the length of the fade are settings: 200 ms prepares the picture sooner, and 0 ms shows it without a fade.
+        Queue quick=new Queue();QsMediaAppearance fast=new QsMediaAppearance(quick,quick);Card second=new Card();AutoBlurDrawable secondBlur=material(second);
+        second.coverImg.setImageDrawable(image(second,0xff118844));fast.onNativeUpdate(second,"bindCoverImg");
+        Bundle instant=values(true);instant.putFloat(QsMediaAppearance.TRANSITION,0f);instant.putFloat(QsMediaAppearance.SETTLE,200f);fast.configure(instant);
+        quick.advance(199);check(quick.jobs.isEmpty(),"before the set wait nothing is prepared");
+        quick.advance(1);check(quick.jobs.size()==1,"after it the picture is prepared");
+        quick.runJobs();RuntimeShader shown=draw(fast,second,secondBlur);
+        check(shown.floats.get("c17MediaMix")[0]==1f&&shown.floats.get("c17MediaPreviousMix")[0]==0f,"with no transition the picture is simply there");
+        check((pixel(shown)&0xffffff)==0x118844,"and it is the new cover's");
+    }
+
     static void transitionWeights() {
         check(QsMediaAppearance.DEBOUNCE_MS==1000L&&QsMediaAppearance.FADE_MS==240L,"new color is immediate, expensive processing is debounced, incoming fade is bounded");
         for(boolean solid:new boolean[]{true,false}) {
@@ -458,5 +513,5 @@ public final class QsMediaAppearanceCheck {
         software.eraseColor(0x00ffffff);check(QsMediaColor.sample(software)==0,"fully transparent artwork never invents a native or gray replacement color");
     }
 
-    public static void main(String[] args)throws Throwable {steadyAndChanges();staleAndUnsupported();nativeWallpaperBranch();nativeFailureRecovery();pointValues();trailingDebounce();staleDebounceAndCancellation();debouncedSubEffects();nativeRebindingDebounce();lightweightCrossfade();crossfadeCancellation();transitionWeights();System.out.println("QsMediaAppearanceCheck passed: "+checks+" (native material and real pixels, immediate new-artwork color + trailing 1000ms preparation + cached 240ms blur fade and immediate cancellation)");}
+    public static void main(String[] args)throws Throwable {steadyAndChanges();fills();staleAndUnsupported();nativeWallpaperBranch();nativeFailureRecovery();pointValues();trailingDebounce();staleDebounceAndCancellation();debouncedSubEffects();nativeRebindingDebounce();lightweightCrossfade();crossfadeCancellation();transitionWeights();System.out.println("QsMediaAppearanceCheck passed: "+checks+" (native material and real pixels, immediate new-artwork color + trailing 1000ms preparation + cached 240ms blur fade and immediate cancellation)");}
 }

@@ -52,11 +52,15 @@ public final class NotificationNativeClock extends FrameLayout {
     private float size, spacing, glassDensity = 1f;
     private int color = Color.WHITE, warnings;
     private boolean available = true, glass;
+    private boolean colorMaskEnabled;
+    private boolean proportionalDigits;
+    private boolean timeAnimationEnabled = true;
     private boolean glassBorderEnabled;
     private float glassBorderWidth;
     private int glassBorderColor = Color.WHITE, borderWarnings;
     private Shader suppliedShader, glassShader;
     private float shaderHeight = -1f;
+    private int visualOutset;
     private int shaderColor;
 
     /** A missing or incompatible system plugin leaves the caller's existing clock available. */
@@ -133,6 +137,26 @@ public final class NotificationNativeClock extends FrameLayout {
     public boolean isAvailable() { return available; }
     public boolean isNativeReady() { return available; }
 
+    /** Disabling during the same minute settles only this bridge's private digit transitions. */
+    public void setTimeAnimationEnabled(boolean enabled) {
+        if (timeAnimationEnabled == enabled) return;
+        timeAnimationEnabled = enabled;
+        if (!enabled) cancel();
+    }
+
+    /** These slots are independent notification copies; the system lockscreen is never changed. */
+    public void setProportionalDigits(boolean enabled) {
+        if (!available || proportionalDigits == enabled) return;
+        proportionalDigits = enabled;
+        try {
+            for (Slot slot : slots) {
+                slot.envelopeValid = false; slot.pivotDirty = true;
+                slot.applyTypography();
+            }
+            requestLayout(); invalidate();
+        } catch (Throwable error) { fail(error); }
+    }
+
     /** No tick, timer, or gesture listener is installed. The caller supplies native time events. */
     public boolean setTime(String value, boolean animate, long now) {
         if (!available) return false;
@@ -154,7 +178,7 @@ public final class NotificationNativeClock extends FrameLayout {
                     slot.applyTypography(); slot.setToken(token.text, false, false, false);
                 }
             } else {
-                boolean canAnimate = animate && !time.isEmpty() && isAttachedToWindow();
+                boolean canAnimate = timeAnimationEnabled && animate && !time.isEmpty() && isAttachedToWindow();
                 for (int i = 0; i < tokens.size(); i++) {
                     Token token = tokens.get(i);
                     boolean hour = after != null && token.start >= after.hourStart && token.start < after.hourEnd;
@@ -199,6 +223,13 @@ public final class NotificationNativeClock extends FrameLayout {
         glass = enabled; glassDensity = nextDensity; glassShader = null; refreshShaders(); invalidate();
     }
 
+    /** The backdrop material needs the plain glyph coverage of our independent
+     * paints, bypassing both supplied and local glass shaders until disabled. */
+    public void setColorMaskEnabled(boolean enabled) {
+        if(colorMaskEnabled==enabled)return;
+        colorMaskEnabled=enabled;refreshShaders();invalidate();
+    }
+
     /** The border is recorded with each private text layer, sharing its native RenderNode effects. */
     public void setGlassBorder(boolean enabled, float widthPx, int argb) {
         float nextWidth = finite(widthPx) ? Math.max(0f, widthPx) : 0f;
@@ -206,8 +237,29 @@ public final class NotificationNativeClock extends FrameLayout {
         glassBorderEnabled = enabled; glassBorderWidth = nextWidth; glassBorderColor = argb;
         invalidateBorderLayers(); invalidate();
     }
+    /** Space belongs to this private row only. Native digit animation and its
+     * original parents keep their own clipping, scale and opacity contracts. */
+    void setVisualOutset(float pixels) {
+        int next=NumericPolicy.layoutPixels(Math.ceil(pixels));
+        if(next==visualOutset)return;
+        visualOutset=next;requestLayout();invalidate();
+    }
 
-    /** Called once after View.draw(Canvas); templates and shared lockscreen instances never enter this map. */
+    static boolean ownsLayer(View view) {
+        if(!(view instanceof TextView))return false;
+        synchronized(OWNED_LAYERS){return OWNED_LAYERS.containsKey(view);}
+    }
+    /** The existing draw hook calls this only after ownsLayer. There is no new
+     * global bridge or lambda on unrelated SystemUI TextViews. */
+    @FunctionalInterface interface DrawAction { void draw(Canvas canvas) throws Throwable; }
+    static void drawOwned(View view,Canvas canvas,DrawAction nativeDraw) throws Throwable {
+        // Native CanvasProperty commands stay on their original recording target.
+        // Colour is prepared on the private ordinary and RT paints before drawing.
+        nativeDraw.draw(canvas);
+        drawOwnedBorder(view,canvas);
+    }
+
+    /** Called once after the owned body, outside its alpha node. */
     public static void drawOwnedBorder(View view, Canvas canvas) {
         if (!(view instanceof TextView) || canvas == null) return;
         BorderLayer owned;
@@ -228,6 +280,14 @@ public final class NotificationNativeClock extends FrameLayout {
             if (owner.borderWarnings++ < 3) ModuleDiagnostics.error("bigclock",
                     "Native clock local border unavailable; native fill retained", error);
         }
+    }
+    static float maskDrawOffset(TextView view) {
+        BorderLayer layer;
+        synchronized(OWNED_LAYERS) {layer=OWNED_LAYERS.get(view);}
+        NotificationNativeClock owner=layer==null?null:layer.owner.get();
+        if(owner==null||!layer.nativeText||owner.nativeAccess.drawOffset==null)return 0f;
+        try {float value=owner.nativeAccess.drawOffset.getFloat(view);return finite(value)?value:0f;}
+        catch(ReflectiveOperationException|RuntimeException unavailable) {return 0f;}
     }
 
     private void drawBorder(TextView layer, Layout layout, Canvas canvas, BorderLayer owned) {
@@ -271,7 +331,7 @@ public final class NotificationNativeClock extends FrameLayout {
         }
     }
 
-    private static boolean hasBitmapGlyphs(CharSequence text) {
+    static boolean hasBitmapGlyphs(CharSequence text) {
         for (int index = 0; index < text.length();) {
             int point = Character.codePointAt(text, index);
             if (point > 0xffff || point == 0xfe0f || point == 0x200d || point == 0x20e3
@@ -383,7 +443,8 @@ public final class NotificationNativeClock extends FrameLayout {
             if (i > 0) width = safeAdd(width, gap);
             width = safeAdd(width, slot.getMeasuredWidth()); height = Math.max(height, slot.getMeasuredHeight());
         }
-        setMeasuredDimension(resolveSize(Math.max(0, width), widthSpec), resolveSize(height, heightSpec));
+        setMeasuredDimension(resolveSize(safeAdd(Math.max(0,width),visualOutset*2),widthSpec),
+                resolveSize(safeAdd(height,visualOutset*2),heightSpec));
     }
 
     @Override protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
@@ -393,11 +454,11 @@ public final class NotificationNativeClock extends FrameLayout {
     }
 
     private void layoutSlots() {
-        int x = 0, gap = Math.round(size * spacing);
+        int x = visualOutset, gap = Math.round(size * spacing);
         for (int i = 0; i < slots.size(); i++) {
             Slot slot = slots.get(i);
             if (i > 0) x = safeAdd(x, gap);
-            int y = Math.max(0, (getMeasuredHeight() - slot.getMeasuredHeight()) / 2);
+            int y = visualOutset+Math.max(0,(getMeasuredHeight()-visualOutset*2-slot.getMeasuredHeight())/2);
             slot.layout(x, y, safeAdd(x, slot.getMeasuredWidth()), y + slot.getMeasuredHeight());
             x = safeAdd(x, slot.getMeasuredWidth());
         }
@@ -407,7 +468,14 @@ public final class NotificationNativeClock extends FrameLayout {
     /** These paints belong only to our independent slots, so display lists can retain their fill. */
     private void refreshShaders() {
         if (!available) { restoreShaders(); return; }
-        Shader shader = glass ? suppliedShader : null;
+        if(colorMaskEnabled) {
+            // These are independent module-owned paints. The backdrop effect
+            // consumes their opaque glyph coverage; a native tint/gradient on
+            // either the ordinary or the RT paint would dim it a second time.
+            for(Slot slot:slots)slot.applyShader(null);
+            return;
+        }
+        Shader shader = glass&&!colorMaskEnabled ? suppliedShader : null;
         if (shader == null && glass) {
             float height = Math.max(1f, getHeight());
             if (glassShader == null || shaderHeight != height || shaderColor != color) {
@@ -450,6 +518,7 @@ public final class NotificationNativeClock extends FrameLayout {
         int naturalHeight, inkTop;
         Typeface envelopeTypeface;
         float envelopeSize = -1f;
+        String envelopeToken, envelopeVariations, envelopeFeatures;
         boolean envelopeValid, pivotDirty = true;
         int envelopeWidth, envelopeHeight, envelopeBaseline, envelopeDrawOffset;
         Slot(Context context, boolean digit) throws ReflectiveOperationException {
@@ -461,6 +530,11 @@ public final class NotificationNativeClock extends FrameLayout {
                 if (!nativeAccess.digitType.isInstance(view)) throw new IllegalStateException("Native clock digit layout incompatible");
                 if (view.getParent() instanceof ViewGroup) ((ViewGroup) view.getParent()).removeView(view);
                 nativeDigit = view;
+                // This is a fresh, module-owned plugin unit. Its visible and
+                // outgoing glyphs may scale beyond their unscaled line box.
+                if(view instanceof ViewGroup) {
+                    ((ViewGroup)view).setClipChildren(false);((ViewGroup)view).setClipToPadding(false);
+                }
                 nativeAccess.attachOutgoing.invoke(view, nativeAccess.inflater);
                 Object current = nativeAccess.getVisible.invoke(view), previous = nativeAccess.getOutgoing.invoke(view);
                 if (!(current instanceof TextView) || !(previous instanceof TextView))
@@ -488,8 +562,7 @@ public final class NotificationNativeClock extends FrameLayout {
         }
         void applyTypography() throws ReflectiveOperationException {
             styleLayer(visible); if (outgoing != null) styleLayer(outgoing);
-            if (digit && (envelopeTypeface != visible.getPaint().getTypeface()
-                    || envelopeSize != visible.getTextSize())) {
+            if (digit && !envelopeMatches(visible.getPaint(), visible.getTextSize())) {
                 envelopeValid = false; pivotDirty = true;
             }
             requestLayout();
@@ -504,7 +577,15 @@ public final class NotificationNativeClock extends FrameLayout {
             }
             applyLayerFont(view,typeface,fontVariations,rt);
             view.setTextSize(TypedValue.COMPLEX_UNIT_PX, size); view.setTextColor(color);
+            // Some plugin versions keep a separate Paint for render-thread text.
+            // Both paints receive the same resolved fill colour; native layer alpha
+            // and CanvasProperty animation remain under the plugin's control.
+            view.getPaint().setColor(color);
+            if(rt!=null&&rt!=view.getPaint())rt.setColor(color);
             view.setLetterSpacing(digit ? 0f : spacing);
+            String features=NotificationBigClockSettings.timeFontFeatures(null,proportionalDigits);
+            if(!features.equals(view.getFontFeatureSettings()))view.setFontFeatureSettings(features);
+            if(rt!=null&&!features.equals(rt.getFontFeatureSettings()))rt.setFontFeatureSettings(features);
         }
         void setToken(String next, boolean animate, boolean hourSpring, boolean stagger) throws ReflectiveOperationException {
             if (next.equals(token)) return;
@@ -551,11 +632,12 @@ public final class NotificationNativeClock extends FrameLayout {
             int height = ink.isEmpty() ? Math.max(1, Math.round(size)) : Math.max(1, ink.height());
             setMeasuredDimension(width, height);
         }
-        /** A numeral slot keeps one box for this font/size, independent of its current and old digit. */
+        /** Heights remain stable; optional proportional widths follow the currently displayed numeral. */
         void ensureDigitEnvelope() {
             Paint paint = visible.getPaint();
             Typeface currentFace = paint.getTypeface(); float currentSize = visible.getTextSize();
-            if (envelopeValid && envelopeTypeface == currentFace && envelopeSize == currentSize) return;
+            if (envelopeValid && envelopeMatches(paint,currentSize)
+                    && (!proportionalDigits || token.equals(envelopeToken))) return;
             int free = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
             visible.measure(free, free); outgoing.measure(free, free);
             naturalHeight = Math.max(1, Math.max(visible.getMeasuredHeight(), outgoing.getMeasuredHeight()));
@@ -567,10 +649,23 @@ public final class NotificationNativeClock extends FrameLayout {
                 advance = Math.max(advance, paint.measureText(numeral));
             }
             envelopeWidth = Math.max(1, (int) Math.ceil(Math.max(advance, ink.width())));
+            if (proportionalDigits && !token.isEmpty()) {
+                paint.getTextBounds(token,0,token.length(),bounds);
+                envelopeWidth = Math.max(1,(int)Math.ceil(Math.max(paint.measureText(token),bounds.width())));
+            }
             envelopeHeight = ink.isEmpty() ? Math.max(1, Math.round(currentSize)) : Math.max(1, ink.height());
             ink.offset(0, envelopeBaseline + envelopeDrawOffset); inkTop = ink.top;
             envelopeTypeface = currentFace; envelopeSize = currentSize;
+            envelopeVariations = paint.getFontVariationSettings(); envelopeFeatures = paint.getFontFeatureSettings();
+            envelopeToken = token;
             envelopeValid = true; pivotDirty = true;
+        }
+        /** Modern Android can keep Typeface identity while HGHT/weight changes on
+         * Paint. These axes and shaping features also own the measured envelope. */
+        boolean envelopeMatches(Paint paint,float textSize) {
+            return envelopeTypeface==paint.getTypeface() && envelopeSize==textSize
+                    && java.util.Objects.equals(envelopeVariations,paint.getFontVariationSettings())
+                    && java.util.Objects.equals(envelopeFeatures,paint.getFontFeatureSettings());
         }
         int nativeDrawOffset(TextView layer) {
             if (nativeAccess.drawOffset != null) try {

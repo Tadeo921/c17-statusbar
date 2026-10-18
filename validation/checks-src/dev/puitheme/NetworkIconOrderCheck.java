@@ -42,6 +42,7 @@ public final class NetworkIconOrderCheck {
     private static MeasurePolicy policy(NetworkIconOrder helper,RowMeasurePolicy nativePolicy) {NetworkIconOrder.RowScope scope=helper.beginRow(new Object());try{return (MeasurePolicy)helper.rowPolicy(nativePolicy);}finally{if(scope!=null)scope.close();}}
     private static NetworkIconOrder helper()throws Exception{NetworkIconOrder h=new NetworkIconOrder();h.resolve(NetworkIconOrderCheck.class.getClassLoader());h.resolveCompose(NetworkIconOrderCheck.class.getClassLoader());return h;}
     public static void main(String[] ignored)throws Exception {
+        nativeIndexGate();
         NetworkIconOrder h=helper();StatusIconContainer parent=new StatusIconContainer();parent.ordering=h;
         Icon other=new Icon("other","alarm_clock",9,1),wifi=new Icon("wifi","wifi",17,2),mobile=new Icon("mobile","stacked_mobile",31,3);
         parent.addView(other);parent.addView(wifi);parent.addView(mobile);
@@ -100,7 +101,70 @@ public final class NetworkIconOrderCheck {
         equal(true,h.configure(settings(true)));equal(true,h.forceStrategy(composer,modelA,strategyA));left=wrapped.measure(false,Arrays.asList(s,t),1);equal(12,left.get("signal"));
         h.releaseRuntime();equal(false,h.configure(settings(true)));equal(null,h.begin(parent));equal(false,h.forceStrategy(composer,modelA,strategyA));equal(nativeText,h.textModifier(nativeText));left=wrapped.measure(false,Arrays.asList(s,t),1);equal(0,left.get("signal"));
         equal(false,((Map<?,?>)field(h,"containers")).size()>0);equal(false,((Map<?,?>)field(h,"nodeKinds")).size()>0);equal(false,((Map<?,?>)field(h,"composerRevisions")).size()>0);
+        effectiveNativeChildren();
         System.out.println("NetworkIconOrderCheck: "+checks+" checks passed");
+    }
+    /** Device code163 shared-slot settings needed Compose placement but installed a no-op global getChildAt hook. */
+    private static void nativeIndexGate()throws Exception{
+        NetworkIconOrder h=helper();equal(false,h.nativeIndexWanted());
+        Bundle swap=settings(true);h.configure(swap);equal(true,h.nativeIndexWanted());
+        Bundle margin=settings(true);margin.putFloat(StatusBarLayoutSettings.key("clock","margin_left"),2);
+        h.configure(margin);equal(false,h.nativeIndexWanted());equal(true,h.wanted());
+        Bundle order=settings(true);order.putBoolean(StatusBarLayoutSettings.MASTER,true);
+        h.configure(order);equal(false,h.nativeIndexWanted());
+        NetworkSharedSlotLayout shared=new NetworkSharedSlotLayout();shared.configure(true);h.sharedLayout(shared);
+        Bundle sharing=new Bundle();sharing.putBoolean(StatusBarLayoutSettings.WIFI_LABEL_SHARED,true);
+        h.configure(sharing);equal(true,h.wanted());equal(false,h.nativeIndexWanted());
+        h.configure(swap);equal(true,h.nativeIndexWanted());
+        swap.putBoolean(StatusBarSettings.SAFE_MODE,true);h.configure(swap);equal(false,h.nativeIndexWanted());
+        h.releaseRuntime();equal(false,h.nativeIndexWanted());
+    }
+    private static final class ThrowingParent extends StatusIconContainer {
+        boolean fail;
+        @Override public View getChildAt(int index){if(fail)throw new IllegalStateException("native read failed");return super.getChildAt(index);}
+    }
+    /** Reader use before/inside native scopes must yield the same model input without swapping twice. */
+    private static void effectiveNativeChildren()throws Exception{
+        NetworkIconOrder h=helper();ThrowingParent p=new ThrowingParent();p.ordering=h;
+        Icon other=new Icon("other","alarm_clock",9,1),wifi=new Icon("wifi","wifi",17,2),cell=new Icon("cell","mobile",31,3);
+        p.addView(other);p.addView(wifi);p.addView(cell);
+        List<View> raw=Arrays.asList(other,wifi,cell),swapped=Arrays.asList(other,cell,wifi);
+        equal(raw,h.orderedChildren(p));h.configure(settings(true));equal(swapped,h.orderedChildren(p));
+        try(NetworkIconOrder.IndexScope outer=h.begin(p)){
+            equal(cell,p.getChildAt(1));equal(swapped,h.orderedChildren(p));equal(cell,p.getChildAt(1));
+            try(NetworkIconOrder.IndexScope inner=h.begin(p)){
+                equal(swapped,h.orderedChildren(p));equal(2,h.childIndex(p,1));
+            }
+            equal(2,h.childIndex(p,1));
+            StatusIconContainer otherParent=new StatusIconContainer();otherParent.ordering=h;
+            Icon otherWifi=new Icon("otherWifi","wifi",17,2),otherCell=new Icon("otherCell","mobile",31,3);
+            otherParent.addView(otherWifi);otherParent.addView(otherCell);
+            try(NetworkIconOrder.IndexScope inner=h.begin(otherParent)){
+                equal(Arrays.asList(otherCell,otherWifi),h.orderedChildren(otherParent));
+                equal(swapped,h.orderedChildren(p));equal(1,h.childIndex(otherParent,0));equal(1,h.childIndex(p,1));
+            }
+            equal(2,h.childIndex(p,1));equal(0,h.childIndex(otherParent,0));
+            p.fail=true;try{h.orderedChildren(p);throw new AssertionError("reader must propagate native read failure");}
+            catch(IllegalStateException expected){}finally{p.fail=false;}
+            equal(2,h.childIndex(p,1));equal(cell,p.getChildAt(1));
+        }
+        equal(1,h.childIndex(p,1));
+        int requests=p.layoutRequests;for(int i=0;i<64;i++)equal(swapped,h.orderedChildren(p));equal(requests,p.layoutRequests);
+        wifi.visible=false;equal(raw,h.orderedChildren(p));wifi.visible=true;
+        cell.blocked=true;equal(raw,h.orderedChildren(p));cell.blocked=false;
+        p.mIgnoredSlots.add("wifi");equal(raw,h.orderedChildren(p));p.mIgnoredSlots.clear();
+        wifi.setVisibility(View.GONE);equal(raw,h.orderedChildren(p));wifi.setVisibility(View.VISIBLE);
+        wifi.setAlpha(0f);equal(swapped,h.orderedChildren(p)); // Native animation alpha is not source eligibility.
+        h.configure(settings(false));equal(raw,h.orderedChildren(p));h.configure(settings(true));
+        Map<?,?> cache=(Map<?,?>)field(h,"containers");equal(true,cache instanceof WeakHashMap);
+        Object stored=cache.get(p);List<?> references=(List<?>)field(stored,"sources");
+        for(Object reference:references){equal(true,reference instanceof java.lang.ref.WeakReference);((java.lang.ref.WeakReference<?>)reference).clear();}
+        equal(swapped,h.orderedChildren(p)); // A snapshot never relies on a stale weak-cache identity.
+        p.removeView(cell);equal(Arrays.asList(other,wifi),h.orderedChildren(p));
+        p.addView(cell);h.changed(p);equal(swapped,h.orderedChildren(p));
+        equal(null,h.orderedChildren(new android.widget.FrameLayout(null)));
+        Bundle safe=settings(true);safe.putBoolean(StatusBarSettings.SAFE_MODE,true);h.configure(safe);equal(raw,h.orderedChildren(p));
+        h.releaseRuntime();equal(null,h.orderedChildren(p));equal(0,cache.size());
     }
     private static Object field(Object owner,String name)throws Exception{java.lang.reflect.Field f=owner.getClass().getDeclaredField(name);f.setAccessible(true);return f.get(owner);}
 }

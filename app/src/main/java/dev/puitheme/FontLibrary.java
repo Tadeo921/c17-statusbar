@@ -19,6 +19,15 @@ import java.util.function.BooleanSupplier;
 
 /** User-owned font library, separate from the bounded network cache and current provider inode. */
 public final class FontLibrary {
+    private static final Map<String,Verified> VERIFIED=new LinkedHashMap<String,Verified>(16,.75f,true){
+        @Override protected boolean removeEldestEntry(Map.Entry<String,Verified> item){return size()>32;}
+    };
+    private static final class Verified{
+        final Object key;final java.nio.file.attribute.FileTime modified;final long bytes;final String hash;
+        Verified(java.nio.file.attribute.BasicFileAttributes attributes,String hash){key=attributes.fileKey();modified=attributes.lastModifiedTime();bytes=attributes.size();this.hash=hash;}
+        boolean same(java.nio.file.attribute.BasicFileAttributes attributes){return java.util.Objects.equals(key,attributes.fileKey())
+                &&bytes==attributes.size()&&modified.equals(attributes.lastModifiedTime());}
+    }
     private static final Object LOCK=new Object();
     private FontLibrary() { }
     public static final class Entry {
@@ -41,10 +50,50 @@ public final class FontLibrary {
         if(cleaned.length()>120)cleaned=cleaned.substring(0,120);
         return cleaned.isEmpty()?"导入字体":cleaned;
     }
+    /** Exact immutable library source; it never redirects a missing hash to custom.font. */
+    public static File providerFile(Context context,android.net.Uri uri)throws IOException{
+        String path=uri==null?null:uri.getPath();
+        if(path==null||!path.matches("/font/library/[0-9a-f]{64}"))throw new IOException("字体引用无效");
+        String hash=path.substring("/font/library/".length());File file=libraryFile(context,hash);
+        if(!matchesFile(file,hash))throw new IOException("字体校验失败，请重新导入");return file;
+    }
+    private static File libraryFile(Context context,String hash)throws IOException{
+        revision(hash);File directory=folder(context),file=new File(directory,hash+".font");
+        if(!file.getCanonicalFile().getParentFile().equals(directory.getCanonicalFile())
+                ||!file.isFile()||file.length()<4||file.length()>96L*1024L*1024L)throw new IOException("字体未导入或已删除");
+        return file;
+    }
+    /** Used on a worker before applying/importing an assignment; another font cannot satisfy this reference. */
+    public static boolean contains(Context context,String hash){
+        if(context==null||!FontScopes.validRevision(hash))return false;
+        try{return verifyFile(libraryFile(context,hash),hash,false);}
+        catch(IOException|RuntimeException unavailable){return false;}
+    }
+    /** Hash validation is reused only while the same inode, byte count and modification time remain unchanged. */
+    static boolean matchesFile(File file,String hash){
+        if(!FontScopes.validRevision(hash))return false;
+        try{return verifyFile(file,hash,true);}catch(IOException|RuntimeException invalid){return false;}
+    }
+    private static boolean verifyFile(File file,String hash,boolean reuse)throws IOException{
+        synchronized(LOCK){
+            String path=file.getCanonicalPath();java.nio.file.attribute.BasicFileAttributes attributes=java.nio.file.Files.readAttributes(file.toPath(),java.nio.file.attribute.BasicFileAttributes.class);
+            if(!attributes.isRegularFile()||attributes.size()<4||attributes.size()>96L*1024L*1024L)return false;
+            Verified known=VERIFIED.get(path);if(reuse&&known!=null&&known.key!=null&&known.hash.equals(hash)&&known.same(attributes))return true;
+            if(!hash.equals(FontFileValidator.sha256(file,96L*1024L*1024L,null))){VERIFIED.remove(path);return false;}
+            java.nio.file.attribute.BasicFileAttributes after=java.nio.file.Files.readAttributes(file.toPath(),java.nio.file.attribute.BasicFileAttributes.class);
+            Verified verified=new Verified(attributes,hash);if(!verified.same(after))return false;
+            VERIFIED.put(path,verified);return true;
+        }
+    }
     /** Only sources sharing the deleted provider file fall back; unrelated settings/imports are untouched. */
     public static Map<String,String> deletionFallback(Map<String,?> values,String hash){
         LinkedHashMap<String,String> changes=new LinkedHashMap<>();
-        if(values==null||hash==null||!hash.equals(values.get(StatusBarSettings.FONT_REVISION)))return changes;
+        if(values==null||hash==null)return changes;
+        Object scoped=values.get(FontScopes.KEY);
+        if(scoped instanceof String)try{
+            if(FontScopes.references((String)scoped,hash))changes.put(FontScopes.KEY,FontScopes.removeFont((String)scoped,hash));
+        }catch(IllegalArgumentException malformed){/* Preserve unrecognised saved values instead of silently clearing them. */}
+        if(!hash.equals(values.get(StatusBarSettings.FONT_REVISION)))return changes;
         changes.put(StatusBarSettings.FONT_REVISION,"");changes.put(StatusBarSettings.FONT_NAME,"");
         if("custom".equals(values.get(StatusBarSettings.FONT_MODE)))changes.put(StatusBarSettings.FONT_MODE,"system");
         for(Map.Entry<String,String> entry:StatusBarSettings.STRING_DEFAULTS.entrySet()){

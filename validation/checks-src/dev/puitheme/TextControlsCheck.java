@@ -11,7 +11,9 @@ import java.util.Map;
 import java.util.HashMap;
 public final class TextControlsCheck {
     private static int checks;
-    private static void equal(Object expected,Object actual) {checks++;if(!java.util.Objects.equals(expected,actual))throw new AssertionError("Expected "+expected+", got "+actual);}
+    /** Clock text may carry digit-cell spans; two texts are equal when their characters are. */
+    private static Object plain(Object value) {return value instanceof CharSequence?value.toString():value;}
+    private static void equal(Object expected,Object actual) {checks++;if(!java.util.Objects.equals(plain(expected),plain(actual)))throw new AssertionError("Expected "+expected+", got "+actual);}
     private static void near(float expected,float actual){checks++;if(Math.abs(expected-actual)>.0001)throw new AssertionError(expected+" != "+actual);}
     public static void main(String[] args) throws Exception {
         Handler handler=new Handler(Looper.getMainLooper());TextControls control=new TextControls(handler);Context context=new Context();
@@ -54,7 +56,49 @@ public final class TextControlsCheck {
         shadePositionIsolation(context);
         classificationCaching(context);
         nativeStyleIsolation(context);
+        clockDrawOffsets(context);
+        tickSelfHealing(context);
         System.out.println(checks+" text state, precision, tint and scheduler checks passed");
+    }
+
+    private static void clockDrawOffsets(Context context) {
+        PanelMode.report(true);
+        TextControls control=new TextControls(new Handler(Looper.getMainLooper()));
+        StatClock status=new StatClock(context);control.attach(status);
+        TextView shade=new com.oplus.systemui.qs.fake.view.QsClock(context);
+        new com.oplus.systemui.qs.OplusQuickStatusBarHeader(context).addView(shade);control.attach(shade);
+        OplusSecondCarrierText carrier=new OplusSecondCarrierText(context);control.attach(carrier);
+        equal(null,control.beginCarrierText(status));near(0f,control.clockDrawOffsetX(carrier));
+        near(0f,control.clockDrawOffsetX(null));near(0f,control.clockDrawOffsetX(new TextView(context)));
+        Bundle options=new Bundle();options.putBoolean("clock_controls_enabled",true);options.putBoolean("clock_position_enabled",true);
+        options.putFloat(StatusBarSettings.CLOCK_OFFSET_X,3.5f);
+        options.putBoolean(StatusBarSettings.SHADE_CLOCK_CONTROLS_ENABLED,true);options.putBoolean("shade_clock_position_enabled",true);
+        options.putFloat(StatusBarSettings.SHADE_CLOCK_OFFSET_X,-2f);
+        control.configure(options,StatusBarSettings.COLOR_DEFAULTS,Collections.emptyMap());
+        float density=status.getResources().getDisplayMetrics().density;
+        near(3.5f*density,control.clockDrawOffsetX(status));near(-2f*density,control.clockDrawOffsetX(shade));
+        for(TextView clock:new TextView[]{status,shade}) {
+            android.graphics.Canvas canvas=new android.graphics.Canvas();control.beforeDraw(clock,canvas);
+            near(canvas.translateX,control.clockDrawOffsetX(clock));
+            int requests=clock.layoutRequests,invalidations=clock.invalidations,faceWrites=clock.typefaceWrites;
+            float pixels=clock.getTextSize();CharSequence text=clock.getText();
+            for(int i=0;i<200;i++)control.clockDrawOffsetX(clock);
+            equal(requests,clock.layoutRequests);equal(invalidations,clock.invalidations);equal(faceWrites,clock.typefaceWrites);
+            near(pixels,clock.getTextSize());equal(text,clock.getText());
+        }
+        options.putBoolean("shade_clock_position_enabled",false);control.configure(options,StatusBarSettings.COLOR_DEFAULTS,Collections.emptyMap());
+        near(0f,control.clockDrawOffsetX(shade));near(3.5f*density,control.clockDrawOffsetX(status));
+        options.putBoolean("clock_controls_enabled",false);options.putBoolean(ClockLayoutSettings.DUAL_ENABLED,true);
+        options.putFloat(ClockLayoutSettings.DUAL_OFFSET_X,-4f);
+        options.putBoolean(ClockLayoutSettings.MARGIN_ENABLED,true);options.putFloat(ClockLayoutSettings.MARGIN_START,8f);
+        control.configure(options,StatusBarSettings.COLOR_DEFAULTS,Collections.emptyMap());
+        near(-4f*density,control.clockDrawOffsetX(status));
+        // The complete source width already reserves the margins and both rows; the origin contains only dualX.
+        options.putFloat(ClockLayoutSettings.MARGIN_START,12f);options.putString(ClockLayoutSettings.DUAL_ALIGN,ClockLayoutSettings.ALIGN_RIGHT);
+        control.configure(options,StatusBarSettings.COLOR_DEFAULTS,Collections.emptyMap());near(-4f*density,control.clockDrawOffsetX(status));
+        options.putBoolean(StatusBarSettings.SAFE_MODE,true);control.configure(options,StatusBarSettings.COLOR_DEFAULTS,Collections.emptyMap());
+        near(0f,control.clockDrawOffsetX(status));near(0f,control.clockDrawOffsetX(shade));
+        PanelMode.query(key->null);
     }
 
     private static void nativeStyleIsolation(Context context) {
@@ -227,7 +271,14 @@ public final class TextControlsCheck {
             equal(712,clock.getTypeface().weight);near(1f/19.5f,clock.getLetterSpacing());equal(0xcc123456,clock.getCurrentTextColor());
             android.graphics.Canvas canvas=new android.graphics.Canvas();control.beforeDraw(clock,canvas);
             near(clock==status?12f:0f,canvas.translateX);near(clock==status?-8f:0f,canvas.translateY);
-            clock.setText(control.nativeText(clock,"系统更新"));equal(status.getText(),clock.getText());
+            // nativeText reads a fresh second; the configured reference may belong to the preceding tick.
+            long beforeNative=System.currentTimeMillis();
+            clock.setText(control.nativeText(clock,"系统更新"));
+            long afterNative=System.currentTimeMillis();
+            boolean current=false;
+            for(long second=beforeNative/1000;second<=afterNative/1000;second++)
+                current|=TimeFormat.format("'C17' HH:mm:ss",second*1000).contentEquals(clock.getText());
+            equal(true,current);
             // Simulate the vendor probing width with its native 13px Paint size.
             for(int i=0;i<3;i++) { clock.setTextSize(0,13f);near(90f,control.restoreClockWidth(clock,60f,13f));near(19.5f,clock.getTextSize()); }
             near(0f,control.restoreClockWidth(clock,Float.NaN,13f));near(0f,control.restoreClockWidth(clock,-60f,13f));
@@ -372,5 +423,60 @@ public final class TextControlsCheck {
         for(TextView shade:shades) { equal("clock",control.group(shade));equal(status.getText(),shade.getText());near(19.5f,shade.getTextSize());equal(0xcc123456,shade.getCurrentTextColor()); }
         equal("'SHADE' HH:mm:ss",settings.getString(StatusBarSettings.SHADE_CLOCK_PATTERN));
         equal("独立运营商文字",carrier.getText());equal(true,handler.delayed!=null&&handler.delay<=60000);
+    }
+
+    /** A seconds clock must keep ticking after every way the chain used to stop until the user touched the screen. */
+    private static void tickSelfHealing(Context context) {
+        long uptime=android.os.SystemClock.uptime;
+        try {
+            Handler handler=new Handler(Looper.getMainLooper());TextControls control=new TextControls(handler);
+            boolean[] failNext={false};
+            StatClock clock=new StatClock(context){@Override public void setText(CharSequence value){if(failNext[0]){failNext[0]=false;throw new IllegalStateException("one view fails");}super.setText(value);}};
+            StatClock other=new StatClock(context);
+            clock.setText("系统时钟");other.setText("系统时钟");control.attach(clock);control.attach(other);
+            Bundle settings=new Bundle();settings.putBoolean("clock_controls_enabled",true);settings.putBoolean(StatusBarSettings.CLOCK_ENABLED,true);
+            settings.putString(StatusBarSettings.CLOCK_PATTERN,"HH:mm:ss");
+            control.configure(settings,StatusBarSettings.COLOR_DEFAULTS,Collections.emptyMap());
+            equal(true,handler.delayed!=null&&handler.delay>0&&handler.delay<=1000);
+            // 1. The tick fires while a native-style scope is open: the refresh is skipped but the chain must survive.
+            Runnable due=handler.delayed;handler.delayed=null;
+            control.enter();due.run();control.exit();
+            equal(true,handler.delayed!=null);
+            // 2. One view throwing on setText must neither escape the tick nor stop the other clock or the chain.
+            due=handler.delayed;handler.delayed=null;failNext[0]=true;other.setText("旧");
+            due.run();
+            equal(true,handler.delayed!=null);equal(true,other.getText().toString().matches("\\d{2}:\\d{2}:\\d{2}"));
+            // 3. The queued tick vanishes (state says pending): the OEM's own text update brings it back.
+            handler.delayed=null;android.os.SystemClock.uptime+=10_000;
+            control.nativeText(clock,"12:34");equal(true,handler.delayed!=null);
+            // 4. A missed screen-on broadcast: the visibility event consults the real power state.
+            control.setInteractive(false);equal(true,handler.delayed==null);
+            android.os.PowerManager.interactive=true;android.os.SystemClock.uptime+=1_000;
+            control.visibilityChanged();equal(true,handler.delayed!=null);
+            // 5. The screen really is off: nothing may tick, and the broadcast flag is respected.
+            control.setInteractive(false);android.os.PowerManager.interactive=false;android.os.SystemClock.uptime+=1_000;
+            control.visibilityChanged();equal(true,handler.delayed==null);
+            android.os.PowerManager.interactive=true;android.os.SystemClock.uptime+=1_000;control.setInteractive(true);equal(true,handler.delayed!=null);
+            // 6. A visible clock that is drawn without any tick is healed by the draw itself, once.
+            handler.delayed=null;android.os.SystemClock.uptime+=10_000;
+            Handler.postedForCheck.clear();
+            control.beforeDraw(clock,new android.graphics.Canvas());control.beforeDraw(clock,new android.graphics.Canvas());
+            equal(1,Handler.postedForCheck.size());
+            Handler.drainForCheck();equal(true,handler.delayed!=null);
+            int queued=handler.scheduled;control.beforeDraw(clock,new android.graphics.Canvas());equal(true,Handler.postedForCheck.isEmpty());equal(queued,handler.scheduled);
+            // 7. A hidden clock is never ticked or healed.
+            clock.shown=false;other.shown=false;control.visibilityChanged();equal(true,handler.delayed==null);
+            android.os.SystemClock.uptime+=10_000;Handler.postedForCheck.clear();control.beforeDraw(clock,new android.graphics.Canvas());
+            equal(true,Handler.postedForCheck.isEmpty());equal(true,handler.delayed==null);
+            // 8. The tick only touches what can be seen. A visibility change updates just that view and restarts the timer once.
+            clock.shown=true;other.shown=false;other.setText("旧");control.visibilityChanged();equal(true,handler.delayed!=null);
+            due=handler.delayed;handler.delayed=null;due.run();
+            equal("旧",other.getText().toString());equal(true,clock.getText().toString().matches("\\d{2}:\\d{2}:\\d{2}"));
+            other.shown=true;Handler.postedForCheck.clear();handler.delayed=null;
+            control.viewVisibilityChanged(other);control.viewVisibilityChanged(other);control.viewVisibilityChanged(clock);
+            equal(true,other.getText().toString().matches("\\d{2}:\\d{2}:\\d{2}"));
+            equal(1,Handler.postedForCheck.size());
+            Handler.drainForCheck();equal(true,handler.delayed!=null);
+        } finally { android.os.SystemClock.uptime=uptime;android.os.PowerManager.interactive=true;Handler.postedForCheck.clear(); }
     }
 }

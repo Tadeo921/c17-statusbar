@@ -43,6 +43,8 @@ public final class NotificationClearMotion {
     private final ArrayList<State> liveStates = new ArrayList<>(2);
     private final Map<Class<?>, RowAccess> rowAccess = new HashMap<>();
     private final Map<View, Integer> nativeBottomMargins = new WeakHashMap<>();
+    /** The shade's small bottom text, pushed down when the button comes down onto it. */
+    private final ShadeTipsPush tips = new ShadeTipsPush();
     private final ThreadLocal<Boolean> writing = new ThreadLocal<>();
     private final ThreadLocal<Integer> nativeDepth = new ThreadLocal<>();
     private WeakReference<View> panel = new WeakReference<>(null);
@@ -500,8 +502,19 @@ public final class NotificationClearMotion {
         }
     }
 
+    /** The button is the module's to place: the system's small text under it is pushed down instead of being covered. */
+    private void pushTips(State state) {
+        View button = state.button.get();
+        if (button == null) return;
+        boolean active = sceneActive() && !safeMode && state.properties.owned && !closed && barState == 0
+                && button.isAttachedToWindow() && button.getVisibility() == View.VISIBLE && button.getAlpha() > .08f;
+        float density = button.getResources().getDisplayMetrics().density;
+        tips.update(button, active, NumericPolicy.layoutPixels(distance, density), NumericPolicy.layoutPixels(8f, density));
+    }
+
     private void restore(State state) {
         View button = state.button.get();
+        tips.update(button, false, 0f, 0f);
         Properties properties = state.properties;
         if (button == null || !properties.owned) return;
         float alpha = button.getAlpha(), y = button.getTranslationY();
@@ -546,7 +559,7 @@ public final class NotificationClearMotion {
         int width, height, nativeTop, nativeLeft, parentWidth, parentHeight, parentPadding, parentLeftPadding, parentRightPadding, childCount, visibility, orientation;
         float scale, pivot,translationX;
         ViewParentKey parentKey;
-        final ViewTreeObserver.OnPreDrawListener preDraw = () -> { update(State.this); return true; };
+        final ViewTreeObserver.OnPreDrawListener preDraw = () -> { update(State.this); pushTips(State.this); return true; };
         final View.OnAttachStateChangeListener attachment = new View.OnAttachStateChangeListener() {
             @Override public void onViewAttachedToWindow(View view) { dirty = true; register(State.this); update(State.this); }
             @Override public void onViewDetachedFromWindow(View view) {

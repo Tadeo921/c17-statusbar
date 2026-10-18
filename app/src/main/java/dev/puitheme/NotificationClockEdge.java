@@ -39,6 +39,7 @@ public final class NotificationClockEdge {
     private static final Map<Class<?>, RowAccess> ROW_ACCESS = new WeakHashMap<>();
     private static final String NATIVE_FADE = "com.oplus.systemui.statusbar.notification.stack.NotificationStackScrollLayoutControllerExtImpl$TopFadeDrawer";
     private static final String NATIVE_ROW = "com.android.systemui.statusbar.notification.row.ExpandableNotificationRow";
+    private static final String CUSTOM_ROW = "com.oplus.systemui.statusbar.notification.customcard.OplusCustomRow";
     private NotificationClockEdge() { }
 
     private static int[] maskColors(boolean decreasing) {
@@ -142,6 +143,13 @@ public final class NotificationClockEdge {
             // This invocation owns one spatial edge. A fixed native TopFade would otherwise fog
             // a fully visible first notification, or add a second fade over the same pixels.
             boundary = nativeBoundary(stack, true);
+            // Surface-backed Live Alerts have an independent content buffer. The bridge
+            // exposes only an audited local ViewRoot; ordinary rows remain in this capture.
+            NotificationRemoteClockEdge.update(stack, geometry.hardTop, geometry.top, geometry.bottom,
+                    geometry.radius, boundary.known && !boundary.nativeBlur && allowCapture
+                            && canvas.isHardwareAccelerated());
+            NotificationSurfaceClockEdge.update(stack, geometry.top, geometry.bottom, geometry.radius,
+                    boundary.known && !boundary.nativeBlur && allowCapture && canvas.isHardwareAccelerated());
             if (entry.width != geometry.width || entry.height != geometry.height) {
                 closeRenderer(entry); entry.blurFailed = false; entry.recoveryRequested = false;
                 entry.width = geometry.width; entry.height = geometry.height;
@@ -238,14 +246,20 @@ public final class NotificationClockEdge {
         final boolean notification;
         final Method height, clipTop, clipBottom, childInGroup;
         RowAccess(Class<?> type) {
-            boolean found = false;
-            for (Class<?> c = type; c != null; c = c.getSuperclass())
-                if (NATIVE_ROW.equals(c.getName())) { found = true; break; }
+            boolean found = false, standard = false;
+            for (Class<?> c = type; c != null; c = c.getSuperclass()) {
+                if (NATIVE_ROW.equals(c.getName())) { found = true; standard = true; break; }
+                // Live Alerts are native ExpandableOutlineView siblings, not
+                // ExpandableNotificationRow subclasses. Recognise this audited
+                // row only; a raw plugin SurfaceView, footer or media panel is
+                // not a notification row and must not activate the list edge.
+                if (CUSTOM_ROW.equals(c.getName())) { found = true; break; }
+            }
             notification = found;
             height = found ? method(type, "getActualHeight") : null;
             clipTop = found ? method(type, "getClipTopAmount") : null;
             clipBottom = found ? method(type, "getClipBottomAmount") : null;
-            childInGroup = found ? method(type, "isChildInGroup") : null;
+            childInGroup = standard ? method(type, "isChildInGroup") : null;
         }
     }
 
@@ -358,6 +372,8 @@ public final class NotificationClockEdge {
         Entry entry;
         synchronized (ENTRIES) { entry = ENTRIES.remove(stack); }
         if (entry != null) closeRenderer(entry);
+        NotificationRemoteClockEdge.releaseStack(stack);
+        NotificationSurfaceClockEdge.release(stack);
     }
 
     /** Feature disable can release every source and blur node without waiting for a detach. */
@@ -365,6 +381,8 @@ public final class NotificationClockEdge {
         ArrayList<Entry> entries;
         synchronized (ENTRIES) { entries = new ArrayList<>(ENTRIES.values()); ENTRIES.clear(); }
         for (Entry entry : entries) closeRenderer(entry);
+        NotificationRemoteClockEdge.releaseResources();
+        NotificationSurfaceClockEdge.releaseResources();
     }
 
     private static void recover(View stack, Entry entry) {

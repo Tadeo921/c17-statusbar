@@ -131,6 +131,10 @@ public final class BatteryAppearance {
         Palette nativeColors=palettes.get(drawable);
         return tint(item,nativeColor,nativeColors!=null?nativeColors.outline:outline.getInt(drawable));
     }
+    /** The colours the native drawable will paint with now, after this module's own tints. */
+    public int[] currentColors(Drawable drawable) throws Exception {
+        return new int[]{progress.getInt(drawable),background.getInt(drawable),outline.getInt(drawable)};
+    }
     public int nativeOutline(Drawable drawable) throws Exception {
         Palette nativeColors=palettes.get(drawable);
         return nativeColors!=null?nativeColors.outline:outline.getInt(drawable);

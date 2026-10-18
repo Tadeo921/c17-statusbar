@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS 27 body and terminal in PUI box -->
+<vector android:height="12dp" android:width="22dp" android:viewportWidth="22" android:viewportHeight="12"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="#ff000000" android:pathData="M3.458,0.333H17.186A3.398,3.398 0,0 1,20.584,3.731V8.263A3.398,3.398 0,0 1,17.186,11.661H3.458A3.398,3.398 0,0 1,0.060,8.263V3.731A3.398,3.398 0,0 1,3.458,0.333Z" />
+    <path android:fillColor="#ff000000" android:pathData="M21.604,4.241H21.604A0.396,0.396 0,0 1,22.000,4.638V7.356A0.396,0.396 0,0 1,21.604,7.753H21.604A0.396,0.396 0,0 1,21.207,7.356V4.638A0.396,0.396 0,0 1,21.604,4.241Z" />
+</vector>

@@ -25,6 +25,10 @@ public class ExpandableNotificationRow extends ViewGroup {
     @Override public int getHeight(){return state.height;}
     public NativeState getViewState(){return state;}
     public com.android.systemui.statusbar.notification.collection.NotificationEntry getEntry(){return entry;}
+    public int adapterReads;
+    private com.android.systemui.statusbar.notification.collection.EntryAdapter nativeAdapter;
+    public com.android.systemui.statusbar.notification.collection.EntryAdapter getEntryAdapter(){adapterReads++;return nativeAdapter==null?()->entry==null?null:entry.getSbn():nativeAdapter;}
+    public void setEntryAdapter(com.android.systemui.statusbar.notification.collection.EntryAdapter value){nativeAdapter=value;}
     public java.util.List<ExpandableNotificationRow> getAttachedChildren(){return attachedChildren;}
     public int getActualHeight(){return state.height;}
     public int getClipTopAmount(){return mClipTopAmount;}

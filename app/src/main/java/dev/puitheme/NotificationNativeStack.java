@@ -39,12 +39,36 @@ public final class NotificationNativeStack {
     // Primitive-only structural counters; no notification text/package or per-frame log.
     private int updateCalls,shadeCalls,currentCalls,applyCalls,borderChanges,lastRows,lastEligibleRows;
     private String lastStage="unresolved";
+    /** Native upward scrolling or an upward pull opened the stack: every card is complete. Scrolling
+     * back to the top, a downward pull at the top or closing the shade folds it again. */
+    private boolean pulledOpen;
+    /** The open stack was scrolled away from the top, so returning to the top folds it. */
+    private boolean scrolledOpen;
     private float lastNativeBorder,lastAppliedBorder;
+    /** Open/fold eases the border instead of jumping; frames come from the list's own update. */
+    private static final long TRANSITION_MILLIS=320L;
+    private float shownBorder=Float.NaN,transitionFrom=Float.NaN;
+    private long transitionStart=-1L;
+    private boolean framePosted;
+    private java.lang.ref.WeakReference<View> stackView=new java.lang.ref.WeakReference<>(null);
     private final ThreadLocal<Scope> scenes=new ThreadLocal<>();
     private final Map<Object,FlowState> observedRulers=new WeakHashMap<>();
     // The real ruler owns a Context. Resolve Resources once; its live Configuration follows
     // rotation without relying on the big-clock callback order.
     private final Map<Object,Resources> rulerResources=new WeakHashMap<>();
+    private final Map<Object,ManagedScene> managedScenes=new WeakHashMap<>();
+    private final Map<View,ManagedRow> managedRows=new WeakHashMap<>();
+    private static final class ManagedScene {
+        final java.lang.ref.WeakReference<Object> extension,ruler,ambient;
+        long generation;boolean active;
+        ManagedScene(Object extension,Object ruler,Object ambient){this.extension=new java.lang.ref.WeakReference<>(extension);
+            this.ruler=new java.lang.ref.WeakReference<>(ruler);this.ambient=new java.lang.ref.WeakReference<>(ambient);}
+    }
+    private static final class ManagedRow {
+        java.lang.ref.WeakReference<android.view.ViewParent> parent;
+        final ManagedScene scene;long generation;
+        ManagedRow(View view,ManagedScene scene){parent=new java.lang.ref.WeakReference<>(view.getParent());this.scene=scene;generation=scene.generation;}
+    }
     private static final class FlowState {
         boolean nativeValue,applied;
         FlowState(boolean nativeValue){this.nativeValue=nativeValue;}
@@ -52,16 +76,16 @@ public final class NotificationNativeStack {
 
     public interface NativeAction { Object run() throws Throwable; }
     private static final class Scope {
-        final Object ruler,manager;
+        final Object ruler,manager,extension,ambient;
         final int scroll;
-        Scope(Object ruler,Object manager,int scroll){this.ruler=ruler;this.manager=manager;this.scroll=scroll;}
+        Scope(Object ruler,Object manager,int scroll,Object extension,Object ambient){this.ruler=ruler;this.manager=manager;this.scroll=scroll;this.extension=extension;this.ambient=ambient;}
     }
     /** Exact real-ROM signatures are resolved together; a partial match is not supported. */
     static final class Access {
         final Class<?> extension,ruler,manager,ambient,row;
         final Method update,current,apply,currentRuler,scroll,state,y,stableHeight,child;
         final Method removed,dismissed,guts,userLocked,expanding,groupChanging,dimens,scaleBase,translationBase;
-        final Field managerField,algorithmField,nativeCurrent,flow,dismissedFlag,swiping,context;
+        final Field managerField,algorithmField,nativeCurrent,flow,dismissedFlag,swiping,context,shadeExpanded;
         final Method flowValue,flowSet;
         Access(Class<?> extension,Class<?> ruler,Class<?> manager,Class<?> algorithm,
                 Class<?> ambient,Class<?> row,Class<?> expandable)throws ReflectiveOperationException {
@@ -87,6 +111,8 @@ public final class NotificationNativeStack {
             }catch(ReflectiveOperationException|RuntimeException unsupported){getValue=null;setValue=null;}
             flowValue=getValue;flowSet=setValue;
             scroll=exact(ambient,"getScrollY");
+            // Optional: when it is missing, a pulled-open stack closes again only when the module stack is switched off.
+            shadeExpanded=booleanField(ambient,"mShadeExpanded");
             state=exact(expandable,"getViewState");
             y=exact(state.getReturnType(),"getYTranslation");
             stableHeight=exact(algorithm,"stableHeightOf",expandable);
@@ -130,6 +156,21 @@ public final class NotificationNativeStack {
         configurationChanged();
     }
     public boolean enabled(){return enabled&&hooksReady&&access!=null&&!ModuleLifecycle.removed();}
+    /** Whether this actual row belongs to the last verified native shade-stack update. */
+    public boolean manages(View summary){
+        ManagedRow row=summary==null?null:managedRows.get(summary);Access nativeAccess=access;
+        if(row==null||nativeAccess==null||!enabled()||!row.scene.active||row.generation!=row.scene.generation
+                ||!summary.isAttachedToWindow()||summary.getParent()==null||summary.getParent()!=row.parent.get()
+                ||summary.getVisibility()==View.GONE||!nativeAccess.row.isInstance(summary))return false;
+        Object extension=row.scene.extension.get(),ruler=row.scene.ruler.get(),ambient=row.scene.ambient.get();
+        if(extension==null||ambient==null||!enabledFor(ruler))return false;
+        try{return nativeAccess.currentRuler.invoke(extension)==ruler
+                &&(nativeAccess.shadeExpanded==null||nativeAccess.shadeExpanded.getBoolean(ambient))
+                &&!yes(nativeAccess.child,summary)&&!yes(nativeAccess.removed,summary)
+                &&!nativeAccess.dismissed(summary)&&!nativeAccess.changing(summary);}
+        catch(ReflectiveOperationException|RuntimeException unavailable){return false;}
+    }
+    private void clearManaged(){managedScenes.clear();managedRows.clear();}
     /** Read only on an explicit diagnostic/probe. Counting never allocates a frame log. */
     public String diagnosticSummary(){return "whole requested="+enabled+" landscape="+landscapeEnabled+" ready="+hooksReady+" resolved="+(access!=null)
             +" portraitClock="+portraitClockEnabled+" landscapeClock="+landscapeClockEnabled
@@ -137,10 +178,10 @@ public final class NotificationNativeStack {
             +" changed="+borderChanges+" rows="+lastRows+" eligible="+lastEligibleRows+" count="+completeCount+" native="+lastNativeBorder
             +" chosen="+lastAppliedBorder+" stage="+lastStage;}
     /** All three native callbacks must be installed before any saved request becomes active. */
-    public void hooksReady(boolean ready){hooksReady=ready&&access!=null;if(!hooksReady){scenes.remove();restoreFlows();}}
+    public void hooksReady(boolean ready){hooksReady=ready&&access!=null;if(!hooksReady){scenes.remove();clearManaged();restoreFlows();}}
     public boolean resolve(ClassLoader loader) {
         restoreFlows();
-        hooksReady=false;access=null;scenes.remove();rulerResources.clear();
+        hooksReady=false;access=null;scenes.remove();rulerResources.clear();clearManaged();
         try {
             access=new Access(loader.loadClass(EXTENSION),loader.loadClass(SHADE_RULER),loader.loadClass(MANAGER),
                     loader.loadClass(ALGORITHM),loader.loadClass(AMBIENT),loader.loadClass(ROW),loader.loadClass(EXPANDABLE));
@@ -165,13 +206,16 @@ public final class NotificationNativeStack {
             NativeAction nativeUpdate)throws Throwable {
         updateCalls++;
         Scope previous=scenes.get(),next=null;
+        ManagedScene old=managedScenes.get(extension);if(old!=null)old.active=false;
         if(enabled()&&notificationPage&&access!=null&&access.extension.isInstance(extension)
                 &&access.ambient.isInstance(ambient))try {
             Object ruler=access.currentRuler.invoke(extension);
             if(access.ruler.isInstance(ruler)&&enabledFor(ruler)) {
                 Object manager=access.managerField.get(ruler);
                 int scroll=((Number)access.scroll.invoke(ambient)).intValue();
-                if(access.manager.isInstance(manager)&&scroll>=0){next=new Scope(ruler,manager,scroll);shadeCalls++;lastStage="shade-scope";}
+                // The shade closing ends a pulled-open stack; the next session starts folded again.
+                if(access.shadeExpanded!=null&&!access.shadeExpanded.getBoolean(ambient))foldNow();
+                if(access.manager.isInstance(manager)&&scroll>=0){next=new Scope(ruler,manager,scroll,extension,ambient);shadeCalls++;lastStage="shade-scope";}
                 else lastStage="native-manager-or-scroll";
             }else if(access.ruler.isInstance(ruler)) {
                 restoreFlow(ruler,access);lastStage="native-orientation";
@@ -180,8 +224,10 @@ public final class NotificationNativeStack {
         else lastStage=enabled()?"native-page-or-type":"disabled-or-hooks";
         // An unrelated nested native scene must never inherit the outer shade parameters.
         if(next==null)scenes.remove();else scenes.set(next);
-        try{return nativeUpdate.run();}
-        finally{if(previous==null)scenes.remove();else scenes.set(previous);}
+        boolean completed=false;
+        try{Object result=nativeUpdate.run();completed=true;return result;}
+        finally{if(!completed){ManagedScene failed=managedScenes.get(extension);if(failed!=null)failed.active=false;}
+            if(previous==null)scenes.remove();else scenes.set(previous);}
     }
     /** Native clipping reads this getter after target calculation has left its scope.
      * One stable value is required for both phases; keyguard remains a different class. */
@@ -228,9 +274,10 @@ public final class NotificationNativeStack {
     /** Called after native configuration changes and on every saved-setting change. Native
      * collectors must not retain the module's enabled value when landscape is opted out. */
     public void configurationChanged() {
+        clearManaged();
         Scope scene=scenes.get();
         if(scene!=null&&!enabledFor(scene.ruler))scenes.remove();
-        if(!enabled()){scenes.remove();restoreFlows();return;}
+        if(!enabled()){scenes.remove();restoreFlows();foldNow();touchDownY=Float.NaN;return;}
         Access nativeAccess=access;
         for(Object ruler:new ArrayList<>(observedRulers.keySet()))
             if(!enabledFor(ruler))restoreFlow(ruler,nativeAccess);
@@ -261,6 +308,8 @@ public final class NotificationNativeStack {
         Scope scene=scenes.get();Access nativeAccess=access;
         if(scene==null||!enabledFor(scene.ruler)||scene.manager!=manager||nativeAccess==null
                 ||nativeViews==null||!finite(nativeBorder)||nativeBorder<=0f){lastStage="apply-without-shade-scope";return nativeBorder;}
+        // Every return below reports what the shade actually shows, so a transition starts from it.
+        shownBorder=nativeBorder;
         lastRows=nativeViews.size();
         lastEligibleRows=0;
         int found=0;float chosen=Float.NaN;
@@ -273,11 +322,13 @@ public final class NotificationNativeStack {
             float translationBase=((Number)nativeAccess.translationBase.invoke(dimensions)).floatValue();
             if(!finite(scaleBase)||!finite(translationBase)||scaleBase<0f||translationBase<0f)return nativeBorder;
             for(Object item:nativeViews) {
-                if(!nativeAccess.row.isInstance(item))continue;
-                if(!(item instanceof View)||((View)item).getVisibility()==View.GONE
-                        ||yes(nativeAccess.child,item)||yes(nativeAccess.removed,item)||nativeAccess.dismissed(item))continue;
+                boolean row=nativeAccess.row.isInstance(item);
+                // The fluid cloud's cards in the shade list count as notifications too (user feedback code161).
+                if(!row&&!fluidCard(item))continue;
+                if(!(item instanceof View)||((View)item).getVisibility()==View.GONE)continue;
+                if(row&&(yes(nativeAccess.child,item)||yes(nativeAccess.removed,item)||nativeAccess.dismissed(item)))continue;
                 // Native gestures/expanded group spring must receive its original physical bounds.
-                if(nativeAccess.changing(item)){lastStage="native-row-interaction";return nativeBorder;}
+                if(row&&nativeAccess.changing(item)){lastStage="native-row-interaction";return nativeBorder;}
                 Object target=nativeAccess.state.invoke(item);
                 if(target==null){lastStage="missing-row-target";return nativeBorder;}
                 float y=((Number)nativeAccess.y.invoke(target)).floatValue();
@@ -293,12 +344,99 @@ public final class NotificationNativeStack {
         }catch(ReflectiveOperationException|RuntimeException unknownGeometry){lastStage="border-reflection";return nativeBorder;}
         // If all notifications fit, do not manufacture a tail or change native shelf constraints.
         if(found<completeCount||!finite(chosen)||chosen<=0f){lastStage="insufficient-full-rows";return nativeBorder;}
-        lastAppliedBorder=Math.min(nativeBorder,chosen);
-        if(lastAppliedBorder<nativeBorder){borderChanges++;lastStage="native-border-applied";}
+        // Normal upward native scrolling must reveal every notification. Scrolling back to the
+        // top folds the stack again, so it never stays open just because it was once scrolled.
+        if(scene.scroll>0){setOpen(true);scrolledOpen=true;}
+        else if(pulledOpen&&scrolledOpen)setOpen(false);
+        float target=pulledOpen?nativeBorder:Math.min(nativeBorder,chosen);
+        lastAppliedBorder=transition(target);shownBorder=lastAppliedBorder;
+        if(pulledOpen)lastStage="pulled-open";
+        else if(lastAppliedBorder<nativeBorder){borderChanges++;lastStage="native-border-applied";}
         else lastStage="native-border-already-limited";
+        recordManaged(scene,nativeViews,nativeAccess);
         return lastAppliedBorder;
     }
-    public void reset(){hooksReady=false;scenes.remove();restoreFlows();rulerResources.clear();}
+    /** Exact native list membership, not a global setting or a hierarchy search. */
+    private void recordManaged(Scope scene,List<?> rows,Access nativeAccess){
+        ManagedScene owner=managedScenes.get(scene.extension);
+        if(owner==null||owner.ruler.get()!=scene.ruler||owner.ambient.get()!=scene.ambient){
+            owner=new ManagedScene(scene.extension,scene.ruler,scene.ambient);managedScenes.put(scene.extension,owner);}
+        owner.generation++;owner.active=true;
+        for(Object item:rows)if(item instanceof View&&nativeAccess.row.isInstance(item)){
+            View view=(View)item;ManagedRow previous=managedRows.get(view);
+            if(previous==null||previous.scene!=owner)
+                managedRows.put(view,new ManagedRow(view,owner));
+            else {previous.generation=owner.generation;if(previous.parent.get()!=view.getParent())previous.parent=new java.lang.ref.WeakReference<>(view.getParent());}
+        }
+    }
+    /** Toggle the open state. With a known list and border the change eases over TRANSITION_MILLIS. */
+    private void setOpen(boolean open) {
+        if(pulledOpen==open)return;
+        pulledOpen=open;scrolledOpen=false;
+        if(stackView.get()!=null&&finite(shownBorder)){transitionFrom=shownBorder;transitionStart=android.os.SystemClock.uptimeMillis();}
+        else transitionStart=-1L;
+    }
+    private void foldNow(){pulledOpen=false;scrolledOpen=false;transitionStart=-1L;shownBorder=Float.NaN;}
+    private float transition(float target) {
+        if(transitionStart<0L||!finite(transitionFrom))return target;
+        long elapsed=android.os.SystemClock.uptimeMillis()-transitionStart;
+        if(elapsed<0L||elapsed>=TRANSITION_MILLIS){transitionStart=-1L;return target;}
+        float progress=elapsed/(float)TRANSITION_MILLIS,remaining=1f-progress;
+        // Decelerating cubic, close to the native panel curves.
+        float eased=1f-remaining*remaining*remaining;
+        requestFrame();
+        return transitionFrom+(target-transitionFrom)*eased;
+    }
+    /** One native children update per display frame while easing; never a timer or a loop. */
+    private void requestFrame() {
+        View stack=stackView.get();
+        if(stack==null||framePosted)return;
+        framePosted=true;
+        stack.postOnAnimation(()->{framePosted=false;nativeChildrenUpdate(stack);});
+    }
+    private void nativeChildrenUpdate(View stack) {
+        if(!childrenUpdateResolved){childrenUpdateResolved=true;
+            for(Class<?> type=stack.getClass();type!=null&&childrenUpdate==null;type=type.getSuperclass())
+                try{childrenUpdate=type.getDeclaredMethod("requestChildrenUpdate");childrenUpdate.setAccessible(true);}catch(ReflectiveOperationException|RuntimeException absent){}
+        }
+        try{if(childrenUpdate!=null)childrenUpdate.invoke(stack);}catch(ReflectiveOperationException|RuntimeException ignored){}
+    }
+    public void reset(){hooksReady=false;scenes.remove();clearManaged();restoreFlows();rulerResources.clear();foldNow();touchDownY=Float.NaN;stackView.clear();framePosted=false;}
+    private float touchDownY=Float.NaN;
+    private java.lang.reflect.Method childrenUpdate;private boolean childrenUpdateResolved;
+    /** Observe pulls at the top without consuming the native gesture: upward opens, downward folds. */
+    public boolean touch(android.view.View stack,android.view.MotionEvent event){
+        if(stack==null||event==null||!enabled())return false;
+        if(stackView.get()!=stack)stackView=new java.lang.ref.WeakReference<>(stack);
+        int action=event.getActionMasked();
+        if(action==android.view.MotionEvent.ACTION_DOWN){touchDownY=event.getPointerCount()==1&&!stack.canScrollVertically(-1)?event.getY():Float.NaN;return false;}
+        if(action!=android.view.MotionEvent.ACTION_MOVE){touchDownY=Float.NaN;return false;}
+        if(event.getPointerCount()!=1){touchDownY=Float.NaN;return false;}
+        if(!finite(touchDownY))return false;
+        float density=stack.getResources().getDisplayMetrics().density;
+        float slop=8f*(density>0f?density:1f),upward=touchDownY-event.getY();
+        boolean open;
+        if(!pulledOpen&&upward>=slop)open=true;
+        // Pulling down at the top of an open stack folds it back, like scrolling back to the top.
+        else if(pulledOpen&&-upward>=slop&&!stack.canScrollVertically(-1))open=false;
+        else return false;
+        touchDownY=Float.NaN;setOpen(open);lastStage=open?"pulled-open-touch":"folded-touch";
+        // The native list recalculates its targets on its next children update.
+        nativeChildrenUpdate(stack);
+        stack.requestLayout();stack.invalidate();
+        return true;
+    }
+    public boolean pulledOpen(){return pulledOpen;}
+    static final String FLUID_ROW="com.oplus.systemui.statusbar.notification.customcard.OplusCustomRow";
+    static final String SEEDING_CARD="com.oplus.systemui.statusbar.notification.stack.NotificationSeedingContainer";
+    /** Fluid-cloud (Seedling) cards in the notification list, by their exact native classes. */
+    static boolean fluidCard(Object item) {
+        for(Class<?> type=item==null?null:item.getClass();type!=null;type=type.getSuperclass()) {
+            String name=type.getName();
+            if(FLUID_ROW.equals(name)||SEEDING_CARD.equals(name))return true;
+        }
+        return false;
+    }
     private static boolean yes(Method method,Object receiver)throws ReflectiveOperationException {
         return method!=null&&Boolean.TRUE.equals(method.invoke(receiver));
     }

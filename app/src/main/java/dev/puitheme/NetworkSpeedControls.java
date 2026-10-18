@@ -4,6 +4,7 @@
 package dev.puitheme;
 
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -63,6 +64,8 @@ public final class NetworkSpeedControls {
     }
 
     private final Map<View, Binding> views = new WeakHashMap<>();
+    /** The native text sizes (number, unit) in pixels, as the module saw them before scaling; unknown means the layout is left alone. */
+    private final Map<View, float[]> nativeSizes = new WeakHashMap<>();
     private final Handler main = new Handler(Looper.getMainLooper());
     private volatile boolean intervalEnabled;
     private volatile long intervalMillis = 4000L;
@@ -143,7 +146,7 @@ public final class NetworkSpeedControls {
         }
         String current = ModuleLifecycle.removed() ? "system" : style;
         if ("system".equals(current)) {
-            if (binding != null) restore(host, binding);
+            fitSystem(host, number, unit);
             return;
         }
         if (binding == null) { binding = new Binding(host, number, unit); views.put(host, binding); }
@@ -179,8 +182,65 @@ public final class NetworkSpeedControls {
         binding.owned = true;
     }
 
+    /**
+     * The OEM layout gives the host a fixed width and both texts the host's whole height. A larger number or unit (the size and
+     * number/unit scales) outgrows that box and the text view itself cuts it off, so the box follows the text: the host widens to
+     * the widest line, and the two lines stop being tied to the host's height. Back at native size nothing of it is left.
+     */
+    private void fitSystem(View host, TextView number, TextView unit) {
+        Binding binding = views.get(host);
+        float[] native_ = nativeSizes.get(host);
+        boolean grown = native_ != null && (number.getTextSize() > native_[0] + .5f || unit.getTextSize() > native_[1] + .5f);
+        if (!grown) {
+            if (binding != null) restore(host, binding);
+            return;
+        }
+        int hostPadding = host.getPaddingLeft() + host.getPaddingRight();
+        int needed = NumericPolicy.layoutPixels((double) Math.max(textWidth(number), textWidth(unit)) + hostPadding);
+        int nativeWidth = binding != null && binding.owned ? binding.nativeWidth : host.getLayoutParams().width;
+        boolean wide = nativeWidth > 0 && needed > nativeWidth;
+        Paint.FontMetrics metrics = binding != null ? binding.metrics : new Paint.FontMetrics();
+        int available = host.getHeight() > 0 ? host.getHeight() : host.getMeasuredHeight();
+        boolean tall = available > 0 && textHeight(number, metrics) + textHeight(unit, metrics) > available;
+        if (!wide && !tall) {
+            if (binding != null) restore(host, binding);
+            return;
+        }
+        if (binding == null) { binding = new Binding(host, number, unit); views.put(host, binding); }
+        if (binding.nativeDepth > 0) return;
+        if (!binding.owned) binding.capture(host, number, unit);
+        ViewGroup.LayoutParams params = host.getLayoutParams();
+        int width = wide ? needed : binding.nativeWidth;
+        if (params.width != width) { params.width = width; host.setLayoutParams(params); }
+        if (tall) {
+            installHeight(number, binding.nativeNumber, ViewGroup.LayoutParams.WRAP_CONTENT);
+            installHeight(unit, binding.nativeUnit, ViewGroup.LayoutParams.WRAP_CONTENT);
+        } else {
+            installOriginal(number, binding.nativeNumber);
+            installOriginal(unit, binding.nativeUnit);
+        }
+        binding.owned = true;
+    }
+
+    /** The native parameters with only the height replaced. */
+    private static void installHeight(TextView view, FrameLayout.LayoutParams nativeParams, int height) {
+        if (!(view.getLayoutParams() instanceof FrameLayout.LayoutParams)) return;
+        FrameLayout.LayoutParams current = (FrameLayout.LayoutParams) view.getLayoutParams();
+        if (current.height == height && current.width == nativeParams.width && current.gravity == nativeParams.gravity) return;
+        FrameLayout.LayoutParams next = new FrameLayout.LayoutParams(nativeParams);
+        next.height = height;
+        view.setLayoutParams(next);
+    }
+
+    /** The sizes the OEM layout gave the two texts, before any scale; the host only grows beyond them. */
+    public void nativeSizes(View host, float numberPixels, float unitPixels) {
+        if (host == null) return;
+        nativeSizes.put(host, new float[]{numberPixels, unitPixels});
+    }
+
     public void onViewDetached(View host) {
         if (host == null || Looper.myLooper() != Looper.getMainLooper()) return;
+        nativeSizes.remove(host);
         Binding binding = views.remove(host);
         if (binding != null) restore(host, binding);
     }

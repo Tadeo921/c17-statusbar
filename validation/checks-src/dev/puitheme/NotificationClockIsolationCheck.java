@@ -37,7 +37,7 @@ public final class NotificationClockIsolationCheck {
         check((Float)read(landscape,"maxSize")==180f);check((Float)b.get(NotificationBigClockSettings.landscapeKey(NotificationBigClockSettings.SCALE))==125f);
         for(Map.Entry<String,Float> item:NotificationBigClockSettings.NUMBERS.entrySet())if(!item.getKey().startsWith(NotificationBigClockSettings.LANDSCAPE_PREFIX)
                 &&!item.getKey().equals(NotificationBigClockSettings.STACK_GAP)&&!item.getKey().equals(NotificationBigClockSettings.STACK_INSET))
-            if(!item.getKey().equals(NotificationBigClockSettings.SCREEN_PADDING))
+            if(!item.getKey().equals(NotificationBigClockSettings.SCREEN_PADDING)&&!item.getKey().equals(NotificationBigClockSettings.REBOUND_BLUR_RADIUS)&&!item.getKey().equals(NotificationBigClockSettings.REBOUND_FADE))
             check(item.getValue().equals(NotificationBigClockSettings.NUMBERS.get(NotificationBigClockSettings.landscapeKey(item.getKey()))));
         check(NotificationBigClockSettings.NUMBERS.get(NotificationBigClockSettings.SCREEN_PADDING)==24f);
         check(!NotificationBigClockSettings.NUMBERS.containsKey(NotificationBigClockSettings.landscapeKey(NotificationBigClockSettings.SCREEN_PADDING)));

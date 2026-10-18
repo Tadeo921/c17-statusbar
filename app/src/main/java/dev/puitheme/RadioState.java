@@ -7,6 +7,12 @@ package dev.puitheme;
 public final class RadioState {
     private RadioState() { }
 
+    // Post-1.8.2 configuration keys remain readable for existing backups/UI only.
+    // They do not change the public 1.8.2 radio or label decisions below.
+    public static final String ALWAYS_SHOWN = "label_always_shown";
+    public static final String WIFI_MERGED = "label_wifi_merged";
+    public static final String BOTH_VISIBLE = "network_both_visible";
+
     /**
      * nativeWifiVisible is WifiIcon.Visible, not a View's visibility or animation alpha.
      * null means the native model is unavailable. defaultWifi describes only the current

@@ -16,9 +16,8 @@ final class Upgrade66 {
         values.putAll(ClassicTextSettings.COLORS);
         for(String color:ClassicTextSettings.COLORS.keySet())values.put(StatusBarSettings.alphaKey(color),false);
         values.putAll(ClassicTextSettings.STRINGS);
-        values.putAll(ShadeWallpaperSettings.BOOLEANS);
-        values.putAll(ShadeWallpaperSettings.NUMBERS);
-        values.putAll(ShadeWallpaperSettings.STRINGS);
+        // This batch is history: it holds the wallpaper keys of the release that added it, not the ones added since (blur, clock zone).
+        values.putAll(ShadeWallpaperSettings.firstReleaseDefaults());
         values.put("shade_wallpaper_manage","");
         values.putAll(IconPackAssignments.stringDefaults());
         values.putAll(NativeNetworkBadgeSettings.inheritedDefaults(Collections.emptyMap()));

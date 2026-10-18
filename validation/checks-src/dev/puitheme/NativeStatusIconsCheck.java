@@ -47,10 +47,10 @@ public final class NativeStatusIconsCheck {
         final String name;String slot;int width=20,height=22,top=12;
         boolean visible=true;
         final StatusIconState state=new StatusIconState();
-        int nativeApply,tint=0xffabcdef;
+        int nativeApply,tint=0xffabcdef,slotReads,visibleReads;
         Icon(String name,String slot){super(null);this.name=name;this.slot=slot;}
-        @Override public String getSlot(){return slot;}
-        @Override public boolean isIconVisible(){return visible;}
+        @Override public String getSlot(){slotReads++;return slot;}
+        @Override public boolean isIconVisible(){visibleReads++;return visible;}
         @Override public boolean isIconBlocked(){Host parent=getParent() instanceof Host?(Host)getParent():null;return parent!=null&&parent.hints!=null&&!parent.bypassBlocked?parent.hints.iconBlocked(this,blocked):blocked;}
         @Override public int getWidth(){return width;}
         @Override public int getHeight(){return height;}
@@ -107,6 +107,7 @@ public final class NativeStatusIconsCheck {
     private static Object read(Object owner,String name)throws Exception{Field f=owner.getClass().getDeclaredField(name);f.setAccessible(true);return f.get(owner);}
     private static Object plan(NativeStatusIcons h,Host host)throws Exception{return read(((Map<?,?>)read(h,"containers")).get(host),"plan");}
     public static void main(String[] args)throws Exception{
+        retainedFlowSelection();
         equal(Collections.singletonMap(NativeStatusIcons.MASTER,false),NativeStatusIcons.booleanDefaults());
         equal(14f,NativeStatusIcons.floatDefaults().get(NativeStatusIcons.MAX));equal("",NativeStatusIcons.stringDefaults().get(NativeStatusIcons.PRIORITY));
         equal(Arrays.asList("bluetooth","location","alarm_clock","zen","hotspot","headset","volume","microphone","camera","privacy_call"),
@@ -315,5 +316,20 @@ public final class NativeStatusIconsCheck {
         h.detached(host);equal(0,((Map<?,?>)read(h,"containers")).size());
         h.onLayout(host);int before=host.layoutRequests;h.configure(settings(true,14,"",0,0,9));equal(before+1,host.layoutRequests);
         h.releaseRuntime();
+    }
+    private static void retainedFlowSelection()throws Exception{
+        NativeStatusIcons hints=helper();Host host=new Host();host.hints=hints;
+        Icon location=new Icon("location","location"),bluetooth=new Icon("bluetooth","bluetooth"),wifi=new Icon("wifi","wifi");
+        host.addView(location);host.addView(bluetooth);host.addView(wifi);
+        hints.configure(settings(true,1,"bluetooth",0,0,0));layout(hints,host);
+        equal(false,hints.retainedHint(location));equal(true,hints.retainedHint(bluetooth));equal(true,hints.retainedHint(wifi));
+        int slots=location.slotReads+bluetooth.slotReads,shown=location.visibleReads+bluetooth.visibleReads;
+        for(int i=0;i<1000;i++){equal(false,hints.retainedHint(location));equal(true,hints.retainedHint(bluetooth));}
+        equal(slots,location.slotReads+bluetooth.slotReads);equal(shown,location.visibleReads+bluetooth.visibleReads);
+        hints.configure(settings(true,1,"location",0,0,0));equal(true,hints.retainedHint(bluetooth));
+        layout(hints,host);equal(true,hints.retainedHint(location));equal(false,hints.retainedHint(bluetooth));
+        hints.detached(host);equal(true,hints.retainedHint(bluetooth));
+        layout(hints,host);hints.configure(settings(false,1,"location",0,0,0));
+        equal(true,hints.retainedHint(location));equal(true,hints.retainedHint(bluetooth));hints.releaseRuntime();
     }
 }

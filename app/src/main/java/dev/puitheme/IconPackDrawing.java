@@ -14,6 +14,9 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
 import android.view.View;
 import java.lang.ref.WeakReference;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -23,18 +26,16 @@ import java.util.WeakHashMap;
 /** Replaces verified native glyphs, never their layout, transforms or battery text renderer. */
 public final class IconPackDrawing {
     interface Assets {
-        Bitmap hint(String slot,boolean on);
-        Bitmap wifi(int level,boolean connected);
-        Bitmap cellular(int level,boolean connected);
-        Bitmap battery(int level,boolean charging);
+        Bitmap image(String role);
         void observe(View view);
+        boolean nativeAppearance(String role);
+        boolean drawNative(String role,Drawable graphic,Canvas canvas,int tint);
     }
     private static final Assets RUNTIME=new Assets(){
-        public Bitmap hint(String slot,boolean on){return IconPackRuntime.bitmapForHint(slot,on);}
-        public Bitmap wifi(int level,boolean connected){return IconPackRuntime.bitmapForWifi(level,connected);}
-        public Bitmap cellular(int level,boolean connected){return IconPackRuntime.bitmapForCellular(level,connected);}
-        public Bitmap battery(int level,boolean charging){return IconPackRuntime.bitmapForBattery(level,charging);}
-        public void observe(View view){IconPackRuntime.observe(view);}
+        public Bitmap image(String role){return IconManagementRuntime.bitmapForRole(role);}
+        public void observe(View view){IconManagementRuntime.observe(view);}
+        public boolean nativeAppearance(String role){return IconManagementRuntime.hasExplicitAppearance(role);}
+        public boolean drawNative(String role,Drawable graphic,Canvas canvas,int tint){return IconManagementRuntime.drawNativeRole(role,graphic,canvas,tint);}
     };
     private static final String HORIZONTAL="com.oplus.systemui.statusbar.pipeline.battery.ui.drawable.HorizontalBatteryContentDrawable";
     private static final String METER="com.oplus.systemui.statusbar.pipeline.battery.ui.view.StatBatteryMeterView";
@@ -54,16 +55,20 @@ public final class IconPackDrawing {
     /** Called inside ScaledDrawable's existing translated/scaled canvas, after native bounds/tint. */
     public boolean drawSignal(String resource,Drawable graphic,Canvas canvas,int tint,int alpha,
                               ColorFilter filter,boolean secondaryHidden){
+        return drawSignal(resource,graphic,canvas,tint,alpha,filter,secondaryHidden,false);
+    }
+    public boolean drawSignal(String resource,Drawable graphic,Canvas canvas,int tint,int alpha,
+                              ColorFilter filter,boolean secondaryHidden,boolean singleSignal){
         if(released||secondaryHidden||graphic==null||canvas==null||resource==null)return false;
         Mask mask=signals.get(graphic);
-        if(mask==null||!resource.equals(mask.resource)){
-            Signal role=Signal.read(resource);if(role==null)return false;
-            mask=new Mask(resource,role);signals.put(graphic,mask);
+        if(mask==null||!resource.equals(mask.resource)||mask.singleSignal!=singleSignal){
+            Signal role=Signal.read(resource,singleSignal);if(role==null)return false;
+            mask=new Mask(resource,role,singleSignal);signals.put(graphic,mask);
         }
-        Bitmap bitmap=mask.signal.wifi?assets.wifi(mask.signal.level,mask.signal.connected)
-                :assets.cellular(mask.signal.level,mask.signal.connected);
+        Bitmap bitmap=assets.image(mask.signal.role);
         Rect bounds=graphic.getBounds();
-        return mask.draw(bitmap,canvas,bounds.left,bounds.top,bounds.right,bounds.bottom,tint,alpha,filter);
+        return mask.draw(bitmap,canvas,bounds.left,bounds.top,bounds.right,bounds.bottom,tint,alpha,filter)
+                ||assets.drawNative(mask.signal.role,graphic,canvas,tint);
     }
 
     /** The incoming model is used: getIcon runs before StatusBarIconView updates its own mIcon. */
@@ -89,7 +94,7 @@ public final class IconPackDrawing {
             }
             if(graphic instanceof HintDrawable){
                 HintDrawable existing=(HintDrawable)graphic;
-                if(existing.helper==this){existing.slot=slot;existing.on=on;assets.observe(owner);return existing;}
+                if(existing.helper==this){existing.slot=slot;existing.on=on;existing.role=hintRole(slot,on);assets.observe(owner);return existing;}
             }
             HintDrawable result=new HintDrawable(this,graphic,slot,on);
             hints.put(result,Boolean.TRUE);assets.observe(owner);return result;
@@ -119,9 +124,20 @@ public final class IconPackDrawing {
                 charging=visible!=null&&id!=null&&visible.getBoolean(charge)&&id.getInt(charge)>0;
             }
             BatteryEntry entry=batteries.get(drawable);
-            if(entry==null){entry=new BatteryEntry(drawable,batteryAccess);batteries.put(drawable,entry);}
+            if(entry==null){entry=new BatteryEntry(drawable,batteryAccess,assets);batteries.put(drawable,entry);}
+            entry.percentage=BatteryNativeStyle.percentEnabled(owner.getContext());
             entry.externalCharging=charging;assets.observe(owner);
         }catch(ReflectiveOperationException|RuntimeException unsupported){/* Draw still reads its native charge ID. */}
+    }
+
+    /** An inline component owns this independent OEM drawable. Its body uses
+     * exactly the same icon-pack scope as a status-bar meter, with native
+     * percent/charge drawing retained and no synthetic View or callback. */
+    void syncInlineBattery(Drawable drawable,boolean percentage,boolean charging) {
+        if(released||drawable==null||batteryAccess==null||!batteryAccess.type.isInstance(drawable))return;
+        BatteryEntry entry=batteries.get(drawable);
+        if(entry==null){entry=new BatteryEntry(drawable,batteryAccess,assets);batteries.put(drawable,entry);}
+        entry.percentage=percentage;entry.externalCharging=charging;
     }
 
     /** Only shape fields change during this draw. Native drawContent/percent Paint/charging remain untouched. */
@@ -129,30 +145,32 @@ public final class IconPackDrawing {
         BatteryAccess access=batteryAccess;
         if(released||drawable==null||access==null||!access.type.isInstance(drawable))return null;
         BatteryEntry entry=batteries.get(drawable);
-        if(entry!=null&&entry.depth>0){entry.depth++;return new BatteryScope(entry);}
+        if(entry==null)return null;
+        if(entry.depth>0){if(entry.depth>=entry.scopes.length)return null;entry.depth++;return entry.scope();}
         try{
-            int level=((Number)access.level.invoke(drawable)).intValue();
+            int level=primitive(access.level,drawable);
             if(level<0||level>100)return null;
-            boolean charging=((Number)access.charge.invoke(drawable)).intValue()>0||entry!=null&&entry.externalCharging;
-            Bitmap bitmap=assets.battery(level,charging);
-            if(!valid(bitmap))return null;
+            boolean charging=primitive(access.charge,drawable)>0||entry.externalCharging;
+            String role=BATTERY_ROLES[charging?1:0][level/10];
+            Bitmap bitmap=entry.percentage?assets.image(role):null;
+            boolean image=valid(bitmap);
+            if(!image&&!assets.nativeAppearance(role))return null;
             boolean inside=access.inside.getBoolean(drawable);
             RectF rect=(RectF)(inside?access.inner:access.outer).get(drawable);
-            if(rect==null||!finite(rect.left)||!finite(rect.top)||!finite(rect.right)||!finite(rect.bottom)
-                    ||rect.width()<=0f||rect.height()<=0f)return null;
-            if(entry==null){entry=new BatteryEntry(drawable,access);batteries.put(drawable,entry);}
+            if(image&&(rect==null||!finite(rect.left)||!finite(rect.top)||!finite(rect.right)||!finite(rect.bottom)
+                    ||rect.width()<=0f||rect.height()<=0f))return null;
             for(int i=0;i<access.shapes.length;i++){
                 Object shape=access.shapes[i].get(drawable);
-                if(!(shape instanceof Drawable)){entry.clear();return null;}
+                if(shape!=null&&!(shape instanceof Drawable)){entry.clear();return null;}
                 entry.originals[i]=(Drawable)shape;
             }
-            entry.bitmap=bitmap;entry.region.set(rect.left,rect.top,rect.right,rect.bottom);
-            entry.tint=((Number)access.outline.invoke(drawable)).intValue();entry.drawn=false;entry.failed=false;
+            entry.bitmap=image?bitmap:null;entry.role=role;if(image)entry.region.set(rect.left,rect.top,rect.right,rect.bottom);
+            entry.tint=primitive(access.outline,drawable);entry.drawn=false;entry.failed=false;
             entry.depth=1;
             try{
-                for(int i=0;i<access.shapes.length;i++)access.shapes[i].set(drawable,entry.proxies[i]);
+                for(int i=0;i<access.shapes.length;i++)if(entry.originals[i]!=null)access.shapes[i].set(drawable,entry.proxies[i]);
             }catch(ReflectiveOperationException failed){entry.restore();return null;}
-            return new BatteryScope(entry);
+            return entry.scope();
         }catch(ReflectiveOperationException|RuntimeException unsupported){
             if(entry!=null)entry.restore();return null;
         }
@@ -177,7 +195,16 @@ public final class IconPackDrawing {
             if(value!=null&&value.depth>0&&--value.depth==0)value.restore();
         }
     }
+    private static final String[][] BATTERY_ROLES=new String[2][11];
+    static{for(int charge=0;charge<2;charge++)for(int level=0;level<=10;level++)BATTERY_ROLES[charge][level]="battery."+(charge==1?"charging.":"")+(level*10);}
+    private static String hintRole(String slot,boolean on){return "hint."+slot+("bluetooth".equals(slot)?on?".on":".off":".default");}
     private static boolean finite(float value){return !Float.isNaN(value)&&!Float.isInfinite(value);}
+    private static int primitive(MethodHandle accessor,Drawable drawable)throws ReflectiveOperationException{
+        try{return (int)accessor.invokeExact((Object)drawable);}
+        catch(RuntimeException failure){throw failure;}
+        catch(Error failure){throw failure;}
+        catch(Throwable unavailable){throw new ReflectiveOperationException(unavailable);}
+    }
     private static boolean valid(Bitmap bitmap){return bitmap!=null&&!bitmap.isRecycled()&&bitmap.getWidth()>0&&bitmap.getHeight()>0;}
     private static boolean named(Class<?> type,String name){for(Class<?> c=type;c!=null;c=c.getSuperclass())if(name.equals(c.getName()))return true;return false;}
     private static Field field(Class<?> type,String name)throws ReflectiveOperationException{
@@ -199,25 +226,33 @@ public final class IconPackDrawing {
         final Class<?> type;
         final Field[] shapes;
         final Field inside,inner,outer;
-        final Method level,charge,outline;
+        final MethodHandle level,charge,outline;
         BatteryAccess(Class<?> type)throws ReflectiveOperationException{
             this.type=type;
             shapes=new Field[]{field(type,"outsideDrawable"),field(type,"insideDrawable"),field(type,"frameDrawable"),field(type,"bgDrawable"),field(type,"progressDrawable")};
             for(int i=0;i<shapes.length;i++)if(shapes[i].getType()!=(i==1||i==4?LayerDrawable.class:Drawable.class))throw new NoSuchFieldException("Unsupported battery shape type");
             inside=field(type,"isShowPercentIn");inner=field(type,"rect");outer=field(type,"noPercentRectF");
-            level=type.getMethod("getBatteryLevel");charge=type.getMethod("getChargeIconId");outline=type.getMethod("getOutlineColor");
+            level=accessor(type,"getBatteryLevel");charge=accessor(type,"getChargeIconId");outline=accessor(type,"getOutlineColor");
+        }
+        private static MethodHandle accessor(Class<?> type,String name)throws ReflectiveOperationException{
+            Method method=type.getMethod(name);if(method.getReturnType()!=Integer.TYPE)throw new NoSuchMethodException(name);
+            return MethodHandles.lookup().unreflect(method).asType(MethodType.methodType(Integer.TYPE,Object.class));
         }
     }
     private static final class Signal {
-        final boolean wifi,connected;final int level;
-        Signal(boolean wifi,int level,boolean connected){this.wifi=wifi;this.level=level;this.connected=connected;}
-        static Signal read(String name){
+        final boolean wifi,connected;final int level;final String role;
+        Signal(boolean wifi,int level,boolean connected){this.wifi=wifi;this.level=level;this.connected=connected;this.role=(wifi?"wifi.":"cellular.")+(connected?Integer.toString(level):"none");}
+        Signal(String row,int level,boolean connected){this.wifi=false;this.level=level;this.connected=connected;this.role="cellular.stacked_"+row+'.'+(connected?Integer.toString(level):"none");}
+        static Signal read(String name,boolean singleSignal){
             // WifiIcon.Companion.fromModel returns Hidden for native Inactive/Unavailable.
             // Level zero is still Active. activity_wifi_none belongs to traffic arrows,
             // not a disconnected signal glyph, and must not consume the wifi.none artwork.
             if(name.matches("stat_signal_wifi_signal_[0-4](_os17)?"))return new Signal(true,digit(name),true);
-            if(name.matches("stat_signal_(lte|soft)_signal_stacked_(primary|secondary)_([0-4]|noservice)")
-                    ||name.matches("stat_signal_(lte|soft)_signal_([0-4]|noservice)(_os17)?")
+            if(name.matches("stat_signal_(lte|soft)_signal_stacked_(primary|secondary)_([0-4]|noservice)")){
+                boolean service=!name.endsWith("_noservice");if(singleSignal)return name.contains("_secondary_")?null:new Signal(false,service?digit(name):0,service);
+                return new Signal(name.contains("_primary_")?"primary":"secondary",service?digit(name):0,service);
+            }
+            if(name.matches("stat_signal_(lte|soft)_signal_([0-4]|noservice)(_os17)?")
                     ||name.matches("stat_sys_signal_[0-4](_fully)?")
                     ||name.matches("stat_signal_signal_lte_single_[0-4](_os17)?")
                     ||name.matches("stat_signal_signal_novoice_[1-4](_os17)?")
@@ -233,11 +268,14 @@ public final class IconPackDrawing {
     private static class Mask {
         final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|2); // FILTER_BITMAP_FLAG; avoid creating Paint/RectF per frame.
         final RectF target=new RectF();
-        String resource;Signal signal;
+        String resource;Signal signal;boolean singleSignal;
         Mask(){ }
-        Mask(String resource,Signal signal){this.resource=resource;this.signal=signal;}
+        Mask(String resource,Signal signal,boolean singleSignal){this.resource=resource;this.signal=signal;this.singleSignal=singleSignal;}
         boolean draw(Bitmap bitmap,Canvas canvas,float left,float top,float right,float bottom,int color,int alpha,ColorFilter filter){
             if(!valid(bitmap)||canvas==null||right<=left||bottom<=top)return false;
+            // V3 fits the visible glyph, so pass the original host region before any legacy canvas-size fit.
+            target.set(left,top,right,bottom);Boolean v3=IconManagementRuntime.draw(bitmap,canvas,target,color,alpha,filter);
+            if(v3!=null)return v3;
             float scale=Math.min((right-left)/bitmap.getWidth(),(bottom-top)/bitmap.getHeight());
             float width=bitmap.getWidth()*scale,height=bitmap.getHeight()*scale;
             float x=(left+right)*.5f,y=(top+bottom)*.5f;target.set(x-width*.5f,y-height*.5f,x+width*.5f,y+height*.5f);
@@ -250,17 +288,18 @@ public final class IconPackDrawing {
     }
     private static final class HintDrawable extends Drawable implements Drawable.Callback {
         final IconPackDrawing helper;final Drawable nativeGraphic;final Mask mask=new Mask();
-        String slot;boolean on;
+        String slot,role;boolean on;
         int tint=0xffffffff,alpha;ColorFilter filter;ColorStateList colors;
         HintDrawable(IconPackDrawing helper,Drawable nativeGraphic,String slot,boolean on){
-            this.helper=helper;this.nativeGraphic=nativeGraphic;this.slot=slot;this.on=on;
+            this.helper=helper;this.nativeGraphic=nativeGraphic;this.slot=slot;this.on=on;this.role=hintRole(slot,on);
             alpha=nativeGraphic.getAlpha();filter=nativeGraphic.getColorFilter();
             setBounds(nativeGraphic.getBounds());setState(nativeGraphic.getState());setLevel(nativeGraphic.getLevel());nativeGraphic.setCallback(this);
         }
         @Override public void draw(Canvas canvas){
-            Rect r=getBounds();Bitmap bitmap=helper.released?null:helper.assets.hint(slot,on);
+            Rect r=getBounds();Bitmap bitmap=helper.released?null:helper.assets.image(role);
             int color=colors==null?tint:colors.getColorForState(getState(),colors.getDefaultColor());
-            if(!mask.draw(bitmap,canvas,r.left,r.top,r.right,r.bottom,color,alpha,filter))nativeGraphic.draw(canvas);
+            if(!mask.draw(bitmap,canvas,r.left,r.top,r.right,r.bottom,color,alpha,filter)
+                    &&(helper.released||!helper.assets.drawNative(role,nativeGraphic,canvas,color)))nativeGraphic.draw(canvas);
         }
         @Override protected void onBoundsChange(Rect bounds){nativeGraphic.setBounds(bounds);}
         @Override protected boolean onStateChange(int[] state){return nativeGraphic.setState(state)||colors!=null;}
@@ -286,16 +325,20 @@ public final class IconPackDrawing {
     }
     private static final class BatteryEntry extends Mask {
         final WeakReference<Drawable> owner;final BatteryAccess access;
+        final Assets assets;final BatteryScope[] scopes=new BatteryScope[8];
         final Drawable[] originals=new Drawable[5],proxies=new Drawable[5];
         final RectF region=new RectF();Bitmap bitmap;
-        int depth,tint;boolean externalCharging,drawn,failed;
-        BatteryEntry(Drawable owner,BatteryAccess access){
-            this.owner=new WeakReference<>(owner);this.access=access;
+        String role;int depth,tint;boolean externalCharging,drawn,failed,percentage;
+        BatteryEntry(Drawable owner,BatteryAccess access,Assets assets){
+            this.owner=new WeakReference<>(owner);this.access=access;this.assets=assets;
             for(int i=0;i<proxies.length;i++)proxies[i]=i==1||i==4?new LayerProxy(this,i):new ShapeProxy(this,i);
+            for(int i=0;i<scopes.length;i++)scopes[i]=new BatteryScope(null);
         }
+        BatteryScope scope(){BatteryScope scope=scopes[depth-1];scope.entry=this;return scope;}
         void shape(Canvas canvas,int index){
             Drawable graphic=originals[index];if(graphic==null)return;
             if(depth==0||failed){graphic.draw(canvas);return;}
+            if(bitmap==null){if(!assets.drawNative(role,graphic,canvas,tint))graphic.draw(canvas);return;}
             if(!drawn){
                 drawn=true;
                 if(!draw(bitmap,canvas,region.left,region.top,region.right,region.bottom,tint,graphic.getAlpha(),null)){
@@ -310,7 +353,7 @@ public final class IconPackDrawing {
             }catch(ReflectiveOperationException unsupported){ }
             clear();
         }
-        void clear(){depth=0;bitmap=null;Arrays.fill(originals,null);drawn=false;failed=false;}
+        void clear(){depth=0;bitmap=null;role=null;Arrays.fill(originals,null);drawn=false;failed=false;}
     }
     /** Do not assign native child callbacks to these temporary proxies or consume their constant state. */
     private static final class ShapeProxy extends Drawable {

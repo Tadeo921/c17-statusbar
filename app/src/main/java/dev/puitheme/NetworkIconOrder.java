@@ -24,6 +24,13 @@ public final class NetworkIconOrder {
     public static final String SWAP = "network_icons_swap_enabled";
     private volatile boolean enabled, released;
     private volatile int revision;
+    private volatile boolean flow;
+    private volatile int labelOrder;
+    private volatile float labelLeft, labelRight;
+    private Object emptyModifier;
+    private Method nodeSetter, requestRemeasure;
+    private boolean updatingNodes;
+    private final Map<Object, WeakReference<Object>> liveModifiers = new WeakHashMap<>();
     private final Map<ViewGroup, Container> containers = new WeakHashMap<>();
     private final ThreadLocal<IndexScope> indexes = new ThreadLocal<>();
     private final ThreadLocal<RowScope> rows = new ThreadLocal<>();
@@ -38,18 +45,45 @@ public final class NetworkIconOrder {
     private Class<?> nativeContainer, measurePolicy;
     private Method slot, visible, blocked;
     private Field ignored;
+    private NetworkSharedSlotLayout sharedLayout;
+    private boolean shared;
+    private Method nativePlaceHelper, nodeOwner, nodeParent, nodeCoordinator, coordinatorPosition;
+    private Method placeableWidth;
+    private Method scopeDensity;
+    private final Map<View, SharedRow> sharedRows = new WeakHashMap<>();
+    private final ThreadLocal<SharedMeasure> sharedMeasure = new ThreadLocal<>();
+    private final ThreadLocal<MarginMeasure> marginMeasure = new ThreadLocal<>();
+
+    public void sharedLayout(NetworkSharedSlotLayout value) { sharedLayout = value; }
 
     public boolean configure(Bundle settings) {
-        boolean wanted = !released && settings != null && settings.getBoolean(SWAP, false)
+        StatusBarLayoutSettings.Snapshot layout = StatusBarLayoutSettings.Snapshot.parse(settings);
+        boolean nextShared = layout.wifiLabelShared && sharedLayout != null && sharedLayout.enabled();
+        boolean nextFlow = layout.enabled;
+        int nextOrder = nextFlow && !nextShared ? layout.order(StatusBarLayoutSettings.LABEL) : 0;
+        float nextLeft = nextFlow && !nextShared ? layout.left(StatusBarLayoutSettings.LABEL) : 0f;
+        float nextRight = nextFlow && !nextShared ? layout.right(StatusBarLayoutSettings.LABEL) : 0f;
+        boolean wanted = !released && settings != null && (nextShared || settings.getBoolean(SWAP, false)
+                || nextFlow && (nextOrder != 0 || nextLeft != 0 || nextRight != 0))
                 && !settings.getBoolean(StatusBarSettings.SAFE_MODE, false);
-        if (enabled == wanted) return false;
-        enabled = wanted; revision++;
+        if (enabled == wanted && shared == nextShared && flow == nextFlow && labelOrder == nextOrder && labelLeft == nextLeft && labelRight == nextRight) return false;
+        if (shared && !nextShared) for (SharedRow row : new ArrayList<>(sharedRows.values())) row.restore();
+        shared = nextShared;
+        enabled = wanted; flow = nextFlow; labelOrder = nextOrder; labelLeft = nextLeft; labelRight = nextRight; revision++;
+        synchronized (taggedModifiers) { taggedModifiers.clear(); }
+        synchronized (modifierKinds) { modifierKinds.clear(); }
         synchronized (policyCache) { policyCache.clear(); }
+        refreshNodes();
         synchronized (containers) {
             for (ViewGroup parent : containers.keySet()) if (parent != null) parent.requestLayout();
         }
         return true;
     }
+
+    /** The index hook is installed only once the swap is on. */
+    public boolean wanted() { return enabled && !released; }
+    /** The shared Compose placement can be active while legacy native index remapping is unused. */
+    public boolean nativeIndexWanted() { return wanted() && !flow; }
 
     public void resolve(ClassLoader loader) throws ReflectiveOperationException {
         nativeContainer = loader.loadClass("com.android.systemui.statusbar.phone.StatusIconContainer");
@@ -67,13 +101,38 @@ public final class NetworkIconOrder {
         lookaheadNode = loader.loadClass("androidx.compose.ui.node.LookaheadPassDelegate").getDeclaredMethod("getLayoutNode");
         lookaheadNode.setAccessible(true);
         Class<?> modifier = loader.loadClass("androidx.compose.ui.Modifier");
+        Class<?> node = loader.loadClass("androidx.compose.ui.node.LayoutNode");
+        nodeSetter = node.getMethod("setModifier", modifier);
+        for (Method method : node.getMethods()) if (method.getName().startsWith("requestRemeasure")
+                && method.getParameterCount() == 3 && method.getParameterTypes()[0] == Boolean.TYPE) { requestRemeasure = method; break; }
         Class<?> function = loader.loadClass("kotlin.jvm.functions.Function2");
         modifierThen = modifier.getMethod("then", modifier);
         modifierFold = modifier.getMethod("foldIn", Object.class, function);
         Object empty = modifier.getField("Companion").get(null);
+        emptyModifier = empty;
         Method testTag = loader.loadClass("androidx.compose.ui.platform.TestTagKt").getMethod("testTag", modifier, String.class);
         signalTag = testTag.invoke(null, empty, "c17_network_signal");
         textTag = testTag.invoke(null, empty, "c17_network_type");
+        try { scopeDensity = loader.loadClass("androidx.compose.ui.layout.MeasureScope").getMethod("getDensity"); }
+        catch (ReflectiveOperationException optionalDensity) { scopeDensity = null; }
+        for (Method method : loader.loadClass("androidx.compose.foundation.layout.RowMeasurePolicy").getMethods())
+            if (method.getName().equals("placeHelper") && method.getParameterCount() == 10
+                    && method.getParameterTypes()[3] == int[].class && method.getParameterTypes()[4] == Integer.TYPE) {
+                nativePlaceHelper = method; break;
+            }
+        // Optional on older Compose builds: swapping remains available if the
+        // exact measured-fragment API is absent. No generic layout hook is used.
+        try {
+            nodeOwner = node.getMethod("getOwner$ui");
+            nodeParent = node.getMethod("getParent$ui");
+            nodeCoordinator = node.getMethod("getInnerCoordinator$ui");
+            Class<?> coordinator = loader.loadClass("androidx.compose.ui.node.NodeCoordinator");
+            coordinatorPosition = coordinator.getMethod("localToRoot-MK-Hz9U", Long.TYPE);
+            Class<?> placeable = loader.loadClass("androidx.compose.ui.layout.Placeable");
+            placeableWidth = placeable.getMethod("getWidth");
+        } catch (ReflectiveOperationException unavailableSharedPlacement) {
+            nodeOwner = nodeParent = nodeCoordinator = coordinatorPosition = placeableWidth = null;
+        }
         modifierVisitor = Proxy.newProxyInstance(loader, new Class<?>[]{function}, (proxy, method, args) -> {
             if (method.getName().equals("invoke")) {
                 int previous = (Integer) args[0];
@@ -110,7 +169,7 @@ public final class NetworkIconOrder {
             state = containers.get(parent);
             if (state == null) { state = new Container(); containers.put(parent, state); }
         }
-        if (!enabled) return null;
+        if (!enabled || flow) return null;
         if (state.dirty || state.count != parent.getChildCount() || !state.valid(parent)) {
             IndexScope previous = indexes.get(); indexes.remove();
             try { state.capture(parent); } finally { if (previous != null) indexes.set(previous); }
@@ -120,9 +179,33 @@ public final class NetworkIconOrder {
     }
 
     public int childIndex(Object parent, int nativeIndex) {
+        if (!nativeIndexWanted()) return nativeIndex;
         IndexScope scope = indexes.get();
-        return enabled && scope != null && scope.parent == parent && nativeIndex >= 0 && nativeIndex < scope.order.length
+        return scope != null && scope.parent == parent && nativeIndex >= 0 && nativeIndex < scope.order.length
                 ? scope.order[nativeIndex] : nativeIndex;
+    }
+
+    /**
+     * A fresh snapshot of the exact native layout input, including currently hidden children.
+     * Neighbour/measurement consumers apply their own native eligibility filter to this order.
+     * Temporarily suspend our index hook so callers inside either OEM layout scope cannot swap
+     * twice; no hook priority, persistent strong View reference or layout request is involved.
+     */
+    public List<View> orderedChildren(ViewGroup parent) {
+        if (released || parent == null || nativeContainer == null || !nativeContainer.isInstance(parent)) return null;
+        IndexScope previous = indexes.get(); indexes.remove();
+        try {
+            List<View> children = new ArrayList<>(parent.getChildCount());
+            for (int i = 0; i < parent.getChildCount(); i++) children.add(parent.getChildAt(i));
+            if (!enabled) return children;
+            Container current = new Container(); current.capture(children);
+            if (current.order == null || !current.visible(parent)) return children;
+            List<View> result = new ArrayList<>(children.size());
+            for (int index : current.order) result.add(children.get(index));
+            return result;
+        } finally {
+            if (previous == null) indexes.remove(); else indexes.set(previous);
+        }
     }
 
     public final class IndexScope implements AutoCloseable {
@@ -149,12 +232,21 @@ public final class NetworkIconOrder {
             return true;
         }
         void capture(ViewGroup parent) {
-            dirty = false; count = parent.getChildCount(); order = null; sources.clear(); names.clear();
+            try {
+                List<View> children = new ArrayList<>(parent.getChildCount());
+                for (int i = 0; i < parent.getChildCount(); i++) children.add(parent.getChildAt(i));
+                capture(children);
+            } catch (RuntimeException unavailable) {
+                dirty = false; count = parent.getChildCount(); order = null; sources.clear(); names.clear();
+            }
+        }
+        void capture(List<View> children) {
+            dirty = false; count = children.size(); order = null; sources.clear(); names.clear();
             int wifi = -1, firstMobile = -1, lastMobile = -1;
             boolean ambiguous = false;
             try {
                 for (int i = 0; i < count; i++) {
-                    View child = parent.getChildAt(i);
+                    View child = children.get(i);
                     if (!slot.getDeclaringClass().isInstance(child)) continue;
                     String name = (String) slot.invoke(child);
                     if (wifi(name)) { if (wifi != -1) ambiguous = true; wifi = i; sources.add(new WeakReference<>(child)); names.add(name); }
@@ -243,17 +335,37 @@ public final class NetworkIconOrder {
         }
     }
     private Object tagged(Object nativeModifier, Object marker) {
-        if (!enabled || released || nativeModifier == null || modifierThen == null || marker == null) return nativeModifier;
+        if (nativeModifier == null || modifierThen == null || marker == null) return nativeModifier;
         try {
             int kind=modifierKind(nativeModifier),wanted=marker==signalTag?1:2;
             // Native restart callbacks retain the complete Modifier chain. Appending another
             // marker around a saved typography layer would hide its exact restore identity.
-            if(kind==wanted||kind==3)return nativeModifier;
+            if (enabled && !flow && (kind==wanted||kind==3)) return nativeModifier;
+            if ((flow || !enabled || released) && kind != 0) {
+                // A native restart can retain our old chain. Remove only our exact
+                // identity elements, preserving every OEM sizing/semantics modifier.
+                Class<?> function = modifierVisitor.getClass().getInterfaces()[0];
+                Object strip = Proxy.newProxyInstance(function.getClassLoader(), new Class<?>[]{function}, (proxy, method, args) -> {
+                    if (method.getName().equals("invoke")) {
+                        Object element = args[1];
+                        if (element == signalTag || element == textTag) return args[0];
+                        return modifierThen.invoke(args[0], element);
+                    }
+                    if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
+                    if (method.getName().equals("equals")) return proxy == args[0];
+                    return "C17LayoutModifierRestore";
+                });
+                nativeModifier = modifierFold.invoke(nativeModifier, emptyModifier, strip);
+            }
+            if (!enabled || released) return nativeModifier;
             synchronized(taggedModifiers){
                 TagBinding old=taggedModifiers.get(nativeModifier);
                 Object existing=old==null||old.marker!=marker?null:old.result.get();
                 if(existing!=null)return existing;
                 Object result=modifierThen.invoke(nativeModifier,marker);
+                // Margins belong to the exact OEM Row's measured slot. Compose
+                // Padding rejects negatives, so positive and negative values use
+                // the same native placement/width path instead of a Modifier.
                 taggedModifiers.put(nativeModifier,new TagBinding(marker,result));return result;
             }
         }
@@ -262,11 +374,31 @@ public final class NetworkIconOrder {
 
     /** Composer applies modifiers later. The identity marker survives that deferred native setter. */
     public void nodeChanged(Object node, Object modifier) {
-        if (released || node == null) return;
+        if (released || node == null || updatingNodes) return;
         int kind = 0;
         try { if (modifierFold != null && modifier != null) kind = modifierKind(modifier); }
         catch (ReflectiveOperationException | RuntimeException unavailable) { }
         synchronized (nodeKinds) { if (kind == 1 || kind == 2) nodeKinds.put(node, kind); else nodeKinds.remove(node); }
+        synchronized (liveModifiers) { if (kind == 1 || kind == 2) liveModifiers.put(node, new WeakReference<>(modifier)); else liveModifiers.remove(node); }
+    }
+    /** A settings update changes native node modifiers, not Composer slots or saved inputs. */
+    private void refreshNodes() {
+        if (nodeSetter == null || updatingNodes) return;
+        updatingNodes = true;
+        try {
+            synchronized (liveModifiers) {
+                for (Map.Entry<Object, WeakReference<Object>> entry : new ArrayList<>(liveModifiers.entrySet())) {
+                    Object node = entry.getKey(), modifier = entry.getValue().get(); Integer kind;
+                    synchronized (nodeKinds) { kind = nodeKinds.get(node); }
+                    if (node == null || modifier == null || kind == null) continue;
+                    Object result = tagged(modifier, kind == 1 ? signalTag : textTag);
+                    try {
+                        if (result != modifier) { nodeSetter.invoke(node, result); entry.getValue().clear(); liveModifiers.put(node, new WeakReference<>(result)); }
+                        if (requestRemeasure != null) requestRemeasure.invoke(node, false, true, false);
+                    } catch (ReflectiveOperationException | RuntimeException staleNode) { liveModifiers.remove(node); }
+                }
+            }
+        } finally { updatingNodes = false; }
     }
 
     private int kind(Object measurable) {
@@ -314,14 +446,330 @@ public final class NetworkIconOrder {
                         if (kind == 1) { if (signal != -1) ambiguous = true; signal = i; }
                         else if (kind == 2) { if (text != -1) ambiguous = true; text = i; }
                     }
-                    if (!ambiguous && signal >= 0 && text >= 0) {
+                    boolean swap = !flow;
+                    if (flow && !shared && labelOrder != 0 && signal >= 0 && text >= 0) {
+                        boolean rtl = false;
+                        try { rtl = args[0].getClass().getMethod("getLayoutDirection").invoke(args[0]).toString().equals("Rtl"); }
+                        catch (ReflectiveOperationException | RuntimeException unsupportedDirection) { }
+                        boolean textBefore = rtl ? text > signal : text < signal;
+                        swap = textBefore != (labelOrder == 1);
+                    }
+                    if (!ambiguous && signal >= 0 && text >= 0 && swap) {
                         forwarded = args.clone(); forwarded[1] = new SwappedTail(children, signal, text);
                     }
                 }
             }
-            try { return method.invoke(nativePolicy, forwarded); }
+            SharedMeasure previous = sharedMeasure.get(), current = null;
+            MarginMeasure previousMargin = marginMeasure.get();
+            marginMeasure.remove();
+            if (shared && nativePlaceHelper != null && method.getName().startsWith("measure")
+                    && forwarded != null && forwarded.length > 1 && forwarded[1] instanceof List) {
+                current = sharedMeasurement(nativePolicy, (List<?>) forwarded[1]);
+                if (current != null) sharedMeasure.set(current);
+                else sharedMeasure.remove();
+            }
+            if (flow && !shared && nativePlaceHelper != null && method.getName().startsWith("measure")
+                    && forwarded != null && forwarded.length > 1 && forwarded[1] instanceof List
+                    && (labelLeft != 0f || labelRight != 0f)) {
+                MarginMeasure margins = marginMeasurement(nativePolicy, (List<?>) forwarded[1], forwarded[0]);
+                if (margins != null) marginMeasure.set(margins);
+            }
+            try {
+                Object result = method.invoke(nativePolicy, forwarded);
+                if (flow && !shared && result instanceof Integer && method.getName().endsWith("IntrinsicWidth")
+                        && forwarded != null && forwarded.length > 1 && forwarded[1] instanceof List) {
+                    MarginMeasure margins = marginMeasurement(nativePolicy, (List<?>) forwarded[1], forwarded[0]);
+                    if (margins != null) return dimension((long) (Integer) result + margins.left + margins.right);
+                }
+                return result;
+            }
             catch (InvocationTargetException error) { throw error.getCause(); }
+            finally {
+                if (previous == null) sharedMeasure.remove(); else sharedMeasure.set(previous);
+                if (previousMargin == null) marginMeasure.remove(); else marginMeasure.set(previousMargin);
+            }
         });
+    }
+
+    /** One exact native Row hook, active only while this policy measures its own native mobile host. */
+    public Method placeHelperMethod() { return nativePlaceHelper; }
+
+    public Object[] placeHelperArguments(Object policy, Object[] original) {
+        if (!shared) return marginArguments(policy, original);
+        SharedMeasure scope = sharedMeasure.get();
+        if (!shared || released || scope == null || scope.policy != policy || original == null || original.length != 10
+                || !(original[0] instanceof Object[]) || !(original[3] instanceof int[])
+                || !(original[4] instanceof Integer)) return original;
+        Object[] placeables = (Object[]) original[0];
+        int[] nativePositions = (int[]) original[3];
+        if (placeables.length != scope.children || nativePositions.length != scope.children) return original;
+        try {
+            int[] widths = new int[placeables.length];
+            for (int i = 0; i < widths.length; i++) {
+                // Native MeasurePass/LookaheadPassDelegate.measure returns itself.
+                // RowKt may reuse the SAME RowMeasurePolicy singleton for an inner
+                // Row, so policy identity alone is insufficient to own this array.
+                if (placeables[i] == null || placeables[i] != scope.nativeChildren[i]) return original;
+                widths[i] = (Integer) placeableWidth.invoke(placeables[i]);
+                if (widths[i] < 0 || widths[i] > 65535 || nativePositions[i] < 0) return original;
+            }
+            scope.row.capture(nativePositions, widths, scope.label, (Integer) original[4]);
+            NetworkSharedSlotLayout.Target target = scope.row.target;
+            if (target == null && scope.row.normalizeNativePass) {
+                int[] natural = nativePositions.clone();
+                for (int i = 0; i < natural.length; i++) {
+                    natural[i] = nativePositions[i] - scope.row.measuredMin + scope.row.nativeLeading;
+                    if (widths[i] == 0) natural[i] = Math.max(0, Math.min(scope.row.nativeWidth, natural[i]));
+                }
+                Object[] changed = original.clone(); changed[3] = natural; changed[4] = scope.row.nativeWidth;
+                return changed;
+            }
+            if (target == null) return original;
+            int[] positions = nativePositions.clone();
+            int rowLeft = scope.row.rowLeft();
+            if (rowLeft < 0 || target.width < rowLeft) return original;
+            for (int i = 0; i < positions.length; i++) {
+                int value = i == scope.label ? target.labelLeft + scope.row.labelInset - rowLeft
+                        : target.signalLeft + scope.row.signalInset - rowLeft + nativePositions[i] - scope.row.measuredSignalLeft;
+                // A native Row can start after its host's padding. A fragment
+                // reordered before that Row has a negative ROW-local position,
+                // while its HOST-local glyph bounds remain entirely inside the
+                // measured hull. Native place() supports this without a layer.
+                if (value < -65535 || value > 65535 || (long) value + rowLeft < 0
+                        || (long) value + rowLeft + widths[i] > target.width) return original;
+                positions[i] = value;
+            }
+            Object[] changed = original.clone(); changed[3] = positions; changed[4] = target.width - rowLeft;
+            return changed;
+        } catch (ReflectiveOperationException | RuntimeException unsupportedNativeRow) {
+            scope.row.restore(); return original;
+        }
+    }
+
+    private static final class MarginMeasure {
+        final Object policy;
+        final Object[] children;
+        final int label, left, right;
+        MarginMeasure(Object policy, Object[] children, int label, int left, int right) {
+            this.policy = policy; this.children = children; this.label = label; this.left = left; this.right = right;
+        }
+    }
+    private MarginMeasure marginMeasurement(Object policy, List<?> children, Object scope) {
+        if (!enabled || released || !flow || shared || children.isEmpty() || children.size() > 3) return null;
+        int label = -1, signal = -1;
+        for (int i = 0; i < children.size(); i++) {
+            int type = kind(children.get(i));
+            if (type == 1) { if (signal >= 0) return null; signal = i; }
+            else if (type == 2) { if (label >= 0) return null; label = i; }
+        }
+        if (label < 0 || signal < 0) return null;
+        float density = 1f;
+        try { if (scopeDensity != null && scope != null && scopeDensity.getDeclaringClass().isInstance(scope)) density = ((Number) scopeDensity.invoke(scope)).floatValue(); }
+        catch (ReflectiveOperationException | RuntimeException unavailableDensity) { return null; }
+        return new MarginMeasure(policy, children.toArray(), label, marginPixels(labelLeft, density), marginPixels(labelRight, density));
+    }
+    private Object[] marginArguments(Object policy, Object[] original) {
+        MarginMeasure margins = marginMeasure.get();
+        if (!enabled || released || !flow || shared || margins == null || margins.policy != policy
+                || original == null || original.length != 10 || !(original[0] instanceof Object[])
+                || !(original[3] instanceof int[]) || !(original[4] instanceof Integer)) return original;
+        Object[] placeables = (Object[]) original[0]; int[] source = (int[]) original[3];
+        if (placeables.length != margins.children.length || source.length != placeables.length) return original;
+        for (int i = 0; i < placeables.length; i++) if (placeables[i] == null || placeables[i] != margins.children[i]) return original;
+        if (margins.left == 0 && margins.right == 0) return original;
+        int origin = source[margins.label], delta = margins.left + margins.right;
+        int[] positions = source.clone();
+        for (int i = 0; i < positions.length; i++) {
+            long value = source[i];
+            if (i == margins.label) value += margins.left;
+            else if (source[i] >= origin) value += delta;
+            positions[i] = signedPixels(value);
+        }
+        Object[] changed = original.clone(); changed[3] = positions;
+        changed[4] = dimension((long) (Integer) original[4] + delta);
+        return changed;
+    }
+    /** Only the native rendering boundary is finite; stored signed dp are never rewritten. */
+    static int marginPixels(float dp, float density) {
+        double scale = Float.isNaN(density) || Float.isInfinite(density) || density <= 0f ? 1d : density;
+        return signedPixels((double) NumericPolicy.finite(dp, 0f) * scale);
+    }
+    private static int signedPixels(double value) {
+        if (Double.isNaN(value)) return 0;
+        return (int) Math.round(Math.max(-65535d, Math.min(65535d, value)));
+    }
+    private static int dimension(long value) { return (int) Math.max(0L, Math.min(65535L, value)); }
+
+    private Object layoutNode(Object measurable) throws ReflectiveOperationException {
+        Method getter = measurable != null && measuredNode.getDeclaringClass().isInstance(measurable) ? measuredNode
+                : measurable != null && lookaheadNode.getDeclaringClass().isInstance(measurable) ? lookaheadNode : null;
+        return getter == null ? null : getter.invoke(measurable);
+    }
+    private SharedMeasure sharedMeasurement(Object policy, List<?> children) {
+        if (sharedLayout == null || !sharedLayout.enabled() || nodeOwner == null || nodeParent == null
+                || nodeCoordinator == null || coordinatorPosition == null || placeableWidth == null
+                || children.isEmpty() || children.size() > 3) return null;
+        int signal = -1, label = -1;
+        try {
+            for (int i = 0; i < children.size(); i++) {
+                int kind = kind(children.get(i));
+                if (kind == 1) { if (signal != -1) return null; signal = i; }
+                else if (kind == 2) { if (label != -1) return null; label = i; }
+            }
+            if (signal < 0 || children.size() - (label < 0 ? 0 : 1) > 2) return null;
+            Object signalNode = layoutNode(children.get(signal));
+            Object rowNode = nodeParent.invoke(signalNode), owner = nodeOwner.invoke(signalNode);
+            if (!(owner instanceof View) || rowNode == null) return null;
+            for (Object child : children) {
+                Object node = layoutNode(child);
+                if (node == null || nodeParent.invoke(node) != rowNode || nodeOwner.invoke(node) != owner) return null;
+            }
+            View host = sharedLayout.host((View) owner);
+            if (host == null) return null;
+            SharedRow row = sharedRows.get(host);
+            if (row == null || row.row.get() != rowNode) {
+                if (row != null) sharedLayout.unregister(row);
+                row = new SharedRow(host, (View) owner, rowNode, signalNode);
+                sharedRows.put(host, row); sharedLayout.register(host, row);
+            }
+            row.signalNode = new WeakReference<>(signalNode);
+            return new SharedMeasure(policy, row, children.toArray(), label);
+        } catch (ReflectiveOperationException | RuntimeException unsupportedNativeOwner) { return null; }
+    }
+
+    private static final class SharedMeasure {
+        final Object policy; final SharedRow row; final int children, label;
+        final Object[] nativeChildren;
+        SharedMeasure(Object policy, SharedRow row, Object[] children, int label) {
+            this.policy = policy; this.row = row; this.children = children.length; this.nativeChildren = children; this.label = label;
+        }
+    }
+    private final class SharedRow implements NetworkSharedSlotLayout.Backend {
+        final WeakReference<View> host, owner;
+        final WeakReference<Object> row;
+        WeakReference<Object> signalNode;
+        NetworkSharedSlotLayout.Target target;
+        int nativeWidth, labelWidth, signalWidth, labelLeft, signalLeft, measuredSignalLeft;
+        int measuredMin;
+        int nativeLeading, nativeTrailing;
+        int labelInset, signalInset, labelBudget, signalBudget;
+        int diagnosedOrigin = -1, diagnosedWidth = -1, diagnosedLabel = -1, diagnosedSignal = -1;
+        boolean measured, labelPresent, recoveringNativeVisibility, normalizeNativePass;
+        SharedRow(View host, View owner, Object row, Object signalNode) {
+            this.host = new WeakReference<>(host); this.owner = new WeakReference<>(owner); this.row = new WeakReference<>(row);
+            this.signalNode = new WeakReference<>(signalNode);
+        }
+        void capture(int[] positions, int[] widths, int label, int width) {
+            normalizeNativePass = false;
+            int min = Integer.MAX_VALUE, max = 0, signalMin = Integer.MAX_VALUE, signalMax = 0;
+            for (int i = 0; i < positions.length; i++) {
+                // A retained hidden label may still have its former placement
+                // coordinate. Its zero-width point cannot reserve visible space.
+                if (widths[i] == 0) continue;
+                min = Math.min(min, positions[i]); max = Math.max(max, positions[i] + widths[i]);
+                if (i != label) { signalMin = Math.min(signalMin, positions[i]); signalMax = Math.max(signalMax, positions[i] + widths[i]); }
+            }
+            if (signalMin == Integer.MAX_VALUE || max > width || width > 65535) return;
+            boolean present = label >= 0 && widths[label] > 0;
+            // Native radio visibility is authoritative. This is already inside
+            // its current measure pass: stop enforcing the old data-label hull
+            // immediately, without scheduling another measure/invalidation.
+            if (target != null && target.labelVisible != present) {
+                target = null; recoveringNativeVisibility = true;
+            }
+            // The current native pass can still carry the OLD hull's EXACT/min
+            // width. Keep genuine original insets instead of saving the vanished
+            // 104px label as a new trailing margin. Normalize this very pass,
+            // without an extra request, until the parent accepts natural width.
+            if (!measured || target == null && !recoveringNativeVisibility) {
+                nativeLeading = min; nativeTrailing = width - max;
+            }
+            measuredMin = min;
+            measuredSignalLeft = signalMin;
+            signalLeft = signalMin - min + nativeLeading; signalWidth = signalMax - signalMin;
+            labelPresent = present;
+            labelWidth = labelPresent ? widths[label] : 0;
+            labelLeft = labelPresent ? positions[label] - min + nativeLeading : 0;
+            nativeWidth = max - min + nativeLeading + nativeTrailing;
+            if (recoveringNativeVisibility) {
+                normalizeNativePass = width != nativeWidth || min != nativeLeading;
+                if (!normalizeNativePass) recoveringNativeVisibility = false;
+            }
+            measured = true;
+        }
+        int rowLeft() throws ReflectiveOperationException {
+            View hostView = host.get(), ownerView = owner.get(); Object rowNode = row.get();
+            if (hostView == null || ownerView == null || rowNode == null || sharedLayout.host(ownerView) != hostView) return -1;
+            int offset = NetworkSharedSlotLayout.offset(ownerView, hostView);
+            if (offset < 0) return -1;
+            Object coordinator = nodeCoordinator.invoke(rowNode);
+            long point = (Long) coordinatorPosition.invoke(coordinator, 0L);
+            float local = Float.intBitsToFloat((int) (point >>> 32));
+            if (Float.isNaN(local) || Float.isInfinite(local) || local < 0 || local > 65535) return -1;
+            return offset + Math.round(local);
+        }
+        @Override public NetworkSharedSlotLayout.Frame frame(View mobileHost) {
+            try {
+                int left = rowLeft();
+                if (!measured || left < 0 || mobileHost != host.get() || signalWidth <= 0) return null;
+                // Keep the original native leading/trailing space in the real
+                // fragment budgets. C17's measured 184px row is 8px host/Row
+                // origin + 72px signal + 104px type. Dropping the 8px both
+                // under-reserves the host and rejects the first target at X=0.
+                int leading = left + nativeLeading;
+                boolean labelFirst = labelPresent && labelLeft < signalLeft;
+                boolean labelLast = labelPresent && labelLeft + labelWidth > signalLeft + signalWidth;
+                labelInset = labelFirst ? leading : 0;
+                signalInset = labelFirst ? 0 : leading;
+                labelBudget = labelWidth + labelInset + (labelLast ? nativeTrailing : 0);
+                signalBudget = signalWidth + signalInset + (!labelLast ? nativeTrailing : 0);
+                if (labelBudget > 65535 || signalBudget > 65535 || left + nativeWidth > 65535) return null;
+                if (ModuleDiagnostics.enabled() && (left != diagnosedOrigin || nativeWidth != diagnosedWidth
+                        || labelBudget != diagnosedLabel || signalBudget != diagnosedSignal)) {
+                    diagnosedOrigin = left; diagnosedWidth = nativeWidth; diagnosedLabel = labelBudget; diagnosedSignal = signalBudget;
+                    ModuleDiagnostics.fact("radio", "label", "原生共享槽位边距", "backend", "native_compose", "reason", "native_insets",
+                            "row_origin_px", left, "row_width_px", nativeWidth, "label_width_px", labelBudget,
+                            "signal_width_px", signalBudget, "native_width_px", left + nativeWidth);
+                }
+                Object signal = signalNode.get();
+                if (signal == null) return null;
+                long position = (Long) coordinatorPosition.invoke(nodeCoordinator.invoke(signal), 0L);
+                float signalLocal = Float.intBitsToFloat((int) (position >>> 32));
+                if (!Float.isFinite(signalLocal) || signalLocal < -65535f || signalLocal > 65535f) return null;
+                int currentSignal = left + Math.round(signalLocal) - signalInset;
+                return new NetworkSharedSlotLayout.Frame(mobileHost, this, true, labelPresent, labelBudget,
+                        signalBudget, left + labelLeft - labelInset, left + signalLeft - signalInset, left + nativeWidth, currentSignal);
+            } catch (ReflectiveOperationException | RuntimeException unsupportedCoordinates) { restore(); return null; }
+        }
+        @Override public boolean target(NetworkSharedSlotLayout.Target value) {
+            if (!measured || value == null) return reject("unmeasured", -1, value);
+            if (!value.signalVisible || value.labelVisible != labelPresent) return reject("native_visibility", -1, value);
+            try {
+                int origin = rowLeft();
+                if (origin < 0 || value.width < origin || value.signalLeft + signalInset < 0
+                        || (long) value.signalLeft + signalInset + signalWidth > value.width
+                        || labelPresent && (value.labelLeft + labelInset < 0
+                            || (long) value.labelLeft + labelInset + labelWidth > value.width)) return reject("host_geometry", origin, value);
+            } catch (ReflectiveOperationException | RuntimeException detachedRow) { return reject("row_detached", -1, value); }
+            if (value.same(target)) return true;
+            target = value; invalidate(); return true;
+        }
+        private boolean reject(String reason, int origin, NetworkSharedSlotLayout.Target value) {
+            ModuleDiagnostics.fact("radio", "label", "原生共享槽位校验", "backend", "native_compose", "reason", reason,
+                    "row_origin_px", origin, "row_width_px", nativeWidth, "native_width_px", origin + nativeWidth,
+                    "hull_px", value == null ? 0 : value.width, "label_left_px", value == null ? 0 : value.labelLeft,
+                    "signal_left_px", value == null ? 0 : value.signalLeft, "label_width_px", labelBudget, "signal_width_px", signalBudget);
+            return false;
+        }
+        private void invalidate() {
+            Object node = row.get();
+            try { if (node != null && requestRemeasure != null) requestRemeasure.invoke(node, false, true, false); }
+            catch (ReflectiveOperationException | RuntimeException detachedRow) { }
+            // requestRemeasure propagates its single invalidation to the host.
+            // Flow immediately measures the hull; another host.requestLayout()
+            // here would create a second, unnecessary layout pass.
+        }
+        @Override public void restore() { if (target != null) { target = null; invalidate(); } }
     }
 
     private static final class SwappedTail extends AbstractList<Object> {
@@ -334,7 +782,10 @@ public final class NetworkIconOrder {
 
     public void releaseRuntime() {
         released = true;
+        for (SharedRow row : new ArrayList<>(sharedRows.values())) row.restore();
+        sharedRows.clear(); sharedMeasure.remove(); marginMeasure.remove(); shared = false; sharedLayout = null;
         if (enabled) { enabled = false; revision++; }
+        refreshNodes();
         synchronized (containers) { for (ViewGroup parent : containers.keySet()) if (parent != null) parent.requestLayout(); containers.clear(); }
         indexes.remove(); rows.remove();
         synchronized (nodeKinds) { nodeKinds.clear(); }
@@ -342,6 +793,7 @@ public final class NetworkIconOrder {
         synchronized (taggedModifiers) { taggedModifiers.clear(); }
         synchronized (composerRevisions) { composerRevisions.clear(); }
         synchronized (policyCache) { policyCache.clear(); }
+        synchronized (liveModifiers) { liveModifiers.clear(); }
         nativeContainer = null; measurePolicy = null; slot = null; visible = null; blocked = null; ignored = null;
         measuredNode = null; lookaheadNode = null;
         modifierThen = null; modifierFold = null; signalTag = null; textTag = null; modifierVisitor = null;

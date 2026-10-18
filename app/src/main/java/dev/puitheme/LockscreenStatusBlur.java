@@ -44,6 +44,7 @@ public final class LockscreenStatusBlur {
     private static final Method TRANSITION_ALPHA = method(View.class, "getTransitionAlpha");
     private final Map<View, Integer> hosts = new WeakHashMap<>();
     private final WallpaperBlurLayer wallpaper = new WallpaperBlurLayer();
+    private final WallpaperSurfaceBlur externalWallpaper = new WallpaperSurfaceBlur();
     private final Map<Class<?>, Integer> hostKinds = new WeakHashMap<>();
     private final Map<Class<?>, StateAccess> stateAccess = new WeakHashMap<>();
     private final Map<Class<?>, KeyguardAccess> keyguardAccess = new WeakHashMap<>();
@@ -51,6 +52,7 @@ public final class LockscreenStatusBlur {
     private volatile ScrimHost behindScrim, frontScrim;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final AtomicBoolean scrimRefreshPosted = new AtomicBoolean();
+    private final AtomicBoolean wallpaperListenerPosted = new AtomicBoolean();
     private volatile WeakReference<Object> scrimController = new WeakReference<>(null);
     private volatile long runtimeGeneration;
     private volatile boolean enabled;
@@ -137,20 +139,26 @@ public final class LockscreenStatusBlur {
         int kind = hostKind(owner);
         if (kind == 0 || !owner.isAttachedToWindow() || hosts.containsKey(owner)) return;
         hosts.put(owner, kind);
+        if (kind == 1) externalWallpaper.onShade(owner);
         if (enabled) ensureBlurListener(owner.getContext());
     }
-    public void onHostDetached(View owner) { hosts.remove(owner); }
-    public void onHostVisibilityChanged(View owner) { onNativeScrimView(owner); }
+    public void onHostDetached(View owner) { hosts.remove(owner); externalWallpaper.onShadeDetached(owner); }
+    public void onHostVisibilityChanged(View owner) {
+        onNativeScrimView(owner);
+        if (enabled && hostKind(owner) != 0) refreshScrims(true);
+    }
 
     public void onWallpaperEngine(Object engine) {
         wallpaper.onEngine(engine);
-        if (!enabled || engine == null) return;
+        if (!enabled || blurListener != null || engine == null) return;
         // Engine callbacks may use the native wallpaper worker. Listener/state maps
         // stay on the SystemUI main thread; the wallpaper helper serializes transactions.
         final long generation = runtimeGeneration;
         WeakReference<Object> reference = new WeakReference<>(engine);
         Runnable bind = () -> {
+            wallpaperListenerPosted.set(false);
             if (generation != runtimeGeneration || !enabled) return;
+            if (blurListener != null) return;
             Object current = reference.get(); if (current == null) return;
             Method context = method(current.getClass(), "getDisplayContext");
             try {
@@ -158,12 +166,16 @@ public final class LockscreenStatusBlur {
                 if (value instanceof Context) ensureBlurListener((Context)value);
             } catch (ReflectiveOperationException | RuntimeException unsupported) { }
         };
-        if (Looper.myLooper() == Looper.getMainLooper()) bind.run(); else main.post(bind);
+        if (Looper.myLooper() == Looper.getMainLooper()) bind.run();
+        else if (wallpaperListenerPosted.compareAndSet(false, true) && !main.post(bind)) wallpaperListenerPosted.set(false);
     }
     public void onWallpaperDestroyed(Object engine) { wallpaper.onDestroyed(engine); }
     public void onWallpaperFrame(Object engine) { wallpaper.onNativeFrame(engine); }
     public void beforeWallpaperSnapshot(Object engine) { wallpaper.beforeNativeSnapshot(engine); }
     public void afterWallpaperSnapshot(Object engine) { wallpaper.afterNativeSnapshot(engine); }
+    public void onNativeWallpaperController(Object controller) { externalWallpaper.onController(controller); }
+    public void onNativeWallpaperFlow(Object flow) { externalWallpaper.onFlowChanged(flow); }
+    public void onNativeWallpaperTask(Object task) { externalWallpaper.onWindowInfoTask(task); }
 
     /** Observe AFTER native state writes. No decisions based on guessed doze enums. */
     public void onNativeState(Object controller) {
@@ -253,15 +265,16 @@ public final class LockscreenStatusBlur {
     }
     private void syncWallpaper() {
         wallpaper.configure(enabled, crossWindowEnabled, weight(), radius, range, transition, maskColor);
+        externalWallpaper.configure(enabled, crossWindowEnabled, weight(), radius, range, transition, maskColor);
     }
     private void updateVisibility() { syncWallpaper(); }
 
-    /** Existing native frames may finish an async scrim update. Observe only:
-     * do NOT draw BackgroundBlurDrawable or a mask into any foreground window.
+    /** Compatibility registration only. Scrim alpha follows native property-write
+     * callbacks; stable foreground frames do not walk/reflect its parent tree.
      */
     public void drawBefore(View owner, Canvas canvas) {
         if (!enabled || owner == null) return;
-        onHostAttached(owner); refreshScrims(true);
+        onHostAttached(owner);
     }
     private void ensureBlurListener(Context context) {
         if (!enabled || blurListener != null || Build.VERSION.SDK_INT < 31) return;
@@ -315,7 +328,7 @@ public final class LockscreenStatusBlur {
     }
     public void releaseRuntime() {
         runtimeGeneration++; scrimController.clear();
-        enabled = false; wallpaper.releaseRuntime(); hosts.clear();
+        enabled = false; wallpaper.releaseRuntime(); externalWallpaper.releaseRuntime(); hosts.clear();
         stateAccess.clear(); keyguardAccess.clear(); hostKinds.clear(); removeBlurListener();
         scrimAccess.clear(); behindScrim = frontScrim = null;
         easedDoze = behindOpacity = frontOpacity = Float.NaN;
@@ -325,7 +338,9 @@ public final class LockscreenStatusBlur {
         return "enabled=" + enabled + ",stateKnown=" + stateKnown + ",keyguard=" + keyguard
                 + ",dozing=" + dozing + ",windowBlur=" + crossWindowEnabled + ",easedDoze=" + easedDoze
                 + ",behindOpacity=" + behindOpacity + ",frontOpacity=" + frontOpacity
-                + "," + wallpaper.summary() + ",source=WallpaperEngineSurfaceOnly+nativeDismiss+nativeScrim";
+                + ",maskAlpha=" + (maskColor >>> 24) + ",wallpaperEffectVisibility=" + weight()
+                + "," + wallpaper.summary() + "," + externalWallpaper.summary()
+                + ",source=WallpaperEngine+NativeWallpaperWindowInfo+nativeDismiss+nativeScrim";
     }
     private static float number(Bundle b, String key, float fallback, float low, float high) {
         Object value = b == null ? null : b.get(key);

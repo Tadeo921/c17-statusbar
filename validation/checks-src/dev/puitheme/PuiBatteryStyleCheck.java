@@ -34,6 +34,8 @@ public final class PuiBatteryStyleCheck {
         public Drawable getDrawable(int id,Theme theme){return new Graphic();}
     }
     public static class NativeContext extends Context {
+        public final android.content.ContentResolver resolver=new android.content.ContentResolver();
+        public android.content.ContentResolver getContentResolver(){return resolver;}
         public Resources getResources(){return new NativeResources();}
         public Context createPackageContext(String name,int flags){return new Context(){public Resources getResources(){return new PuiResources();}};}
     }
@@ -43,7 +45,13 @@ public final class PuiBatteryStyleCheck {
         public RectF rect=new RectF(8,8,108,60);
         public int progressColor=0xff22c55e,backgroundColor=0x4d000000,outlineColor=0xe6000000,batteryLevel=85;
         public int tintCalls;
-        public Context getContext(){return new NativeContext();}
+        public final NativeContext context=new NativeContext();
+        public int chargeIconId;
+        public Context getContext(){return context;}
+        public int getBatteryLevel(){return batteryLevel;}
+        public int getChargeIconId(){return chargeIconId;}
+        public void setColors(int progress,int bg,int outline){progressColor=progress;backgroundColor=bg;outlineColor=outline;}
+        public void updatePaintXfermode(Paint paint){ }
         public void updateDrawableTint(){tintCalls++;}
     }
     public static class NativeHorizontal extends NativeBar {
@@ -51,10 +59,13 @@ public final class PuiBatteryStyleCheck {
         public LayerDrawable progressDrawable=new LayerDrawable(new Drawable[]{new Graphic()});
         public RectF noPercentRectF=new RectF(0,0,116,68);
         public Paint percentInPaint=new Paint(1);
+        public boolean isShowPercentIn=true;
         public int measures;
+        public RectF getBodyRectForLayout(RectF content){return rect;}
         public void updatePercentInTextBounds(){measures++;}
     }
     public static void main(String[] args) throws Exception {
+        android.provider.Settings.System.values.put("display_power_percent",1);
         NativeHorizontal battery=new NativeHorizontal();battery.percentInPaint.setTextSize(38);
         Drawable outside=battery.outsideDrawable,frame=battery.frameDrawable,inside=battery.insideDrawable;
         Drawable outer=battery.bgDrawable,outerFill=battery.progressDrawable;
@@ -90,7 +101,42 @@ public final class PuiBatteryStyleCheck {
         settings.putBoolean("battery_enabled",true);style.configure(settings);style.prepare(battery);style.updateView(owner,battery);
         style.detach(owner,battery);check(battery.outsideDrawable==latestNative,"detach retained PUI objects");equal(64,image.getLayoutParams().height);
         nativeScaleFactor();
+        noPercentageFallback();
         System.out.println("PuiBatteryStyleCheck passed: "+checks);
+    }
+    private static void noPercentageFallback() throws Exception {
+        NativeHorizontal battery=new NativeHorizontal();battery.percentInPaint.setTextSize(38);
+        Drawable[] originals={battery.outsideDrawable,battery.insideDrawable,battery.frameDrawable,battery.bgDrawable,battery.progressDrawable};
+        ViewGroup owner=new ViewGroup(new NativeContext());ImageView image=new ImageView(owner.getContext());owner.addView(image);
+        image.setImageDrawable(battery);image.setLayoutParams(new ViewGroup.LayoutParams(87,48));
+        Bundle settings=new Bundle();settings.putBoolean("battery_enabled",true);
+        PuiBatteryStyle style=new PuiBatteryStyle(NativeHorizontal.class);style.configure(settings);
+        android.provider.Settings.System.values.put("display_power_percent",0);
+        check(!style.prepare(battery),"no-percentage system battery was replaced by PUI");
+        style.updateView(owner,battery);equal(48,image.getLayoutParams().height);
+        check(battery.bgDrawable==originals[3]&&battery.progressDrawable==originals[4],"no-percentage outer assets changed");
+        check(battery.percentInPaint.getTextSize()==38,"no-percentage text metrics changed");
+        for(int percent:new int[]{1,2}) {
+            android.provider.Settings.System.values.put("display_power_percent",percent);
+            check(style.prepare(battery),"percentage mode "+percent+" refused PUI");style.updateView(owner,battery);
+            equal(51,image.getLayoutParams().height);
+            android.provider.Settings.System.values.put("display_power_percent",0);
+            check(!style.prepare(battery),"percentage off retained PUI");style.updateView(owner,battery);
+            check(battery.outsideDrawable==originals[0]&&battery.insideDrawable==originals[1]&&battery.frameDrawable==originals[2],"percentage off did not restore native inside assets");
+            check(battery.bgDrawable==originals[3]&&battery.progressDrawable==originals[4],"percentage off did not restore native outer assets");
+            check(battery.percentInPaint.getTextSize()==38,"percentage off did not restore native metrics");
+            equal(48,image.getLayoutParams().height);
+        }
+        android.provider.Settings.System.values.put("display_power_percent",1);style.prepare(battery);style.updateView(owner,battery);
+        Drawable latest=new Graphic();battery.bgDrawable=latest;
+        android.provider.Settings.System.values.put("display_power_percent",0);style.prepare(battery);style.updateView(owner,battery);
+        check(battery.bgDrawable==latest,"percentage off replaced a freshly rebuilt OEM asset");
+        android.provider.Settings.System.values.put("display_power_percent",1);
+        style.prepare(battery);style.updateView(owner,battery);
+        image.getLayoutParams().width=100;
+        android.provider.Settings.System.values.put("display_power_percent",0);style.prepare(battery);style.updateView(owner,battery);
+        equal(100,image.getLayoutParams().width);equal(48,image.getLayoutParams().height);
+        android.provider.Settings.System.values.put("display_power_percent",1);
     }
     private static void nativeScaleFactor() throws Exception {
         NativeHorizontal battery=new NativeHorizontal();PuiBatteryStyle style=new PuiBatteryStyle(NativeHorizontal.class);

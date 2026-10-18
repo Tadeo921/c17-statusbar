@@ -8,8 +8,10 @@ public interface WindowManager {
     void removeCrossWindowBlurEnabledListener(java.util.function.Consumer<Boolean> listener);
     class LayoutParams extends ViewGroup.LayoutParams {
         public static final int FLAG_SCALED=0x4000,FLAG_SHOW_WALLPAPER=0x100000;
+        public static final int FLAG_NOT_FOCUSABLE=8,FLAG_NOT_TOUCHABLE=16,FLAG_HARDWARE_ACCELERATED=0x1000000;
         public static final int SOFT_INPUT_STATE_ALWAYS_HIDDEN=3,SOFT_INPUT_STATE_ALWAYS_VISIBLE=5,SOFT_INPUT_ADJUST_RESIZE=16;
         public int flags;
+        public int format;
         public final android.graphics.Rect surfaceInsets=new android.graphics.Rect();
         public LayoutParams() {super(MATCH_PARENT,MATCH_PARENT);}
         public LayoutParams(int width,int height) {super(width,height);}

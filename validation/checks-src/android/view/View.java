@@ -3,7 +3,12 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 public class View implements ViewParent, Drawable.Callback {
+    public static final android.util.Property<View,Float> TRANSLATION_X=new android.util.Property<View,Float>(Float.class,"translationX"){
+        public Float get(View view){return view.getTranslationX();}
+        public void set(View view,Float value){view.setTranslationX(value);}
+    };
     public static final int NO_ID=-1;
+    public static final int IMPORTANT_FOR_ACCESSIBILITY_NO=2,IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS=4;
     public static final class MeasureSpec {
         public static final int EXACTLY=0x40000000, AT_MOST=0x80000000, UNSPECIFIED=0;
         public static int getSize(int spec){return spec&0x3fffffff;}
@@ -11,11 +16,25 @@ public class View implements ViewParent, Drawable.Callback {
         public static int makeMeasureSpec(int size,int mode){return (size&0x3fffffff)|(mode&0xc0000000);}
     }
     public static final int VISIBLE=0,INVISIBLE=4,GONE=8;
+    public static final int LAYER_TYPE_NONE=0,LAYER_TYPE_SOFTWARE=1,LAYER_TYPE_HARDWARE=2;
+    private int layerType;
+    private android.graphics.Paint layerPaintForCheck;
+    public int layerTypeWrites;
+    public boolean hardwareAcceleratedForCheck=true;
+    public int getLayerType(){return layerType;}
+    public void setLayerType(int type,android.graphics.Paint paint){layerType=type;layerPaintForCheck=paint;layerTypeWrites++;}
+    public android.graphics.Paint getLayerPaintForCheck(){return layerPaintForCheck;}
+    public boolean isHardwareAccelerated(){return hardwareAcceleratedForCheck;}
     public static final int LAYOUT_DIRECTION_LTR=0,LAYOUT_DIRECTION_RTL=1;
     private int minimumWidth, visibility;
     private float alpha=1f,translationAlpha=1f,translationX,translationY,scaleX=1f,scaleY=1f;
     private int layoutLeft;
     private int layoutTop;
+    private int layoutRightForCheck,layoutBottomForCheck;
+    /** Opt in to Android's real layout bounds for parent-dispatch checks.
+     * The legacy measurement fixtures retain their fixed default dimensions. */
+    public boolean useLayoutBoundsForCheck;
+    private boolean touchDownForCheck;
     public int layoutRequests, invalidations;
     public int postedInvalidations;
     public boolean dirty;
@@ -29,6 +48,8 @@ public class View implements ViewParent, Drawable.Callback {
     private boolean clipToOutline;
     private ViewGroup.LayoutParams layoutParams;
     private boolean measured,layoutRequested=true;
+    private boolean clickable,focusable;
+    private OnClickListener clickListener;
     private int measuredWidth,measuredHeight;
     private final Resources resources = Resources.getSystem();
     public interface OnLayoutChangeListener {
@@ -54,16 +75,39 @@ public class View implements ViewParent, Drawable.Callback {
             listener.onLayoutChange(this,0,0,width,height,0,0,oldWidth,oldHeight);
     }
     public View(Context context) { this.context=context; }
+    public int backgroundColorForCheck;
+    public void setBackgroundColor(int value){backgroundColorForCheck=value;}
+    public void setWillNotDraw(boolean value) { }
+    protected void onAttachedToWindow() { }
+    protected void onDetachedFromWindow() { }
+    protected void onSizeChanged(int width,int height,int oldWidth,int oldHeight) { }
+    public void onVisibilityAggregated(boolean visible) { }
+    protected void onVisibilityChanged(View changedView,int visibility) { }
+    protected void onWindowVisibilityChanged(int visibility) { }
+    public void assignParent(ViewParent next){parent=next;}
+    public ViewRootImpl nativeRootForCheck=new ViewRootImpl();
+    private android.graphics.RenderNode backgroundNodeForCheck;
+    public ViewRootImpl getViewRootImpl(){return nativeRootForCheck;}
+    public IViewWrapper getViewWrapper(){return () -> {
+        if(backgroundNodeForCheck==null)backgroundNodeForCheck=new android.graphics.RenderNode("fixture owned backdrop view");
+        return backgroundNodeForCheck;
+    };}
     public Context getContext() { return context; }
     public boolean isAttachedToWindow() { return attached; }
     public boolean isShown() { return shown; }
     public int getWindowVisibility() { return windowVisibility; }
-    public int getWidth() { return 124; }
-    public int getHeight() { return 80; }
+    public int getWidth() { return useLayoutBoundsForCheck?Math.max(0,layoutRightForCheck-layoutLeft):124; }
+    public int getHeight() { return useLayoutBoundsForCheck?Math.max(0,layoutBottomForCheck-layoutTop):80; }
     public int getTop() {return layoutTop;}
     public void offsetTopAndBottom(int value) {layoutTop+=value;}
+    public int layoutCalls;
+    public void layout(int left,int top,int right,int bottom){layoutLeft=left;layoutTop=top;layoutRightForCheck=right;layoutBottomForCheck=bottom;layoutCalls++;}
     public void getLocationOnScreen(int[] output) {output[0]=getLeft();output[1]=getTop();}
+    public void getLocationInWindow(int[] output) {getLocationOnScreen(output);}
     public int getLeft() {return layoutLeft;}
+    public int getRight() {return getLeft()+getWidth();}
+    public int getBottom() {return getTop()+getHeight();}
+    public boolean hasOnClickListeners() {return clickListener!=null;}
     public void offsetLeftAndRight(int value) {layoutLeft+=value;}
     public float getTranslationX() {return translationX;}
     public void setTranslationX(float value) {translationX=value;}
@@ -87,19 +131,50 @@ public class View implements ViewParent, Drawable.Callback {
     protected void onMeasure(int width,int height){setMeasuredDimension(getWidth(),getHeight());}
     protected void setMeasuredDimension(int width,int height){measuredWidth=width;measuredHeight=height;measured=true;}
     public static int resolveSizeAndState(int size,int spec,int state){return MeasureSpec.getMode(spec)==MeasureSpec.EXACTLY?MeasureSpec.getSize(spec):size;}
-    public void setClickable(boolean value) { }
-    public void setFocusable(boolean value) { }
-    public void setImportantForAccessibility(int value) { }
-    public void setPadding(int left,int top,int right,int bottom) { }
+    public static int resolveSize(int size,int spec){
+        int mode=MeasureSpec.getMode(spec),limit=MeasureSpec.getSize(spec);
+        return mode==MeasureSpec.EXACTLY?limit:mode==MeasureSpec.AT_MOST?Math.min(size,limit):size;
+    }
+    public void setPivotX(float value) { }
+    public void setPivotY(float value) { }
+    public void setClickable(boolean value) {clickable=value;}
+    public boolean isClickable(){return clickable;}
+    public void setFocusable(boolean value) {focusable=value;}
+    public boolean isFocusable(){return focusable;}
+    public void setOnClickListener(OnClickListener listener){clickListener=listener;if(listener!=null)clickable=true;}
+    public boolean performClick(){if(clickListener==null)return false;clickListener.onClick(this);return true;}
+    public boolean dispatchTouchEvent(MotionEvent event){return onTouchEvent(event);}
+    public boolean onTouchEvent(MotionEvent event) {
+        if(!isClickable()){touchDownForCheck=false;return false;}
+        int action=event.getActionMasked();
+        if(action==MotionEvent.ACTION_DOWN){touchDownForCheck=true;return true;}
+        if(action==MotionEvent.ACTION_CANCEL){touchDownForCheck=false;return true;}
+        if(action==MotionEvent.ACTION_MOVE&&(event.getX()<0||event.getX()>=getWidth()||event.getY()<0||event.getY()>=getHeight()))touchDownForCheck=false;
+        if(action==MotionEvent.ACTION_UP){boolean click=touchDownForCheck;touchDownForCheck=false;if(click)performClick();}
+        return true;
+    }
+    public boolean getGlobalVisibleRect(android.graphics.Rect output){
+        if(!shown||visibility!=VISIBLE||!attached||getWidth()<=0||getHeight()<=0)return false;
+        output.set(getLeft(),getTop(),getLeft()+getWidth(),getTop()+getHeight());return true;
+    }
+    private int importantForAccessibility;
+    public void setImportantForAccessibility(int value) { importantForAccessibility=value; }
+    public int getImportantForAccessibility() { return importantForAccessibility; }
+    /** Opt-in real padding for owned text allocation checks; legacy fixtures keep their old zero-padding contract. */
+    public static boolean keepPaddingForCheck;
+    private int checkPaddingLeft,checkPaddingTop,checkPaddingRight,checkPaddingBottom;
+    public void setPadding(int left,int top,int right,int bottom) {
+        if(keepPaddingForCheck){checkPaddingLeft=left;checkPaddingTop=top;checkPaddingRight=right;checkPaddingBottom=bottom;}
+    }
     public Object getTag(int key) {return null;}
     public Object getTag() {return null;}
     public void setTag(int key,Object value) { }
     public int getScrollX() {return 0;}
     public int getScrollY() {return 0;}
-    public int getPaddingLeft() {return 0;}
-    public int getPaddingTop() {return 0;}
-    public int getPaddingRight() {return 0;}
-    public int getPaddingBottom() {return 0;}
+    public int getPaddingLeft() {return checkPaddingLeft;}
+    public int getPaddingTop() {return checkPaddingTop;}
+    public int getPaddingRight() {return checkPaddingRight;}
+    public int getPaddingBottom() {return checkPaddingBottom;}
     public int getPaddingStart() {return getLayoutDirection()==LAYOUT_DIRECTION_RTL?getPaddingRight():getPaddingLeft();}
     public int getPaddingEnd() {return getLayoutDirection()==LAYOUT_DIRECTION_RTL?getPaddingLeft():getPaddingRight();}
     public void setPaddingRelative(int start,int top,int end,int bottom) { }
@@ -121,6 +196,7 @@ public class View implements ViewParent, Drawable.Callback {
     public int getMinimumWidth() { return minimumWidth; }
     public void setMinimumWidth(int value) { minimumWidth = value; requestLayout(); }
     public int getVisibility() { return visibility; }
+    public int[] getDrawableState(){return new int[0];}
     public void setVisibility(int value) { visibility = value; }
     public ViewParent getParent() { return parent; }
     public View getRootView() {return parent instanceof View?((View)parent).getRootView():this;}
@@ -128,9 +204,19 @@ public class View implements ViewParent, Drawable.Callback {
     public android.os.IBinder getWindowToken() {return null;}
     public Display getDisplay() {return null;}
     public void draw(android.graphics.Canvas canvas) { }
+    public android.graphics.RenderEffect renderEffect;
+    public int renderEffectWrites;
+    public void setRenderEffect(android.graphics.RenderEffect effect){renderEffect=effect;renderEffectWrites++;}
     public void postInvalidate() {postedInvalidations++;}
+    public long lastDelayedInvalidateForCheck;
+    public void postInvalidateDelayed(long delay) {postedInvalidations++;lastDelayedInvalidateForCheck=delay;}
+    public void postInvalidateOnAnimation() {postedInvalidations++;}
     public Resources getResources() { return resources; }
     public void requestLayout() { layoutRequests++;layoutRequested=true; }
+    public int forcedLayouts;
+    public void forceLayout() { forcedLayouts++;layoutRequested=true; }
+    public boolean canScrollUpForCheck;
+    public boolean canScrollVertically(int direction){return direction<0&&canScrollUpForCheck;}
     public void invalidate() { invalidations++; }
     public boolean isDirty() { return dirty; }
     public void invalidateOutline() { invalidations++; }
@@ -140,6 +226,10 @@ public class View implements ViewParent, Drawable.Callback {
     private Drawable background;
     public Drawable getBackground(){return background;}
     public void setBackground(Drawable value){background=value;}
+    public void setBackgroundDrawable(Drawable value){setBackground(value);}
+    private Drawable foreground;
+    public Drawable getForeground(){return foreground;}
+    public void setForeground(Drawable value){foreground=value;}
     public android.graphics.Matrix getMatrix(){return new android.graphics.Matrix();}
     public void transformMatrixToGlobal(android.graphics.Matrix matrix){
         if(parent instanceof View)((View)parent).transformMatrixToGlobal(matrix);
@@ -149,5 +239,19 @@ public class View implements ViewParent, Drawable.Callback {
         android.graphics.Matrix global=new android.graphics.Matrix(),inverse=new android.graphics.Matrix();
         transformMatrixToGlobal(global);global.invert(inverse);matrix.preConcat(inverse);
     }
-    public boolean post(Runnable task){task.run();return true;}
+    /** Opt in per View to the real queued post/remove ordering. Existing
+     * synchronous fixture consumers keep their original behavior. */
+    public boolean queuePostedForCheck;
+    public int postCallsForCheck;
+    public final java.util.List<Runnable> postedTasksForCheck=new java.util.ArrayList<>();
+    public boolean post(Runnable task){postCallsForCheck++;if(queuePostedForCheck)postedTasksForCheck.add(task);else task.run();return true;}
+    /** Queued, not run: a check runs delayed work explicitly with {@link #runDelayedForCheck}. */
+    public final java.util.List<Runnable> delayedTasks=new java.util.ArrayList<>();
+    public boolean postDelayed(Runnable task,long delay){delayedTasks.add(task);return true;}
+    public boolean removeCallbacks(Runnable task){boolean removed=delayedTasks.remove(task);for(int i=postedTasksForCheck.size()-1;i>=0;i--)if(postedTasksForCheck.get(i)==task){postedTasksForCheck.remove(i);removed=true;}return removed;}
+    public void runPostedForCheck(){java.util.List<Runnable> due=new java.util.ArrayList<>(postedTasksForCheck);postedTasksForCheck.clear();for(Runnable task:due)task.run();}
+    public void runDelayedForCheck(){java.util.List<Runnable> due=new java.util.ArrayList<>(delayedTasks);delayedTasks.clear();for(Runnable task:due)task.run();}
+    /** Queued, not run: a check drives display frames explicitly. */
+    public final java.util.List<Runnable> animationFrames=new java.util.ArrayList<>();
+    public void postOnAnimation(Runnable task){animationFrames.add(task);}
 }

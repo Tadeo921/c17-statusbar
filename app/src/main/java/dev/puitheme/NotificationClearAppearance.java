@@ -40,6 +40,7 @@ public final class NotificationClearAppearance {
     public static final String GRADIENT_COLOR_DARK="notification_clear_gradient_color_dark";
     public static final String OPACITY="notification_clear_opacity";
     public static final String GRADIENT_ANGLE="notification_clear_gradient_angle";
+    public static final String GRADIENT_RANGE="notification_clear_gradient_range";
     public static final String LANDSCAPE_MASTER="notification_clear_landscape_custom_enabled";
     public static final String LANDSCAPE_GRADIENT_ENABLED="notification_clear_landscape_gradient_enabled";
     public static final String LANDSCAPE_COLOR_LIGHT="notification_clear_landscape_color_light";
@@ -48,6 +49,7 @@ public final class NotificationClearAppearance {
     public static final String LANDSCAPE_GRADIENT_COLOR_DARK="notification_clear_landscape_gradient_color_dark";
     public static final String LANDSCAPE_OPACITY="notification_clear_landscape_opacity";
     public static final String LANDSCAPE_GRADIENT_ANGLE="notification_clear_landscape_gradient_angle";
+    public static final String LANDSCAPE_GRADIENT_RANGE="notification_clear_landscape_gradient_range";
     private static final String MIGRATED="notification_clear_landscape_migrated_v62";
     private static final String FRESH="notification_clear_landscape_fresh_v62";
     public static final Map<String,String> LANDSCAPE_LEGACY;
@@ -60,6 +62,7 @@ public final class NotificationClearAppearance {
         flags.put(NotificationClearMotion.MOTION_ENABLED,false);
         Map<String,Float> numbers=new LinkedHashMap<>();numbers.put(OPACITY,100f);numbers.put(GRADIENT_ANGLE,90f);
         numbers.put(LANDSCAPE_OPACITY,100f);numbers.put(LANDSCAPE_GRADIENT_ANGLE,90f);
+        numbers.put(GRADIENT_RANGE,100f);numbers.put(LANDSCAPE_GRADIENT_RANGE,100f);
         numbers.put(NotificationClearMotion.SAFE_DISTANCE,18f);numbers.put(NotificationClearMotion.ENTRY_TRAVEL,32f);
         numbers.put(NotificationClearMotion.OFFSET_Y,0f);
         Map<String,Integer> colors=new LinkedHashMap<>();
@@ -70,7 +73,7 @@ public final class NotificationClearAppearance {
         BOOLEANS=Collections.unmodifiableMap(flags);NUMBERS=Collections.unmodifiableMap(numbers);COLORS=Collections.unmodifiableMap(colors);
         Map<String,String> legacy=new LinkedHashMap<>();
         legacy.put(LANDSCAPE_MASTER,MASTER);legacy.put(LANDSCAPE_GRADIENT_ENABLED,GRADIENT_ENABLED);
-        legacy.put(LANDSCAPE_OPACITY,OPACITY);legacy.put(LANDSCAPE_GRADIENT_ANGLE,GRADIENT_ANGLE);
+        legacy.put(LANDSCAPE_OPACITY,OPACITY);legacy.put(LANDSCAPE_GRADIENT_ANGLE,GRADIENT_ANGLE);legacy.put(LANDSCAPE_GRADIENT_RANGE,GRADIENT_RANGE);
         for(String[] pair:new String[][]{{LANDSCAPE_COLOR_LIGHT,COLOR_LIGHT},{LANDSCAPE_COLOR_DARK,COLOR_DARK},
                 {LANDSCAPE_GRADIENT_COLOR_LIGHT,GRADIENT_COLOR_LIGHT},{LANDSCAPE_GRADIENT_COLOR_DARK,GRADIENT_COLOR_DARK}}){
             legacy.put(pair[0],pair[1]);legacy.put(pair[0]+"_custom_alpha",pair[1]+"_custom_alpha");
@@ -134,7 +137,7 @@ public final class NotificationClearAppearance {
             if(background!=null)backgrounds.put(background,new WeakReference<>(button));
         }
         if(changed)retireEngines(button,null);
-        if(enabled(button))trace("background:"+(background==null?"absent":background.getClass().getName()),
+        if(enabled(button)&&tracing())trace("background:"+(background==null?"absent":background.getClass().getName()),
                 "clear background "+(background==null?"absent":background.getClass().getName()));
     }
     public void forget(View button) {
@@ -164,7 +167,7 @@ public final class NotificationClearAppearance {
         Object actual=QsTileAppearance.call(proxy,"getBlurDrawable",mask?null:fallback);
         if(!(actual instanceof Drawable))actual=fallback;
         boolean wallpaper=QsTileAppearance.type(actual,WALLPAPER_BLUR);
-        trace("resolved:"+(actual==null?"absent":actual.getClass().getName()),
+        if(tracing())trace("resolved:"+(actual==null?"absent":actual.getClass().getName()),
                 "clear material "+(actual==null?"absent":actual.getClass().getName()));
         if(QsTileAppearance.type(actual,PLATFORM_BLUR)||wallpaper) {
             Object engine=QsTileAppearance.field(actual,wallpaper?"blendDrawable":"blurDrawable");
@@ -203,7 +206,7 @@ public final class NotificationClearAppearance {
                 ShaderSwap swap=null;
                 try { swap=prepareGlass(engine,style(button),Boolean.TRUE.equals(wallpaperEngines.get(engine))); }
                 catch(ReflectiveOperationException|RuntimeException unavailable){error(unavailable);}
-                trace("prepared:"+(swap!=null),"clear native base shader prepared "+(swap!=null));
+                if(tracing())trace("prepared:"+(swap!=null),"clear native base shader prepared "+(swap!=null));
                 try { nativeDraw.draw(canvas); } finally { if(swap!=null)swap.restore(); }
             }
         } finally { active.remove(engine);if(active.isEmpty())drawingEngines.remove(); }
@@ -219,7 +222,7 @@ public final class NotificationClearAppearance {
         Object config=QsTileAppearance.field(nativeMaterial,"currentBlurMixConfig");
         int[] slots=wallpaper?wallpaperSlots(owner,all):clearSlots(base,all,config);
         traceMaterial(config,base,all,slots);
-        if(slots==null)trace("slots:"+wallpaper+":"+base.size()+":"+all.size(),
+        if(slots==null&&tracing())trace("slots:"+wallpaper+":"+base.size()+":"+all.size(),
                 "clear unsupported native base slots wallpaper "+wallpaper+" multi "+base.size()+" summary "+all.size());
         if(slots==null)return null;
         Object corner=QsTileAppearance.call(QsTileAppearance.field(owner,"mCornerParams"),"getType");
@@ -227,19 +230,32 @@ public final class NotificationClearAppearance {
         if(corner==null||Boolean.TRUE.equals(QsTileAppearance.field(meta,"valid")))return null;
         Rect bounds=engine.getBounds();if(!QsTileAppearance.valid(bounds))return null;
         Object effects=QsTileAppearance.invoke(owner,"getAllEffects");if(!(effects instanceof List))return null;
-        Class<?> builder=Class.forName("com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt",false,owner.getClass().getClassLoader());
-        StringBuilder source=new StringBuilder();
-        QsTileAppearance.invoke(builder,"buildShaderString",source,QsTileAppearance.field(owner,"blendAlgorithmMask"),all.size(),corner,false,effects);
-        // Reuse the proven single-argument substitution, not a second material implementation.
-        String material=QsNativeGlassFill.decorate(source.toString());if(material==null)return null;
         CachedShader cached=shaders.get(owner);
-        if(cached==null||!cached.source.equals(material)){cached=new CachedShader(material,new RuntimeShader(material));shaders.put(owner,cached);}
+        Object mask=QsTileAppearance.field(owner,"blendAlgorithmMask");
+        if(cached==null||!cached.matches((RuntimeShader)original,mask,all.size(),corner,(List<?>)effects,
+                engine,nativeMaterial,config,base,all)) {
+            QsNativeGlassFill.SourceSignature signature=QsNativeGlassFill.SourceSignature.capture(
+                    (RuntimeShader)original,mask,all.size(),corner,(List<?>)effects,false);
+            Class<?> builder=Class.forName("com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt",false,owner.getClass().getClassLoader());
+            StringBuilder source=new StringBuilder();
+            QsTileAppearance.invoke(builder,"buildShaderString",source,mask,all.size(),corner,false,effects);
+            // Unknown structural contracts still rebuild and compare the native source every time.
+            String material=QsNativeGlassFill.decorate(source.toString());if(material==null)return null;
+            if(cached==null||!cached.source.equals(material)){
+                cached=new CachedShader(material,new RuntimeShader(material));shaders.put(owner,cached);
+            }
+            cached.signature=signature;
+            cached.inputs=signature==null?null:new ShaderInputs(engine,nativeMaterial,config,base,all,(List<?>)effects);
+        }
         RuntimeShader replacement=cached.shader;
         QsTileAppearance.invoke(owner,"setBaseUniform",replacement);
         replacement.setIntUniform("uEnableBlend",Boolean.TRUE.equals(QsTileAppearance.field(owner,"enableBlend"))?1:0);
-        replacement.setFloatUniform("u_multiBlendParams",QsNativeGlassFill.uniforms(all));
+        if(cached.blendUniforms==null||cached.blendUniforms.length!=all.size()*5)cached.blendUniforms=new float[all.size()*5];
+        QsNativeGlassFill.fillUniforms(all,cached.blendUniforms);
+        replacement.setFloatUniform("u_multiBlendParams",cached.blendUniforms);
         for(Object effect:(List<?>)effects)if(Boolean.TRUE.equals(QsTileAppearance.call(effect,"isEnabled")))QsTileAppearance.invoke(effect,"pushUniforms",replacement);
-        replacement.setInputShader("c17QsFill",QsTileAppearance.shader(style,new Rect(0,0,bounds.width(),bounds.height())));
+        cached.fillBounds.left=0;cached.fillBounds.top=0;cached.fillBounds.right=bounds.width();cached.fillBounds.bottom=bounds.height();
+        replacement.setInputShader("c17QsFill",QsTileAppearance.shader(style,cached.fillBounds));
         replacement.setFloatUniform("c17QsSlots",slots[0]*5f,slots[1]*5f);
         Object nativePaint=QsTileAppearance.field(engine,"drawableShaderPaint");
         ShaderSwap swap=new ShaderSwap(owner,(RuntimeShader)original,replacement,nativePaint instanceof Paint?(Paint)nativePaint:null);
@@ -291,7 +307,31 @@ public final class NotificationClearAppearance {
     }
     private static final class CachedShader {
         final String source;final RuntimeShader shader;
+        final Rect fillBounds=new Rect();float[] blendUniforms;
+        QsNativeGlassFill.SourceSignature signature;ShaderInputs inputs;
         CachedShader(String source,RuntimeShader shader){this.source=source;this.shader=shader;}
+        boolean matches(RuntimeShader original,Object mask,int count,Object corner,List<?> effects,
+                Drawable engine,Drawable material,Object config,List<?> base,List<?> summary) {
+            return signature!=null&&inputs!=null&&inputs.matches(engine,material,config,base,summary,effects)
+                    &&signature.matches(original,mask,count,corner,effects,false);
+        }
+    }
+    /** Keep only weak native identities; the material cache must not retain its own WeakHashMap key. */
+    private static final class ShaderInputs {
+        final NativeIdentity engine,material,config,base,summary,effects;
+        ShaderInputs(Drawable engine,Drawable material,Object config,List<?> base,List<?> summary,List<?> effects) {
+            this.engine=new NativeIdentity(engine);this.material=new NativeIdentity(material);this.config=new NativeIdentity(config);
+            this.base=new NativeIdentity(base);this.summary=new NativeIdentity(summary);this.effects=new NativeIdentity(effects);
+        }
+        boolean matches(Drawable engine,Drawable material,Object config,List<?> base,List<?> summary,List<?> effects) {
+            return this.engine.matches(engine)&&this.material.matches(material)&&this.config.matches(config)
+                    &&this.base.matches(base)&&this.summary.matches(summary)&&this.effects.matches(effects);
+        }
+    }
+    private static final class NativeIdentity {
+        final WeakReference<Object> value;final boolean present;
+        NativeIdentity(Object value){this.value=new WeakReference<>(value);present=value!=null;}
+        boolean matches(Object current){return current==null?!present:value.get()==current;}
     }
     private static final class ShaderSwap {
         final Object owner;final RuntimeShader original,replacement;final Paint paint;final Shader paintShader;
@@ -374,7 +414,8 @@ public final class NotificationClearAppearance {
         return new QsTileAppearance.Style(effectiveColor(settings,colorKey),effectiveColor(settings,secondKey),
                 Math.max(0f,Math.min(100f,NumericPolicy.finite(settings.get(landscape?LANDSCAPE_OPACITY:OPACITY),100f))),
                 NumericPolicy.finite(settings.get(landscape?LANDSCAPE_GRADIENT_ANGLE:GRADIENT_ANGLE),90f)%360f,
-                settings.getBoolean(landscape?LANDSCAPE_GRADIENT_ENABLED:GRADIENT_ENABLED,false));
+                settings.getBoolean(landscape?LANDSCAPE_GRADIENT_ENABLED:GRADIENT_ENABLED,false),
+                Math.max(5f,Math.min(100f,NumericPolicy.finite(settings.get(landscape?LANDSCAPE_GRADIENT_RANGE:GRADIENT_RANGE),100f)))/100f);
     }
     private static String landscapeKey(String portrait){
         for(Map.Entry<String,String> item:LANDSCAPE_LEGACY.entrySet())if(item.getValue().equals(portrait))return item.getKey();
@@ -428,7 +469,8 @@ public final class NotificationClearAppearance {
         if(!StatusBarSettings.customAlpha(values,a))first=(first&0xffffff)|0xff000000;
         if(!StatusBarSettings.customAlpha(values,b))second=(second&0xffffff)|0xff000000;
         return QsTileAppearance.shader(new QsTileAppearance.Style(first,second,Math.max(0f,Math.min(100f,StatusBarSettings.number(values,OPACITY,100f)))*.36f,
-                StatusBarSettings.number(values,GRADIENT_ANGLE,90f)%360f,StatusBarSettings.bool(values,GRADIENT_ENABLED)),bounds);
+                StatusBarSettings.number(values,GRADIENT_ANGLE,90f)%360f,StatusBarSettings.bool(values,GRADIENT_ENABLED),
+                Math.max(5f,Math.min(100f,StatusBarSettings.number(values,GRADIENT_RANGE,100f)))/100f),bounds);
     }
     private static View owner(Map<Drawable,WeakReference<View>> owners,Drawable drawable) {
         WeakReference<View> ref=owners.get(drawable);View view=ref==null?null:ref.get();return QsTileAppearance.type(view,BUTTON_CLASS)?view:null;
@@ -453,11 +495,13 @@ public final class NotificationClearAppearance {
         for(Drawable engine:retired)dirty(engine);
     }
     private void trace(String stage,String detail) {
+        if(!tracing())return;
         synchronized(traceStages) {if(traceStages.size()>=16||!traceStages.add(stage))return;}
         ModuleDiagnostics.info("notification_clear",detail);
     }
     /** One bounded snapshot per material shape; no object identifiers or user settings are logged. */
     private void traceMaterial(Object config,List<?> base,List<?> summary,int[] slots) {
+        if(!tracing())return;
         String name=config==null?"absent":config.getClass().getSimpleName();
         String stage="schema:"+name+":"+base.size()+":"+summary.size()+":"+(slots==null?"native":slots[0]+":"+slots[1]);
         synchronized(traceStages) {if(traceStages.size()>=16||!traceStages.add(stage))return;}
@@ -486,6 +530,7 @@ public final class NotificationClearAppearance {
         }
         ModuleDiagnostics.info("notification_clear",detail.toString());
     }
+    private boolean tracing(){return ModuleDiagnostics.enabled()&&traceStages.size()<16;}
     private void error(Throwable error) {
         if(!loggedError){loggedError=true;ModuleDiagnostics.error("notification_clear","Clear button fill unavailable; original material retained",error);}
     }

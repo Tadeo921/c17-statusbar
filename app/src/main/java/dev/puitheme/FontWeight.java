@@ -9,11 +9,20 @@ import android.os.Build;
 import android.widget.TextView;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
 
 /** Changes the real wght axis, rather than only the Typeface's requested style metadata. */
 public final class FontWeight {
-    private static final Map<Typeface,Map<Integer,Plan>> CACHE=new WeakHashMap<>();
+    /** Plans by family, least recently used first. code100: this used to be cleared completely as soon as a 33rd family appeared. Every
+     * plan derives a new Typeface, which is itself a family for the next call, so a status bar with a few fonts and weights went over 32
+     * quickly; from then on every styling pass threw all plans away and built every face (and its font-variation instance) again, which
+     * also gave the views new Typeface objects and new layouts. Now only the least recently used family goes. */
+    private static final int MAX_FAMILIES=96;
+    private static final Map<Typeface,Map<String,Plan>> CACHE=new LinkedHashMap<Typeface,Map<String,Plan>>(32,.75f,true){
+        @Override protected boolean removeEldestEntry(Map.Entry<Typeface,Map<String,Plan>> eldest){
+            if(size()<=MAX_FAMILIES)return false;evictions++;return true;
+        }
+    };
+    private static long hits,misses,evictions;
     private FontWeight(){ }
     private static final class Plan {
         final Typeface face;
@@ -24,21 +33,24 @@ public final class FontWeight {
         }
     }
     public static synchronized void release(){CACHE.clear();}
+    /** Plan cache statistics for the performance summary: hits, misses (a face was built) and evicted families. */
+    public static synchronized long[] stats(){return new long[]{hits,misses,evictions,CACHE.size()};}
     private static boolean same(String a,String b){return a==b||(a!=null&&a.equals(b));}
     private static synchronized Plan plan(Typeface family,int requested,String nativeAxes){
         Typeface base=family==null?Typeface.DEFAULT:family;
         int weight=Math.max(1,Math.min(1000,requested));
-        Map<Integer,Plan> weights=CACHE.get(base);
+        Map<String,Plan> weights=CACHE.get(base);
         if(weights==null){
-            if(CACHE.size()>=32)CACHE.clear();
-            weights=new LinkedHashMap<Integer,Plan>(16,.75f,true){
-                @Override protected boolean removeEldestEntry(Map.Entry<Integer,Plan> item){return size()>48;}
+            weights=new LinkedHashMap<String,Plan>(16,.75f,true){
+                @Override protected boolean removeEldestEntry(Map.Entry<String,Plan> item){return size()>48;}
             };
             CACHE.put(base,weights);
         }
-        Plan result=weights.get(weight);
-        if(result!=null&&same(result.nativeAxes,nativeAxes))return result;
-        result=null;
+        // Weight and the caller's native axes together: two callers with different native axes no longer replace each other's plan.
+        String key=weight+"|"+(nativeAxes==null?"":nativeAxes);
+        Plan result=weights.get(key);
+        if(result!=null){hits++;return result;}
+        misses++;
         Typeface fallback=Build.VERSION.SDK_INT>=28?Typeface.create(base,weight,base.isItalic())
                 :Typeface.create(base,(weight>=600?Typeface.BOLD:Typeface.NORMAL)
                         |(base.isItalic()?Typeface.ITALIC:Typeface.NORMAL));
@@ -51,7 +63,7 @@ public final class FontWeight {
             }
         }catch(IllegalArgumentException unsupported){ /* Static/OEM families retain their real style match. */ }
         if(result==null)result=new Plan(fallback,nativeAxes,null,false);
-        weights.put(weight,result);return result;
+        weights.put(key,result);return result;
     }
     private static String withWeight(String original,int weight){
         StringBuilder result=new StringBuilder("'wght' ").append(weight);

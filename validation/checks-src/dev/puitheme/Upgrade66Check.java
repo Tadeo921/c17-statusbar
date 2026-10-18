@@ -17,11 +17,34 @@ public final class Upgrade66Check {
     private static Map<String,Object> wire(Bundle snapshot,int schema) {
         Map<String,Object> values=new LinkedHashMap<>();
         for(String key:snapshot.keySet())values.put(key,snapshot.get(key));
+        if(schema<13)for(String key:Upgrade90.DEFAULTS.keySet())values.remove(key);
+        if(schema<14)for(String key:Upgrade91.DEFAULTS.keySet())values.remove(key);
+        if(schema<21)for(String key:Upgrade103.DEFAULTS.keySet())values.remove(key);
+        if(schema<22)for(String key:Upgrade105.DEFAULTS.keySet())values.remove(key);
+        if(schema<23)for(String key:Upgrade106.DEFAULTS.keySet())values.remove(key);
+        if(schema<24)for(String key:Upgrade107.DEFAULTS.keySet())values.remove(key);
+        if(schema<25)for(String key:Upgrade108.DEFAULTS.keySet())values.remove(key); if(schema<26)for(String key:Upgrade117.DEFAULTS.keySet())values.remove(key); if(schema<27)for(String key:Upgrade118.DEFAULTS.keySet())values.remove(key); if(schema<28)for(String key:Upgrade135.DEFAULTS.keySet())values.remove(key); if(schema<29)for(String key:Upgrade136.DEFAULTS.keySet())values.remove(key); if(schema<37)for(String key:Upgrade169.DEFAULTS.keySet())values.remove(key); if(schema<38)for(String key:Upgrade171.DEFAULTS.keySet())values.remove(key); if(schema<39)for(String key:Upgrade172.DEFAULTS.keySet())values.remove(key); if(schema<40)for(String key:Upgrade173.DEFAULTS.keySet())values.remove(key); if(schema<41)for(String key:Upgrade174.DEFAULTS.keySet())values.remove(key); if(schema<42)for(String key:Upgrade175.DEFAULTS.keySet())values.remove(key); if(schema<44)for(String key:Upgrade184.DEFAULTS.keySet())values.remove(key); if(schema<45)for(String key:Upgrade185.DEFAULTS.keySet())values.remove(key); if(schema<46)for(String key:Upgrade186.DEFAULTS.keySet())values.remove(key); if(schema<47)for(String key:Upgrade187.DEFAULTS.keySet())values.remove(key); if(schema<48)for(String key:Upgrade188.DEFAULTS.keySet())values.remove(key); if(schema<43)for(String key:Upgrade177.DEFAULTS.keySet())values.remove(key); if(schema<36)for(String key:Upgrade168.DEFAULTS.keySet())values.remove(key); if(schema<35)for(String key:Upgrade166.DEFAULTS.keySet())values.remove(key); if(schema<34)for(String key:Upgrade160.DEFAULTS.keySet())values.remove(key); if(schema<33)for(String key:Upgrade157.DEFAULTS.keySet())values.remove(key); if(schema<32)for(String key:Upgrade154.DEFAULTS.keySet())values.remove(key); if (schema < 31) for (String key : Upgrade146.DEFAULTS.keySet()) values.remove(key);
+        if(schema<30)for(String key:Upgrade144.DEFAULTS.keySet())values.remove(key);
+        if(schema<20)for(String key:Upgrade101.DEFAULTS.keySet())values.remove(key);
+        if(schema<19)for(String key:Upgrade100.DEFAULTS.keySet())values.remove(key);
+        if(schema<18)for(String key:Upgrade99.DEFAULTS.keySet())values.remove(key);
+        if(schema<17)for(String key:Upgrade98.DEFAULTS.keySet())values.remove(key);
+        if(schema<16)for(String key:Upgrade96.DEFAULTS.keySet())values.remove(key);
+        if(schema<15)for(String key:Upgrade93.DEFAULTS.keySet())values.remove(key);
+        if(schema<11)for(String key:Upgrade82.DEFAULTS.keySet())values.remove(key);
+        if(schema<10)for(String key:Upgrade80.DEFAULTS.keySet())values.remove(key);
+        if(schema<12)values.remove(FluidCloudStyle.FOLLOW_MEDIA);
+        if(schema<12)values.remove(FluidCloudStyle.BACKGROUND_COLOR_CUSTOMIZED);
         values.put(SettingsFrameworkMirror.SCHEMA,schema);values.put(SettingsFrameworkMirror.REVISION,6600L);
         return values;
     }
     private static Map<String,Object> historical(Bundle current,int schema) {
         Map<String,Object> values=wire(current,schema);
+        for(String key:Upgrade76.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade77.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade78.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade79.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade80.DEFAULTS.keySet())values.remove(key);
         for(String key:Upgrade70.DEFAULTS.keySet())values.remove(key);
         for(String key:Upgrade67.DEFAULTS.keySet())values.remove(key);
         if(schema<3)for(String key:Upgrade66.DEFAULTS.keySet())values.remove(key);
@@ -29,6 +52,8 @@ public final class Upgrade66Check {
         return values;
     }
     private static Object historicalExpected(Bundle current,String key) {
+        // The old wire has no two-row fields; its later migration is distinct from today's fresh defaults.
+        if(ClockLayoutSettings.DUAL_LOWER_SCALE.equals(key))return Upgrade90.DEFAULTS.get(key);
         return NativeClockMeasurement.SCALE_BASIS_VERSION.equals(key)?1f:current.get(key);
     }
     private static final class Storage extends Context {
@@ -50,7 +75,7 @@ public final class Upgrade66Check {
         for(String key:Upgrade66.DEFAULTS.keySet())equal(Upgrade66.DEFAULTS.get(key),snapshot.get(key));
         for(String key:Upgrade67.DEFAULTS.keySet())equal(Upgrade67.DEFAULTS.get(key),snapshot.get(key));
         // Raw private stores are intentionally sparse; present damaged new fields must not be repaired.
-        Map<String,Object> additions=new LinkedHashMap<>(Upgrade66.DEFAULTS);additions.putAll(Upgrade67.DEFAULTS);additions.putAll(Upgrade70.DEFAULTS);
+        Map<String,Object> additions=new LinkedHashMap<>(Upgrade66.DEFAULTS);additions.putAll(Upgrade67.DEFAULTS);additions.putAll(Upgrade70.DEFAULTS);additions.putAll(Upgrade76.DEFAULTS);additions.putAll(Upgrade77.DEFAULTS);additions.putAll(Upgrade78.DEFAULTS);additions.putAll(Upgrade79.DEFAULTS);additions.putAll(Upgrade80.DEFAULTS);additions.putAll(Upgrade82.DEFAULTS);
         for(String key:additions.keySet()) {
             Storage broken=new Storage();broken.backup.values.putAll(untouched);broken.backup.values.put(key,new Object());
             equal(null,SettingsSnapshot.durableSnapshot(broken));
@@ -124,9 +149,11 @@ public final class Upgrade66Check {
         for(String key:current.keySet())equal(historicalExpected(current,key),boot.get(key));reader.stop();
     }
     private static void typedCurrent(Bundle current) {
-        Map<String,Object> modern=wire(current,5);equal(true,SettingsSnapshot.complete(SettingsFrameworkMirror.decode(modern)));
+        Map<String,Object> modern=wire(current,SettingsFrameworkMirror.VERSION);equal(true,SettingsSnapshot.complete(SettingsFrameworkMirror.decode(modern)));
         for(String key:current.keySet()) {
-            Map<String,Object> missing=new LinkedHashMap<>(modern);missing.remove(key);equal(null,SettingsFrameworkMirror.decode(missing));
+            Map<String,Object> missing=new LinkedHashMap<>(modern);missing.remove(key);
+            if(FluidCloudStyle.BACKGROUND_COLOR_CUSTOMIZED.equals(key))equal(false,SettingsFrameworkMirror.decode(missing).get(key));
+            else equal(null,SettingsFrameworkMirror.decode(missing));
             Bundle incomplete=new Bundle(current);incomplete.keySet().remove(key);equal(false,SettingsSnapshot.complete(incomplete));
             for(Object invalid:new Object[]{null,new Object()}) {
                 Map<String,Object> wrong=new LinkedHashMap<>(modern);wrong.put(key,invalid);equal(null,SettingsFrameworkMirror.decode(wrong));
@@ -144,7 +171,7 @@ public final class Upgrade66Check {
         absentBatch=new LinkedHashMap<>(modern);
         for(String key:Upgrade66.DEFAULTS.keySet())absentBatch.remove(key);
         equal(null,SettingsFrameworkMirror.decode(absentBatch));
-        for(Object invalid:new Object[]{null,0,6,4L,5L,"4","5",new Object()}) {
+        for(Object invalid:new Object[]{null,0,SettingsFrameworkMirror.VERSION+1,4L,5L,"4","5",new Object()}) {
             Map<String,Object> wrong=new LinkedHashMap<>(modern);wrong.put(SettingsFrameworkMirror.SCHEMA,invalid);
             equal(null,SettingsFrameworkMirror.decode(wrong));
         }
@@ -157,6 +184,10 @@ public final class Upgrade66Check {
             // This synthetic management row is runtime metadata, not a portable parameter.
             if("shade_wallpaper_manage".equals(key)){equal(null,ConfigTransfer.types().get(key));continue;}
             Object value=stored.get(key);
+            if(IconManagementSettings.LEGACY_KEYS.contains(key)){
+                equal(null,ConfigTransfer.types().get(key));equal(false,defaults.values().containsKey(key));
+                equal(value,StatusBarSettings.STRING_DEFAULTS.containsKey(key)?StatusBarSettings.STRING_DEFAULTS.get(key):StatusBarSettings.BOOLEAN_DEFAULTS.get(key));continue;
+            }
             ConfigTransfer.Type expected=value instanceof Boolean?ConfigTransfer.Type.BOOLEAN:
                     value instanceof Float?ConfigTransfer.Type.NUMBER:value instanceof Integer?ConfigTransfer.Type.COLOR:ConfigTransfer.Type.STRING;
             equal(expected,ConfigTransfer.types().get(key));equal(value,defaults.values().get(key));
@@ -184,7 +215,7 @@ public final class Upgrade66Check {
         current.putFloat(StatusBarSettings.DATA_OFFSET_X,-8.24f);current.putBoolean(StatusBarSettings.SAFE_MODE,true);
         current.putBoolean(NotificationBigClockSettings.MASTER,true);
         current.putString(IconPackRepository.LAYERS,"[]");current.putBoolean(IconPackRepository.MASTER,true);
-        equal(69,Upgrade66.DEFAULTS.size());equal(5,SettingsFrameworkMirror.VERSION);
+        equal(69,Upgrade66.DEFAULTS.size());equal(48,SettingsFrameworkMirror.VERSION);
         Map<String,Object> expected67=new LinkedHashMap<>();
         expected67.put("native_network_badge_1_hidden",false);expected67.put("native_network_badge_2_hidden",false);
         expected67.put("notification_big_clock_screen_padding",24f);equal(expected67,Upgrade67.DEFAULTS);
@@ -224,7 +255,7 @@ public final class Upgrade66Check {
         current.putInt(PanelMode.CLOCK+"_color_light",0);current.putString(CarrierPanels.CLASSIC+"_text","");
         current.putBoolean(NativeNetworkBadgeSettings.key(1,"hidden"),true);
         current.putFloat(NotificationBigClockSettings.SCREEN_PADDING,37.125f);
-        Bundle loaded=SettingsFrameworkMirror.decode(wire(current,5));
+        Bundle loaded=SettingsFrameworkMirror.decode(wire(current,SettingsFrameworkMirror.VERSION));
         equal(true,loaded.get(ClassicTextSettings.CLOCK_MASTER));equal(112.5f,loaded.get(PanelMode.CLOCK+"_scale"));
         equal(0,loaded.get(PanelMode.CLOCK+"_color_light"));equal("",loaded.get(CarrierPanels.CLASSIC+"_text"));
         equal(true,loaded.get(NativeNetworkBadgeSettings.key(1,"hidden")));

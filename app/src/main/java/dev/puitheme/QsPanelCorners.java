@@ -110,7 +110,27 @@ public final class QsPanelCorners {
             if (view != null) {
                 current.clear();
                 if (previous == null) drawing.remove(); else drawing.set(previous);
+                reconcile(view);
             }
+        }
+    }
+
+    /** After a slider's native draw: a glass drawable the native code built or replaced during that very draw (the brightness
+     * mirror builds its own on its first frame, and the OEM may build it outside the shape scope) is given the unified
+     * radius at once and redrawn, instead of keeping the native full-round shape until some later update. */
+    private void reconcile(View view) {
+        if (!enabled || !view.isAttachedToWindow()) return;
+        synchronized (lock) {
+            Owned state = controls.get(view);
+            if (state == null || !state.blurOwned) return;
+            try {
+                Object base = value(view, "baseMixColorDrawable"), active = value(view, "activeMixColorDrawable");
+                if (state.blurCacheValid && state.blurBase.get() == base && state.blurActive.get() == active) return;
+                state.nativeBlur = nativeRadius(view, state);
+                state.blurCacheValid = false;
+                updateBlur(view, state, sliderBlurCurve(view, state.nativeBlur));
+                view.invalidate();
+            } catch (ReflectiveOperationException | RuntimeException error) { unavailable(error); }
         }
     }
 
@@ -327,11 +347,6 @@ public final class QsPanelCorners {
             collectPluginControls(group.getChildAt(i), depth + 1, visited, result);
     }
 
-    static float scaledRadius(float current, float base, float target, float limit) {
-        float ratio = Float.isFinite(current) && Float.isFinite(base) && base > 0f ? current / base : 1f;
-        return Math.max(0f, Math.min(limit, target * Math.max(0f, ratio)));
-    }
-
     private Object value(View view, String name) {
         synchronized (lock) {
             Owned state = controls.get(view);
@@ -360,6 +375,8 @@ public final class QsPanelCorners {
     }
 
     /** Bind only wrappers created from this control's actual paths/canvas in this draw. */
+    /** Unified corners are on; the shape hooks exist only then. */
+    public boolean active() { return enabled; }
     public boolean isDrawingShapes() { return enabled && (drawing.get() != null || spotlight.get() != null); }
 
     /** Scoped to the exact native wrapper callback; its original Rect/content remain native. */
@@ -503,17 +520,26 @@ public final class QsPanelCorners {
 
     public boolean isRewritingBlur() { return enabled && (drawing.get() != null || blurOwner.get() != null); }
 
+    /** True when a blur factory call must be rewritten: inside the module's scopes, or when it is made for one of our own
+     * sliders (the factories take the slider as their first argument), in whichever frame and thread state it happens. */
+    public boolean rewritesBlur(Object first) {
+        return isRewritingBlur() || enabled && first instanceof View && isSlider((View) first) && ((View) first).isAttachedToWindow();
+    }
+
     /** Blur factories keep native Rect/material and use the same final continuous curve. */
     public Object[] blurShape(String name, Object[] original) {
         SliderDrawing scope = drawing.get();
-        if (!enabled || scope == null && blurOwner.get() == null || original == null || original.length < 4
+        if (!enabled || original == null || original.length < 4
                 || !(name.equals("applySeekBarBgBlurConfig") || name.equals("applySeekBarActiveBlurConfig")
-                || name.equals("createSeekBarBlurDrawable"))) return original;
-        // Both audited native methods pass the original rectangle as parameter 1.
+                || name.equals("createSeekBarBlurDrawable") || name.equals("getSeekBarBackground")
+                || name.equals("getSeekBarActiveDrawable"))) return original;
+        // Every audited native method passes the original rectangle as parameter 1 and the radius as parameter 2.
         if (!(original[1] instanceof Rect) || !(original[2] instanceof Number)) return original;
         Object source = original[0];
         View view = blurOwner.get();
         if (view == null && scope != null) view = scope.view();
+        // The factories that take the slider itself are rewritten for it wherever they are called from.
+        if (view == null && source instanceof View && isSlider((View) source) && ((View) source).isAttachedToWindow()) view = (View) source;
         if (view == null || !(source == view || source == view.getContext())) return original;
         Rect rect = (Rect) original[1];
         float target;
@@ -541,11 +567,14 @@ public final class QsPanelCorners {
     private float sliderCurve(View view, float nativeRadius, int kind, float width, float height) {
         if (!Float.isFinite(nativeRadius) || !Float.isFinite(width) || !Float.isFinite(height)
                 || width <= 0f || height <= 0f) return nativeRadius;
-        Object raw = value(view, kind == 1 ? "mBackgroundRadius" : "mProgressRadius");
-        if (!(raw instanceof Number) || !Float.isFinite(number(raw)) || number(raw) <= 0f) return nativeRadius;
+        // A square junction stays square (the active track's cut edge).
+        if (nativeRadius <= 0f) return nativeRadius;
         float target = dp * view.getResources().getDisplayMetrics().density;
         if (!Float.isFinite(target) || target < 0f) return nativeRadius;
-        return scaledRadius(nativeRadius, number(raw), target, Math.min(width, height) / 2f);
+        // One fixed radius, whatever the native radii are doing. The ROM scales them by a press ratio and animates a
+        // separate transition radius when the secondary page opens or closes; carrying that ratio into our radius made the
+        // glass layer several times rounder than the outline for a few frames after every tap and at the end of a tap.
+        return Math.max(0f, Math.min(Math.min(width, height) / 2f, target));
     }
     private float sliderWeight(View view, float nativeWeight, int kind) {
         if (view == null || !Float.isFinite(nativeWeight)) return nativeWeight;
@@ -553,13 +582,9 @@ public final class QsPanelCorners {
             Owned state = controls.get(view);
             if (state == null || !(state.weight instanceof Number)) return nativeWeight;
             float target = number(state.weight);
-            Object raw = value(view, kind == 1 ? "mBackgroundRoundCornerWeight" : "mProgressRoundCornerWeight");
-            if (!(raw instanceof Number) || !Float.isFinite(number(raw))) return nativeWeight;
-            float base = number(raw);
-            // Native fields remain untouched. Any transient final-shape coefficient
-            // relative to that native base still follows the native press animation.
-            float result = base > 0f ? target * (nativeWeight / base) : target + nativeWeight - base;
-            return Float.isFinite(result) && result >= 0f ? result : nativeWeight;
+            // Native fields remain untouched; the shared tile weight is used as is, so every layer of the slider
+            // (outline, glass, active track) keeps one continuous-corner coefficient during native press animations.
+            return Float.isFinite(target) && target >= 0f ? target : nativeWeight;
         }
     }
 

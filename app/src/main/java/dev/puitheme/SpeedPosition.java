@@ -28,19 +28,28 @@ public final class SpeedPosition {
             CLOCK_LEFT="clock_left",CLOCK_RIGHT="clock_right";
     public static Map<String,String> stringDefaults(){return Collections.singletonMap(POSITION,NATIVE);}
     public static Map<String,Boolean> booleanDefaults(){return Collections.singletonMap(SAFE_GAP_ENABLED,false);}
-    public static Map<String,Float> numberDefaults(){return Collections.singletonMap(SAFE_GAP,2f);}
+    /**
+     * The width kept free for the signal and Wi-Fi icons at the status bar's edge (dp). The speed sits where a full set of them would
+     * leave it and keeps the room of the ones that are off, so the number depends on this setting and the edge, and on nothing else.
+     */
+    public static final String EDGE_RESERVE="speed_edge_reserve";
+    public static final float DEFAULT_RESERVE=49f,MAX_RESERVE=160f;
+    public static Map<String,Float> numberDefaults(){
+        Map<String,Float> numbers=new java.util.LinkedHashMap<>();numbers.put(SAFE_GAP,2f);numbers.put(EDGE_RESERVE,DEFAULT_RESERVE);
+        return Collections.unmodifiableMap(numbers);
+    }
     public static String position(Object value){
         return CELLULAR_LEFT.equals(value)||RIGHT_START.equals(value)||CLOCK_LEFT.equals(value)||CLOCK_RIGHT.equals(value)
                 ?(String)value:NATIVE;
     }
     /** A frozen selection, replaced only by a configuration event; no preference access during layout/draw. */
     private static final class Selection {
-        final String position;final float offset,gap,scale;final boolean safeGap;
-        Selection(String position){this(position,0f,0f,false,1f);}
-        Selection(String position,float offset,float gap,boolean safeGap,float scale){this.position=position;this.offset=offset;this.gap=gap;this.safeGap=safeGap;this.scale=scale;}
+        final String position;final float offset,gap,scale,reserve;final boolean safeGap,positioning;
+        Selection(String position){this(position,0f,0f,false,1f,0f,false);}
+        Selection(String position,float offset,float gap,boolean safeGap,float scale,float reserve,boolean positioning){this.position=position;this.offset=offset;this.gap=gap;this.safeGap=safeGap;this.scale=scale;this.reserve=reserve;this.positioning=positioning;}
         boolean clock(){return CLOCK_LEFT.equals(position)||CLOCK_RIGHT.equals(position);}
-        boolean layout(){return !NATIVE.equals(position)||offset!=0f||safeGap;}
-        boolean same(Selection other){return position.equals(other.position)&&offset==other.offset&&safeGap==other.safeGap&&(!safeGap||gap==other.gap)&&scale==other.scale;}
+        boolean layout(){return positioning||safeGap;}
+        boolean same(Selection other){return position.equals(other.position)&&offset==other.offset&&safeGap==other.safeGap&&positioning==other.positioning&&(!safeGap||gap==other.gap)&&scale==other.scale&&reserve==other.reserve;}
     }
     private static volatile Selection selection=new Selection(NATIVE);
     private static final class NetworkGeometry {
@@ -58,7 +67,8 @@ public final class SpeedPosition {
         synchronized(SpeedPosition.this){networkPosted=false;}
         if(released||!selection.safeGap)return;
         for(Binding b:new ArrayList<>(containers.values())){
-            b.planDirty=true;ViewGroup parent=b.parent.get();if(parent!=null){parent.requestLayout();replay(parent);}
+            b.planDirty=true;refreshCopy(b,false);
+            ViewGroup parent=b.parent.get();if(parent!=null){parent.requestLayout();replay(parent);}
         }
     }
     private Class<?> nativeContainer,nativeSpeed,nativePhone,nativeState;
@@ -70,10 +80,18 @@ public final class SpeedPosition {
     private final Map<View,Binding> clocks=new WeakHashMap<>();
     private final ThreadLocal<Scope> scopes=new ThreadLocal<>();
     private final ThreadLocal<ChildMeasureScope> childMeasurements=new ThreadLocal<>();
+    @FunctionalInterface public interface OrderReader {List<View> orderedChildren(ViewGroup parent);}
+    private OrderReader orderReader;
     interface CopyFactory {View create(View source,FrameLayout parent,int layout)throws Exception;}
     private final CopyFactory copyFactory;
     public SpeedPosition(){this((source,parent,layout)->LayoutInflater.from(source.getContext()).inflate(layout,parent,false));}
     SpeedPosition(CopyFactory factory){copyFactory=factory;}
+
+    /** Explicit layout input; resolving native hook order is the reader's responsibility. */
+    public void setOrderReader(OrderReader reader){
+        if(orderReader==reader)return;orderReader=reader;
+        for(Binding b:new ArrayList<>(containers.values())){b.dirty=true;b.planDirty=true;}
+    }
 
     public void resolve(ClassLoader loader)throws ReflectiveOperationException{
         nativeContainer=loader.loadClass("com.android.systemui.statusbar.phone.StatusIconContainer");
@@ -98,11 +116,15 @@ public final class SpeedPosition {
         catch(NoSuchFieldException zeroSpacingC17){iconSpacing=null;}
     }
     public boolean configure(Bundle b){
-        boolean enabled=!released&&b!=null&&!SafetyMode.enabled(b)&&b.getBoolean("speed_enabled",false)
-                &&b.getBoolean("speed_position_enabled",true);
-        Selection next=enabled?new Selection(position(b.get(POSITION)),number(b,"speed_offset_x",0f),
-                Math.max(0f,number(b,SAFE_GAP,2f)),b.getBoolean(SAFE_GAP_ENABLED,false),
-                b.getBoolean("speed_size_enabled",true)?Math.max(0f,number(b,"speed_scale",100f))/100f:1f):new Selection(NATIVE);
+        boolean enabled=!released&&b!=null&&!SafetyMode.enabled(b)&&b.getBoolean("speed_enabled",false);
+        boolean flow=StatusBarLayoutSettings.enabled(b);
+        boolean positioning=enabled&&!flow&&b.getBoolean("speed_position_enabled",true);
+        boolean gap=enabled&&!flow&&b.getBoolean(SAFE_GAP_ENABLED,false);
+        Selection next=enabled?new Selection(positioning?position(b.get(POSITION)):NATIVE,
+                positioning&&!gap?number(b,"speed_offset_x",0f):0f,
+                number(b,SAFE_GAP,2f),gap,
+                b.getBoolean("speed_size_enabled",true)?Math.max(0f,number(b,"speed_scale",100f))/100f:1f,
+                Math.max(0f,Math.min(MAX_RESERVE,number(b,EDGE_RESERVE,DEFAULT_RESERVE))),positioning):new Selection(NATIVE);
         if(selection.same(next))return false;
         selection=next;
         for(Binding binding:new ArrayList<>(containers.values())){
@@ -137,7 +159,7 @@ public final class SpeedPosition {
         if(released||source==null||nativeSpeed==null||!nativeSpeed.isInstance(source)||copies.containsKey(source)
                 ||!(source.getParent() instanceof ViewGroup))return;
         ViewGroup parent=(ViewGroup)source.getParent();
-        if(!nativeContainer.isInstance(parent)||phone(parent)==null)return;
+        if(!nativeContainer.isInstance(parent))return;
         changed(parent);
     }
     /** Partial/unsupported hook installation must not reserve space or mask the native source. */
@@ -164,7 +186,8 @@ public final class SpeedPosition {
     }
     /** Unsupported phone allocation stays native too; do not reintroduce an unallocated draw offset. */
     public float drawOffsetXdp(View view,float configured){
-        return sources.containsKey(view)||copies.containsKey(view)?0f:configured;
+        Binding b=sources.get(view);if(b==null)b=copies.get(view);
+        return selection.safeGap||b!=null&&(!selection.clock()||b.mirrorReady)?0f:configured;
     }
     /** A virtual allocation, never real View padding: no content, text size or OEM inset is modified. */
     public int allocationPaddingEnd(View child,int nativeValue){
@@ -172,7 +195,7 @@ public final class SpeedPosition {
         ChildMeasureScope measuring=childMeasurements.get();
         if(!allocationReady||scope==null||b==null||scope.binding!=b||b.samplingPadding||scope.policy.clock()
                 ||measuring!=null&&measuring.binding==b)return nativeValue;
-        return Math.min(65535,Math.max(0,nativeValue)+scope.reservation);
+        return Math.min(65535,nativeValue+scope.reservation);
     }
     /**
      * C17 measures each icon before adding its width and padding to the row. Virtual allocation
@@ -195,8 +218,13 @@ public final class SpeedPosition {
     }
     public void changed(ViewGroup parent){
         if(released||parent==null||nativeContainer==null||!nativeContainer.isInstance(parent))return;
-        View phone=phone(parent);if(phone==null)return; // Never borrow a QS/lockscreen clock.
+        // Each native row owns its own relative frame, including QS and keyguard.
+        // Only clock mirroring needs the audited PhoneStatusBarView clock host.
+        View phone=phone(parent);
         Binding binding=containers.get(parent);
+        // Children can be inflated before the row is inserted into a Phone or
+        // panel. Rebind its scene owner and listener after that insertion.
+        if(binding!=null&&binding.phone.get()!=phone){detached(parent);binding=null;}
         if(binding==null){binding=new Binding(parent,phone);containers.put(parent,binding);}
         binding.dirty=true;capture(binding);refreshCopy(binding,true);
     }
@@ -208,7 +236,47 @@ public final class SpeedPosition {
         return null;
     }
     private void capture(Binding b){
-        ViewGroup parent=b.parent.get();View phone=b.phone.get();if(parent==null||phone==null)return;
+        ViewGroup parent=b.parent.get();if(parent==null)return;
+        List<View> children=readChildren(parent);if(children==null)return;
+        capture(b,children);
+    }
+    private List<View> readChildren(ViewGroup parent){
+        try{
+            List<View> children;
+            if(orderReader!=null)children=orderReader.orderedChildren(parent);
+            else{children=new ArrayList<>(parent.getChildCount());for(int i=0;i<parent.getChildCount();i++)children.add(parent.getChildAt(i));}
+            if(children==null||children.size()!=parent.getChildCount())return null;
+            java.util.IdentityHashMap<View,Boolean> seen=new java.util.IdentityHashMap<>();
+            for(View child:children)if(child==null||child.getParent()!=parent||seen.put(child,Boolean.TRUE)!=null)return null;
+            return children;
+        }catch(RuntimeException unsupported){return null;}
+    }
+    /** Only order/state identity invalidates a plan; sampling never requests another native pass. */
+    private boolean refreshOrder(Binding b){
+        if(b.dirty){capture(b);return !b.dirty;}
+        if(orderReader==null)return true;
+        ViewGroup parent=b.parent.get();if(parent==null)return false;
+        List<View> children=readChildren(parent);if(children==null)return false;
+        Map<View,Node> previous=new WeakHashMap<>();for(Node n:b.nodes){View v=n.child.get();if(v!=null)previous.put(v,n);}
+        ArrayList<Node> current=new ArrayList<>();View speed=null;
+        try{
+            for(View child:children){
+                String name=slot.getDeclaringClass().isInstance(child)?(String)slot.invoke(child):null;
+                Object state=stateTag==0?null:child.getTag(stateTag);
+                if(state!=null&&nativeState.isInstance(state)){
+                    Node node=previous.get(child);
+                    if(node==null||node.state.get()!=state||!java.util.Objects.equals(node.slot,name)){b.dirty=true;capture(b,children);return !b.dirty;}
+                    current.add(node);
+                }
+                if(nativeSpeed.isInstance(child)){if(speed!=null){b.dirty=true;capture(b,children);return !b.dirty;}speed=child;}
+            }
+            if(speed!=b.speed.get()||current.size()!=b.nodes.size()){b.dirty=true;capture(b,children);return !b.dirty;}
+            if(!current.equals(b.nodes)){b.nodes.clear();b.nodes.addAll(current);b.planDirty=true;}
+            return true;
+        }catch(ReflectiveOperationException|RuntimeException unsupported){return false;}
+    }
+    private void capture(Binding b,List<View> children){
+        ViewGroup parent=b.parent.get();View phone=b.phone.get();if(parent==null)return;
         if(stateTag==0){
             android.content.res.Resources r=parent.getResources();String pkg="com.android.systemui";
             stateTag=r.getIdentifier("status_bar_view_state_tag","id",pkg);
@@ -216,14 +284,14 @@ public final class SpeedPosition {
             startSideId=r.getIdentifier("status_bar_start_side_container","id",pkg);
             layoutId=r.getIdentifier("network_speed_view","layout",pkg);
         }
-        // A preference/layout recapture is not a new OEM icon. Preserve its measured
-        // Wi-Fi-on budget, while a replaced view/state/slot gets a fresh baseline.
+        // Preserve state identity across a preference/layout recapture. Radio geometry is
+        // sampled anew; no first-state or widest-state position is remembered.
         Map<View,Node> previousNodes=new WeakHashMap<>();
         for(Node node:b.nodes){View child=node.child.get();if(child!=null)previousNodes.put(child,node);}
         b.nodes.clear();View speed=null;
         try{
-            for(int i=0;i<parent.getChildCount();i++){
-                View child=parent.getChildAt(i);String name=slot.getDeclaringClass().isInstance(child)?(String)slot.invoke(child):null;
+            for(View child:children){
+                String name=slot.getDeclaringClass().isInstance(child)?(String)slot.invoke(child):null;
                 Object state=stateTag==0?null:child.getTag(stateTag);
                 if(state!=null&&nativeState.isInstance(state)){
                     Node prior=previousNodes.get(child);
@@ -235,8 +303,8 @@ public final class SpeedPosition {
         View previous=b.speed.get();
         if(previous!=speed){removeCopy(b);if(previous!=null)sources.remove(previous);b.speed=new WeakReference<>(speed);}
         if(speed!=null)sources.put(speed,b);
-        View clock=clockId==0?null:phone.findViewById(clockId),host=clockContainerId==0?null:phone.findViewById(clockContainerId);
-        View start=startSideId==0?null:phone.findViewById(startSideId);
+        View clock=phone==null||clockId==0?null:phone.findViewById(clockId),host=phone==null||clockContainerId==0?null:phone.findViewById(clockContainerId);
+        View start=phone==null||startSideId==0?null:phone.findViewById(startSideId);
         if(!(clock instanceof TextView)||!(host instanceof FrameLayout)||clock.getParent()!=host||start==null){clock=null;host=null;start=null;}
         if(b.host.get()!=host){removeCopy(b);View oldClock=b.clock.get();if(oldClock!=null)clocks.remove(oldClock);}
         b.clock=new WeakReference<>((TextView)clock);b.host=new WeakReference<>((FrameLayout)host);b.start=new WeakReference<>(start);
@@ -251,22 +319,20 @@ public final class SpeedPosition {
         final Map<View,Node> byView=new WeakHashMap<>();
         boolean dirty=true,planDirty=true,ownedPadding,mirrorReady,syncing,samplingPadding;
         int left,top,right,bottom,addedLeft,addedRight;
-        int allocation,spacing,plannedWidth,plannedDirection;
-        float wifiOnBudget,ghostWifi;int wifiOnGapCount;boolean gapFallbackReported;
+        int allocation,spacing,plannedWidth,plannedDirection,plannedEndPadding,plannedRightPadding;
         Object lastState;int lastTint=Integer.MIN_VALUE;
         final View.OnLayoutChangeListener layout=(v,l,t,r,b,ol,ot,or,ob)->refreshCopy(this,false);
-        Binding(ViewGroup parent,View phone){this.parent=new WeakReference<>(parent);this.phone=new WeakReference<>(phone);phone.addOnLayoutChangeListener(layout);}
+        Binding(ViewGroup parent,View phone){this.parent=new WeakReference<>(parent);this.phone=new WeakReference<>(phone);(phone==null?parent:phone).addOnLayoutChangeListener(layout);}
     }
     private static final class Node {
         final WeakReference<View> child;final WeakReference<Object> state;final String slot;
         int index;
         float target,width,nativeWidth,delta,paintLeft,paintRight;int visibility;
-        float wifiOnWidth,wifiOnNativeWidth;boolean wifiOnVisible;
-        boolean latentWifi;
+        boolean shown;
         Node(View child,Object state,String slot){this.child=new WeakReference<>(child);this.state=new WeakReference<>(state);this.slot=slot;}
     }
     /** Only native state/configuration/layout callbacks call this method, never dispatchDraw/preDraw. */
-    public void nativeUpdated(View source){Binding b=sources.get(source);if(b!=null)refreshCopy(b,true);}
+    public void nativeUpdated(View source){Binding b=sources.get(source);if(b!=null){refreshOrder(b);refreshCopy(b,true);}}
     public void slotChanged(View source){
         Binding b=sources.get(source);ViewGroup parent=b==null?null:b.parent.get();
         if(parent!=null)changed(parent);
@@ -282,10 +348,11 @@ public final class SpeedPosition {
             if(width<=0)width=source.getMeasuredWidth();
             float density=source.getResources().getDisplayMetrics().density;
             int offset=Math.round(NumericPolicy.pixels(selection.offset,density));
-            int gap=selection.safeGap?Math.max(0,Math.round(NumericPolicy.pixels(selection.gap,density))):0;
+            int gap=selection.safeGap?Math.round(NumericPolicy.pixels(selection.gap,density)):0;
             float enlarged=visualExtra(source,selection);
             if(enlarged>NumericPolicy.MAX_LAYOUT_PIXELS){removeCopy(b);return;}
-            int extra=(int)Math.ceil(enlarged),reserve=width+extra+gap+Math.abs(offset);
+            int extra=(int)Math.ceil(enlarged),reserve=Math.max(0,width+extra+gap+Math.abs(offset));
+            float inkLeft=-enlarged/2f,inkRight=width+enlarged/2f;
             if(source.getLayoutParams() instanceof ViewGroup.MarginLayoutParams){
                 ViewGroup.MarginLayoutParams p=(ViewGroup.MarginLayoutParams)source.getLayoutParams();reserve+=Math.max(0,p.leftMargin)+Math.max(0,p.rightMargin);
             }
@@ -312,8 +379,14 @@ public final class SpeedPosition {
             if(copy.getVisibility()!=(shown?View.VISIBLE:View.GONE))copy.setVisibility(shown?View.VISIBLE:View.GONE);
             boolean left=CLOCK_LEFT.equals(selection.position);
             FrameLayout.LayoutParams lp=(FrameLayout.LayoutParams)copy.getLayoutParams();
-            int leftMargin=left?-reserve+offset+(int)Math.ceil(enlarged/2f):0,
-                    rightMargin=left?0:-reserve-offset+(int)Math.ceil(enlarged/2f),gravity=(left?Gravity.LEFT:Gravity.RIGHT)|Gravity.CENTER_VERTICAL;
+            // Allocation moves the clock's host edge. Place the copy from that current edge,
+            // not from the allocation again, or +/- offsets are cancelled/doubled.
+            int leftMargin=left?-(int)Math.ceil(inkRight)+offset:0,
+                    rightMargin=left?0:(int)Math.floor(inkLeft)-width-offset,gravity=(left?Gravity.LEFT:Gravity.RIGHT)|Gravity.CENTER_VERTICAL;
+            if(selection.safeGap){
+                leftMargin=left?-gap-(int)Math.ceil(inkRight):0;
+                rightMargin=left?0:(int)Math.floor(inkLeft)-gap-width;
+            }
             if(lp.width!=width||lp.gravity!=gravity||lp.leftMargin!=leftMargin||lp.rightMargin!=rightMargin){
                 lp.width=width;lp.gravity=gravity;lp.leftMargin=leftMargin;lp.rightMargin=rightMargin;copy.setLayoutParams(lp);
             }
@@ -349,87 +422,88 @@ public final class SpeedPosition {
         Selection policy=selection;
         if(!hooksReady||!allocationReady||released||ModuleLifecycle.removed()||!policy.layout())return null;
         Binding b=containers.get(parent);if(b==null)return null;
-        if(b.dirty)capture(b);
+        if(!refreshOrder(b))return null;
+        if(policy.clock()&&!b.mirrorReady)return null;
         int reservation=reservation(b,policy);
-        if(reservation<0)return null; // Unknown OEM allocation keeps every native target and width intact.
+        if(reservation==Integer.MIN_VALUE)return null; // Negative adjacent gaps are a signed virtual allocation.
         if(b.allocation!=reservation){b.allocation=reservation;b.planDirty=true;if(targets)parent.requestLayout();}
         Scope scope=new Scope(b,targets,scopes.get(),policy,reservation);scopes.set(scope);return scope;
     }
     private int reservation(Binding b,Selection policy){
         if(policy.clock())return 0;
-        View speed=b.speed.get();ViewGroup parent=b.parent.get();if(speed==null||parent==null||speed.getParent()!=parent)return -1;
+        View speed=b.speed.get();ViewGroup parent=b.parent.get();if(speed==null||parent==null||speed.getParent()!=parent)return Integer.MIN_VALUE;
         b.samplingPadding=true;
         try{
             Object ignoredSlots=ignored.get(parent);int spacing=iconSpacing==null?0:Math.max(0,iconSpacing.getInt(parent));
             if(spacing!=b.spacing){b.spacing=spacing;b.planDirty=true;}
             if(!eligible(speed,ignoredSlots))return 0;
-            float hiddenWifi=0,mobileSpan=0,wifiSpan=0,safetyExtra=0,radioInkExtra=0;boolean knownSpeed=false,hasMobile=false,shownWifi=false;
-            ArrayList<Node> visibleNodes=new ArrayList<>();Node speedNode=null;
+            boolean knownSpeed=false;Node speedNode=null;
             for(Node node:b.nodes){
-                View child=node.child.get();if(child==null||child.getParent()!=parent)return -1;
+                View child=node.child.get();if(child==null||child.getParent()!=parent)return Integer.MIN_VALUE;
                 boolean shown=eligible(child,ignoredSlots);
+                if(shown!=node.shown){node.shown=shown;b.planDirty=true;}
                 if(child==speed){knownSpeed=true;speedNode=node;}
-                if(mobile(node.slot)&&shown){hasMobile=true;mobileSpan+=child.getWidth()+child.getPaddingStart()+child.getPaddingEnd()+spacing;}
                 float nativeWidth=child.getWidth()+child.getPaddingStart()+child.getPaddingEnd();
-                node.nativeWidth=nativeWidth;
+                if(nativeWidth!=node.nativeWidth){node.nativeWidth=nativeWidth;b.planDirty=true;}
                 float oldLeft=node.paintLeft,oldRight=node.paintRight;
                 extents(node,child,policy,network,child==speed);
                 if(oldLeft!=node.paintLeft||oldRight!=node.paintRight)b.planDirty=true;
                 float width=node.paintRight-node.paintLeft;
-                if(width>NumericPolicy.MAX_LAYOUT_PIXELS)return -1;
+                if(width>NumericPolicy.MAX_LAYOUT_PIXELS)return Integer.MIN_VALUE;
                 if(width!=node.width){node.width=width;b.planDirty=true;}
-                if(shown){
-                    visibleNodes.add(node);float extra=Math.max(0f,width-nativeWidth);safetyExtra+=extra;
-                    if(wifi(node.slot)||mobile(node.slot))radioInkExtra+=extra;
-                }
-                if(wifi(node.slot)&&shown&&nativeWidth>0f){shownWifi=true;wifiSpan+=nativeWidth+spacing;}
-                // Wi-Fi's native view remains registered while the radio is off. Keep its known
-                // allocation, rather than letting an end-aligned container change physical width.
-                boolean latent=wifi(node.slot)&&!shown&&nativeWidth>0;
-                if(latent!=node.latentWifi){node.latentWifi=latent;b.planDirty=true;}
             }
-            if(!knownSpeed||CELLULAR_LEFT.equals(policy.position)&&!hasMobile)return -1;
-            float density=speed.getResources().getDisplayMetrics().density;
-            float gap=policy.safeGap?Math.max(0,NumericPolicy.pixels(policy.gap,density)-spacing):0f;
-            if(RIGHT_START.equals(policy.position)){visibleNodes.remove(speedNode);visibleNodes.add(0,speedNode);}
-            else if(CELLULAR_LEFT.equals(policy.position)){
-                visibleNodes.remove(speedNode);int index=0;while(index<visibleNodes.size()&&!mobile(visibleNodes.get(index).slot))index++;
-                visibleNodes.add(index,speedNode);
+            if(!knownSpeed)return Integer.MIN_VALUE;
+            boolean rtl=parent.getLayoutDirection()==View.LAYOUT_DIRECTION_RTL;
+            ArrayList<Node> ordered=new ArrayList<>(b.nodes);
+            if(rtl&&RIGHT_START.equals(policy.position))Collections.reverse(ordered);
+            order(ordered,speedNode,policy.position);
+            int at=ordered.indexOf(speedNode);
+            // Reserve missing radio space for native measurement. A wider real radio keeps its
+            // native width; placement below normalises its target to the fixed relative frame.
+            // Never make the speed's native allocation negative to compensate a wide radio.
+            float radioNow=radioWidth(ordered,at,spacing);
+            float hold=Math.max(0f,NumericPolicy.pixels(policy.reserve,speed.getResources().getDisplayMetrics().density)-radioNow);
+            if(policy.safeGap){
+                if(speedNode.width<=0f)return 0;
+                float gap=NumericPolicy.pixels(policy.gap,speed.getResources().getDisplayMetrics().density);
+                // Hold a stable native-width envelope. Native number/unit setters already
+                // request text layout; sampling never shrinks/grows this row's allocation.
+                float scale=NumericPolicy.scale(policy.scale,Math.max(speed.getWidth(),speed.getHeight()));
+                float envelopeLeft=speed.getWidth()*(1f-scale)/2f;
+                float envelopeRight=speed.getWidth()*(1f+scale)/2f;
+                float extra=envelopeRight-speedNode.nativeWidth-referenceInk(reference(ordered,at),speed.getResources().getDisplayMetrics().density)+gap-spacing+hold;
+                if(at==0)extra+=Math.max(0f,-envelopeLeft);
+                return Math.max(-(int)Math.max(0,speedNode.nativeWidth-1f),Math.min(65535,(int)Math.ceil(extra)));
             }
-            int gapCount=0;for(int i=1;i<visibleNodes.size();i++)
-                if(networkNode(visibleNodes.get(i-1),speedNode)||networkNode(visibleNodes.get(i),speedNode))gapCount++;
-            // The custom 4G/5G label may replace the Wi-Fi slot's width when Wi-Fi goes away.
-            // Reserve only the net missing network budget, including the safety boundaries
-            // that disappeared with that slot; never reserve Wi-Fi again over a grown mobile.
-            float radioBudget=mobileSpan+wifiSpan+(policy.safeGap?radioInkExtra+gap*gapCount:0f);
-            if(shownWifi){
-                // Store the native on-state geometry separately from enabled safety. Changing
-                // the option while Wi-Fi is off must not preserve obsolete safety padding.
-                b.wifiOnBudget=mobileSpan+wifiSpan;b.wifiOnGapCount=gapCount;
-                for(Node node:b.nodes)if(wifi(node.slot)||mobile(node.slot)){
-                    View child=node.child.get();node.wifiOnVisible=visibleNodes.contains(node);
-                    node.wifiOnWidth=child.getWidth();node.wifiOnNativeWidth=node.nativeWidth;
-                }
-            }
-            if(!shownWifi&&(RIGHT_START.equals(policy.position)||NATIVE.equals(policy.position))){
-                float onBudget=b.wifiOnBudget;
-                if(policy.safeGap){
-                    onBudget+=gap*b.wifiOnGapCount;
-                    for(Node node:b.nodes)if(node.wifiOnVisible){
-                        View child=node.child.get();
-                        onBudget+=radioExtra(node.wifiOnWidth,node.wifiOnNativeWidth,wifi(node.slot),
-                                child.getResources().getDisplayMetrics().density,network);
-                    }
-                }
-                hiddenWifi=Math.max(0f,onBudget-radioBudget);
-            }
-            if(hiddenWifi!=b.ghostWifi){b.ghostWifi=hiddenWifi;b.planDirty=true;}
-            // A free horizontal offset is a draw/layout translation, not permission to resize
-            // the native row or move Wi-Fi/mobile. Only the explicit safety option allocates it.
-            float safety=policy.safeGap?gap*gapCount+safetyExtra+Math.abs(NumericPolicy.pixels(policy.offset,density)):0f;
-            return Math.min(65535,Math.max(0,(int)Math.ceil(hiddenWifi+safety)));
-        }catch(ReflectiveOperationException|RuntimeException unsupported){return -1;}
+            return Math.min(65535,(int)Math.ceil(hold));
+        }catch(ReflectiveOperationException|RuntimeException unsupported){return Integer.MIN_VALUE;}
         finally{b.samplingPadding=false;}
+    }
+    /**
+     * The gap uses the configured signal frame, not the current signal-level drawable's
+     * intrinsic width. A radio-state resource change must not move the user's anchor.
+     */
+    private float referenceInk(Node next,float density){
+        if(next!=null&&!radio(next.slot))return next.paintLeft;
+        NetworkGeometry geometry=network;
+        float frame=NumericPolicy.layoutPixels(20f,density);
+        return frame*(1f-NumericPolicy.scale(geometry.dataScale,frame))/2f+NumericPolicy.pixels(geometry.dataX,density);
+    }
+    /** Non-radio tail geometry survives radio view removal/recreation as well as hiding. */
+    private static Node reference(List<Node> ordered,int at){
+        for(int i=at+1;i<ordered.size();i++){
+            Node node=ordered.get(i);if(!radio(node.slot)&&node.shown)return node;
+        }
+        return null;
+    }
+    /** Width (with spacing) of the radios currently shown right of the speed. */
+    private static float radioWidth(List<Node> ordered,int at,int spacing){
+        float now=0f;
+        for(int i=at+1;i<ordered.size();i++){
+            Node node=ordered.get(i);
+            if(radio(node.slot)&&node.shown&&node.nativeWidth>0f)now+=node.nativeWidth+spacing;
+        }
+        return now;
     }
     private boolean eligible(View child,Object ignoredSlots)throws ReflectiveOperationException{
         return Boolean.TRUE.equals(visible.invoke(child))&&!Boolean.TRUE.equals(blocked.invoke(child))
@@ -439,40 +513,56 @@ public final class SpeedPosition {
         float scale=NumericPolicy.scale(policy.scale,Math.max(view.getWidth(),view.getHeight()));
         return Math.max(0f,view.getWidth()*(scale-1f));
     }
-    private static boolean networkNode(Node node,Node speed){return node==speed||wifi(node.slot)||mobile(node.slot);}
     private static void extents(Node node,View view,Selection policy,NetworkGeometry network,boolean speed){
         node.paintLeft=0f;node.paintRight=node.nativeWidth;
         if(!policy.safeGap)return;
-        if(speed){float extra=visualExtra(view,policy);node.paintLeft=-extra/2f;node.paintRight+=extra/2f;return;}
+        if(speed){
+            // The native host box, scaled about its centre: the OEM text stays centred inside it, so the
+            // digits never change this edge and the gap does not breathe with the number.
+            float scale=NumericPolicy.scale(policy.scale,Math.max(view.getWidth(),view.getHeight())),center=view.getWidth()/2f;
+            if(view.getWidth()<=0){node.paintLeft=node.paintRight=0f;return;}
+            node.paintLeft=center-center*scale;node.paintRight=center+center*scale;return;
+        }
         boolean wifi=wifi(node.slot);if(!wifi&&!mobile(node.slot))return;
         float density=view.getResources().getDisplayMetrics().density;
         // C17 mobile host also contains independently-positioned labels. Signal is painted
         // around its 20dp frame centre, not the centre of that entire expanding host.
         float frame=networkFrame(view.getWidth(),density,wifi),half=networkHalf(frame,density,wifi,network);
         float offset=NumericPolicy.pixels(wifi?network.wifiX:network.dataX,density);
-        node.paintLeft=Math.min(0f,frame/2f-half+offset);
-        node.paintRight=Math.max(node.nativeWidth,frame/2f+half+offset);
+        node.paintLeft=frame/2f-half+offset;
+        node.paintRight=frame/2f+half+offset;
     }
     private static float networkFrame(float width,float density,boolean wifi){return wifi?width:Math.min(width,NumericPolicy.layoutPixels(20f,density));}
     private static float networkHalf(float frame,float density,boolean wifi,NetworkGeometry network){
         float intrinsic=wifi?network.wifiInkDp:network.dataInkDp,ink=intrinsic>0f?NumericPolicy.layoutPixels(intrinsic,density):frame;
         return ink*NumericPolicy.scale(wifi?network.wifiScale:network.dataScale,ink)/2f;
     }
-    private static float radioExtra(float width,float nativeWidth,boolean wifi,float density,NetworkGeometry network){
-        float frame=networkFrame(width,density,wifi),half=networkHalf(frame,density,wifi,network),offset=NumericPolicy.pixels(wifi?network.wifiX:network.dataX,density);
-        return Math.max(0f,Math.max(nativeWidth,frame/2f+half+offset)-Math.min(0f,frame/2f-half+offset)-nativeWidth);
-    }
     public void beforeLayout(ViewGroup parent){Binding b=containers.get(parent);if(b!=null)b.planDirty=true;}
     public final class Scope implements AutoCloseable{
+        boolean prepared;
         private Binding binding;private final boolean targets;private Scope previous;
         private final Selection policy;private final int reservation;
         private float[] nativeTargets,deltas;
         private Scope(Binding b,boolean targets,Scope previous,Selection policy,int reservation){binding=b;this.targets=targets;this.previous=previous;this.policy=policy;this.reservation=reservation;}
         @Override public void close(){if(scopes.get()==this){if(previous==null)scopes.remove();else scopes.set(previous);}binding=null;previous=null;nativeTargets=null;deltas=null;}
     }
+    /** Publish relative targets before native coordination reads them. Its animation
+     * remains in charge of visibility, alpha and additional per-frame movement. */
+    public void prepareTargets(ViewGroup parent){
+        Scope scope=scopes.get();
+        if(scope==null||!scope.targets||scope.prepared||scope.policy.clock()||scope.binding.parent.get()!=parent)return;
+        // Inner icon-policy scopes are now active. Refresh their visibility before
+        // choosing the non-radio tail; hidden hints must not become a false anchor.
+        reservation(scope.binding,scope.policy);
+        for(Node node:scope.binding.nodes){
+            View child=node.child.get();Object state=node.state.get();
+            if(child!=null&&state!=null)beforeApply(state,child);
+        }
+        scope.prepared=true;
+    }
     /** All OEM targets exist before applyToView begins. Touch targets once per native layout, never child indexes. */
     public void beforeApply(Object state,View child){
-        Scope scope=scopes.get();if(scope==null||!scope.targets||scope.policy.clock())return;
+        Scope scope=scopes.get();if(scope==null||!scope.targets||scope.prepared||scope.policy.clock())return;
         Binding b=scope.binding;View speed=b.speed.get();if(speed==null||speed.getParent()!=b.parent.get())return;
         try{
             if(scope.nativeTargets==null){
@@ -486,7 +576,9 @@ public final class SpeedPosition {
                     n.index=i;scope.nativeTargets[i]=((Number)getX.invoke(s)).floatValue();
                     if(visibility!=n.visibility||scope.nativeTargets[i]!=n.target)b.planDirty=true;
                 }
-                if(b.plannedWidth!=b.parent.get().getWidth()||b.plannedDirection!=b.parent.get().getLayoutDirection())b.planDirty=true;
+                ViewGroup parent=b.parent.get();
+                if(b.plannedWidth!=parent.getWidth()||b.plannedDirection!=parent.getLayoutDirection()
+                        ||b.plannedEndPadding!=parent.getPaddingEnd()||b.plannedRightPadding!=parent.getPaddingRight())b.planDirty=true;
                 if(b.planDirty){plan(b,speed,scope);b.planDirty=false;}
                 for(int i=0;i<count;i++)scope.deltas[i]=b.nodes.get(i).delta;
             }
@@ -496,86 +588,67 @@ public final class SpeedPosition {
         }catch(ReflectiveOperationException|RuntimeException unsupported){b.planDirty=true;}
     }
     private void plan(Binding b,View speed,Scope scope)throws ReflectiveOperationException{
-            b.byView.clear();
-            Node speedNode=null;ArrayList<Node> shown=new ArrayList<>();
-            ViewGroup parent=b.parent.get();if(parent==null)return;
-            b.plannedWidth=parent.getWidth();b.plannedDirection=parent.getLayoutDirection();
-            for(Node node:b.nodes){
-                View v=node.child.get();Object s=node.state.get();if(v==null||s==null||v.getParent()!=parent)return;
-                node.delta=0f;b.byView.put(v,node);
-                node.visibility=stateVisible.getInt(s);node.target=((Number)getX.invoke(s)).floatValue();
-                if(node.visibility==0){shown.add(node);if(v==speed)speedNode=node;}
+        b.byView.clear();Node speedNode=null;
+        ViewGroup parent=b.parent.get();if(parent==null)return;
+        b.plannedWidth=parent.getWidth();b.plannedDirection=parent.getLayoutDirection();
+        b.plannedEndPadding=parent.getPaddingEnd();b.plannedRightPadding=parent.getPaddingRight();
+        for(Node node:b.nodes){
+            View v=node.child.get();Object state=node.state.get();if(v==null||state==null||v.getParent()!=parent)return;
+            node.delta=0f;b.byView.put(v,node);
+            node.visibility=stateVisible.getInt(state);node.target=((Number)getX.invoke(state)).floatValue();
+            if(v==speed)speedNode=node;
+        }
+        if(speedNode==null||!speedNode.shown||speedNode.visibility!=0||speedNode.width<=0f)return;
+        Selection policy=scope.policy;
+        boolean rtl=parent.getLayoutDirection()==View.LAYOUT_DIRECTION_RTL;
+        // Set the local target before native coordination/animation. Do not infer an
+        // animation displacement from a replay of slot widths: other scoped icon
+        // policies may have excluded slots from the native allocation.
+        ArrayList<Node> ordered=new ArrayList<>(b.nodes);
+        boolean start=RIGHT_START.equals(policy.position);
+        // "Right-side area leftmost" stays physical left in RTL too. Other selections
+        // follow the native logical slot and mirror once, just like StatusIconContainer.
+        if(rtl&&start)Collections.reverse(ordered);
+        order(ordered,speedNode,policy.position);
+        int at=ordered.indexOf(speedNode);
+        float tail=0f;
+        for(int i=at+1;i<ordered.size();i++){
+            Node node=ordered.get(i);
+            // Native DOT/HIDDEN is an animation/occlusion result. Keep the model's
+            // allocated anchor while it animates; scoped blocking is already sampled.
+            if(node.shown&&!radio(node.slot))tail+=node.nativeWidth+b.spacing;
+        }
+        float density=speed.getResources().getDisplayMetrics().density;
+        float edge=parent.getWidth()-(start?parent.getPaddingRight():parent.getPaddingEnd())-tail-NumericPolicy.pixels(policy.reserve,density);
+        Node anchor=reference(ordered,at);
+        float desired=policy.safeGap
+                ?edge+b.spacing+referenceInk(anchor,density)-NumericPolicy.pixels(policy.gap,density)-(float)Math.ceil(speedNode.paintRight)
+                :edge-speedNode.nativeWidth;
+        if(rtl&&!start)desired=parent.getWidth()-desired-speed.getWidth();
+        if(!policy.safeGap)desired+=NumericPolicy.pixels(policy.offset,density);
+        speedNode.delta=desired-speedNode.target;
+        if(start){
+            // Move the native speed slot to the selected end of the row without leaving
+            // its IconManager parent. Real siblings use their real widths, not ghost space.
+            float cursor=parent.getWidth()-parent.getPaddingRight();boolean previous=false;
+            for(int i=ordered.size()-1;i>=0;i--){
+                Node node=ordered.get(i);if(node==speedNode||!node.shown||node.visibility!=0)continue;
+                if(previous)cursor-=b.spacing;previous=true;
+                cursor-=node.nativeWidth;node.delta=cursor-node.target;
             }
-            if(speedNode==null||speedNode.width<=0)return;
-            shown.sort((a,c)->Float.compare(a.target,c.target));
-            Selection policy=scope.policy;
-            if(NATIVE.equals(policy.position)&&!policy.safeGap){
-                // Preserve OEM targets exactly, including margins, privacy reservations and
-                // independent Wi-Fi/mobile adjustments. A hidden Wi-Fi allocation stabilises
-                // the speed's world position without repacking the remaining native icons.
-                speedNode.delta=NumericPolicy.pixels(policy.offset,speed.getResources().getDisplayMetrics().density);
-                return;
-            }
-            if(CELLULAR_LEFT.equals(policy.position)){
-                shown.remove(speedNode);int mobile=-1;
-                for(int i=0;i<shown.size();i++)if(mobile(shown.get(i).slot)){mobile=i;break;}
-                if(mobile<0)return;shown.add(mobile,speedNode);
-            }else if(RIGHT_START.equals(policy.position)){shown.remove(speedNode);shown.add(0,speedNode);}
-            float density=speed.getResources().getDisplayMetrics().density;
-            float gap=policy.safeGap?Math.max(b.spacing,NumericPolicy.pixels(policy.gap,density)):b.spacing;
-            float[] desired=new float[shown.size()];int at=shown.indexOf(speedNode);
-            float ghost=b.ghostWifi;
-            boolean rtl=parent.getLayoutDirection()==View.LAYOUT_DIRECTION_RTL;
-            if(rtl){
-                float cursor=parent.getPaddingEnd();
-                for(int i=0;i<shown.size();i++){
-                    Node node=shown.get(i);desired[i]=cursor-node.paintLeft;cursor+=node.width;
-                    if(i+1<shown.size())cursor+=networkNode(node,speedNode)||networkNode(shown.get(i+1),speedNode)?gap:b.spacing;
-                }
-            }else{
-                float cursor=parent.getWidth()-parent.getPaddingEnd()-ghost;
-                for(int i=shown.size()-1;i>=0;i--){
-                    Node node=shown.get(i);cursor-=node.width;desired[i]=cursor-node.paintLeft;
-                    if(i>0)cursor-=networkNode(node,speedNode)||networkNode(shown.get(i-1),speedNode)?gap:b.spacing;
-                }
-            }
-            // Real slots include the OEM inter-icon spacing. Move neighbours only when the
-            // requested speed offset would consume that spacing; no draw-time overlap is hidden.
-            desired[at]+=NumericPolicy.pixels(policy.offset,density);
-            if(policy.safeGap){
-                for(int i=at-1;i>=0;i--){
-                    Node node=shown.get(i),next=shown.get(i+1);
-                    float required=desired[i+1]+next.paintLeft-node.paintRight-(networkNode(node,speedNode)||networkNode(next,speedNode)?gap:b.spacing);
-                    desired[i]=Math.min(desired[i],required);
-                }
-                for(int i=at+1;i<shown.size();i++){
-                    Node node=shown.get(i),previous=shown.get(i-1);
-                    float required=desired[i-1]+previous.paintRight-node.paintLeft+(networkNode(node,speedNode)||networkNode(previous,speedNode)?gap:b.spacing);
-                    desired[i]=Math.max(desired[i],required);
-                }
-            }
-            // Enabling the optional safety constraint must not push icons into the neighbouring
-            // battery/cutout slot. Insufficient native space keeps the OEM allocation for this pass.
-            if(policy.safeGap&&(desired[0]+shown.get(0).paintLeft<parent.getPaddingStart()
-                    ||desired[desired.length-1]+shown.get(shown.size()-1).paintRight>parent.getWidth()-parent.getPaddingEnd())){
-                // Preserve a requested offset even when the native cutout/overflow budget
-                // cannot accommodate safety. Do not silently turn a saved position into zero.
-                speedNode.delta=NumericPolicy.pixels(policy.offset,density);
-                if(!b.gapFallbackReported){b.gapFallbackReported=true;ModuleDiagnostics.info("speed_position","安全间距空间不足，保留原生图标顺序与用户偏移");}
-                return;
-            }
-            b.gapFallbackReported=false;
-            for(int i=0;i<shown.size();i++){
-                Node node=shown.get(i);node.delta=desired[i]-node.target;
-            }
+        }
     }
+    private static void order(List<Node> nodes,Node speed,String position){
+        if(speed!=null&&RIGHT_START.equals(position)){nodes.remove(speed);nodes.add(0,speed);}
+    }
+    private static boolean radio(String slot){return wifi(slot)||mobile(slot);}
     private static boolean wifi(String slot){return slot!=null&&(slot.equals("wifi")||slot.startsWith("wifi_"));}
     private static boolean mobile(String slot){return slot!=null&&(slot.equals("mobile")||slot.startsWith("mobile_")||slot.equals("stacked_mobile")||slot.startsWith("stacked_mobile_"));}
     private void replay(ViewGroup parent){try{if(updateStates!=null)updateStates.invoke(parent);}catch(ReflectiveOperationException|RuntimeException ignored) {}}
     public void detached(View view){
         Binding b=sources.remove(view);if(b==null&&view instanceof ViewGroup)b=containers.remove(view);
         if(b==null)return;ViewGroup parent=b.parent.get();if(parent!=null)containers.remove(parent);
-        View phone=b.phone.get();if(phone!=null)phone.removeOnLayoutChangeListener(b.layout);
+        View phone=b.phone.get();View listener=phone==null?parent:phone;if(listener!=null)listener.removeOnLayoutChangeListener(b.layout);
         View source=b.speed.get();if(source!=null)sources.remove(source);View clock=b.clock.get();if(clock!=null)clocks.remove(clock);
         removeCopy(b);if(parent!=null)parent.requestLayout();
     }
@@ -583,5 +656,6 @@ public final class SpeedPosition {
         selection=new Selection(NATIVE);released=true;hooksReady=false;allocationReady=false;main.removeCallbacks(networkInvalidation);
         for(ViewGroup parent:new ArrayList<>(containers.keySet())){detached(parent);if(parent!=null)replay(parent);}
         containers.clear();sources.clear();copies.clear();clocks.clear();scopes.remove();childMeasurements.remove();
+        orderReader=null;
     }
 }

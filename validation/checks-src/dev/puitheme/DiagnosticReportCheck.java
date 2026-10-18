@@ -28,7 +28,12 @@ public final class DiagnosticReportCheck {
         equal(1.25,display.getDouble("font_scale"));equal(5.0,display.getDouble("scaled_density"));
         JSONObject hardware=DiagnosticReport.device(device);
         equal("PJZ110",hardware.getString("model"));equal("OnePlus",hardware.getString("manufacturer"));
-        equal("16",hardware.getString("android"));equal(false,hardware.has("serial"));equal(false,hardware.has("fingerprint"));
+        equal("16",hardware.getString("android"));equal(false,hardware.has("serial"));equal(false,hardware.has("unavailable"));
+        equal("OnePlus/PJZ110/OP5D0DL1:16/TEST.1/test:user/release-keys",hardware.getString("fingerprint"));
+        equal("OP5D0DL1",hardware.getString("device"));equal("PJZ110",hardware.getString("product"));equal("qcom",hardware.getString("hardware"));
+        equal("test.1",hardware.getString("incremental"));equal("2026-09-05",hardware.getString("security_patch"));
+        equal("arm64-v8a",hardware.getJSONArray("abis").getString(0));equal(true,hardware.has("time_zone")&&hardware.has("locale")&&hardware.has("rom"));
+        equal("unknown",DiagnosticReport.safeFingerprint("/data/private\nline"));
         equal("unknown",DiagnosticReport.safeBuild("/data/private"));equal("unknown",DiagnosticReport.safeBuild("secret\nline"));
 
         LinkedHashMap<String,Object> values=new LinkedHashMap<>();
@@ -56,7 +61,7 @@ public final class DiagnosticReportCheck {
         for(String privateValue:new String[]{"secret private text","private carrier content","/data/user","private.ttf",
                 "some-private-font-hash","private network","PIN_FIXTURE_A7","private unknown text","private_token"})equal(false,serialized.contains(privateValue));
         equal(true,serialized.getBytes(StandardCharsets.UTF_8).length<=DiagnosticReport.MAX_REPORT_BYTES);
-        equal(1,report.getInt("report_schema"));equal(ModuleRuntimeStatus.BUILD_TOKEN,report.getJSONObject("app").getString("expected_runtime"));
+        equal(2,report.getInt("report_schema"));equal(true,report.getJSONArray("guide").length()>=5);equal(true,report.has("packages")&&report.has("diagnosis")&&report.has("latest_facts"));equal(ModuleRuntimeStatus.BUILD_TOKEN,report.getJSONObject("app").getString("expected_runtime"));
         equal(true,report.getString("limitations").contains("不能")||report.getString("limitations").contains("不足"));
         // Wrong types retain a useful failure marker and their applied fallback, without printing the raw value.
         values.put("clock_scale","private corrupted numeric");values.put("clock_enabled","private corrupted boolean");
@@ -84,6 +89,7 @@ public final class DiagnosticReportCheck {
                 .put("sequence",2).put("setting_count",400).put("display",display).put("serial","private serial");
         validated=DiagnosticReport.validateDetails(runtime);equal(false,validated.has("serial"));
         equal("landscape",validated.getJSONObject("display").getString("orientation"));
+        runtimeTokens(values);
         JSONObject metrics=new JSONObject().put("owner_known",true).put("elapsed_ms",12.5).put("pin",528).put("ssid","private network");
         JSONObject stage=new JSONObject().put("kind","hook_stage").put("phase","prepare").put("metrics",metrics);
         validated=DiagnosticReport.validateDetails(stage);equal(2,validated.getJSONObject("metrics").length());
@@ -95,7 +101,95 @@ public final class DiagnosticReportCheck {
         event.put("details",runtime);validated=ModuleDiagnostics.validateEvent(event);
         equal("bigclock",validated.getString("source"));equal("runtime_applied",validated.getJSONObject("details").getString("kind"));
         equal(false,validated.toString().contains("private exception"));
+        facts(device,values);
+        fluidGradientFacts();
         return checks;
+    }
+
+    /** Real dotted build identities must survive the export boundary and drive the correct diagnosis. */
+    private static void runtimeTokens(Map<String,Object> values) throws Exception {
+        String reported="c17-runtime-20261012-1.8.3-beta50-code133";
+        JSONObject details=new JSONObject().put("kind","runtime_applied").put("runtime",reported);
+        equal(reported,DiagnosticReport.validateDetails(details).optString("runtime",""));
+        details.put("runtime",ModuleRuntimeStatus.BUILD_TOKEN);
+        JSONObject event=ModuleDiagnostics.event("setting","系统界面配置应用成功",null).put("details",details);
+        JSONObject validated=ModuleDiagnostics.validateEvent(event);
+        equal(ModuleRuntimeStatus.BUILD_TOKEN,validated.getJSONObject("details").optString("runtime",""));
+        java.util.ArrayList<JSONObject> events=new java.util.ArrayList<>();events.add(validated);
+        JSONArray diagnosis=DiagnosticReport.diagnose(new JSONObject(),new JSONObject(),events,values);
+        JSONObject token=null;
+        for(int i=0;i<diagnosis.length();i++)
+            if("runtime_token".equals(diagnosis.getJSONObject(i).getString("id")))token=diagnosis.getJSONObject(i);
+        equal(true,token!=null);equal("ok",token.getString("status"));
+        equal(true,token.getString("text").contains(ModuleRuntimeStatus.BUILD_TOKEN));
+        for(String invalid:new String[]{reported+"/private",reported+"\nprivate",reported+" private",
+                "private-runtime",reported+"?secret=value",reported+new String(new char[121]).replace('\0','x')}) {
+            details.put("runtime",invalid);
+            equal(false,DiagnosticReport.validateDetails(details).has("runtime"));
+        }
+    }
+
+    /** Structured facts keep only whitelisted names with plain values, and drive the diagnosis hints. */
+    private static void facts(Device device,Map<String,Object> values) throws Exception {
+        JSONObject raw=new JSONObject().put("kind","fact").put("topic","clock")
+                .put("values",new JSONObject().put("reason","pending_lost").put("gap_ms",4200).put("interactive",true).put("pending",false)
+                        .put("secret_name","private").put("group","private text with spaces and / slash").put("view_width",1080));
+        JSONObject fact=DiagnosticReport.validateDetails(raw);
+        equal("clock",fact.getString("topic"));equal("pending_lost",fact.getJSONObject("values").getString("reason"));
+        equal(4200,fact.getJSONObject("values").getInt("gap_ms"));equal(true,fact.getJSONObject("values").getBoolean("interactive"));
+        equal(false,fact.getJSONObject("values").has("secret_name"));equal(false,fact.getJSONObject("values").has("group"));
+        equal(false,fact.toString().contains("private"));
+        equal(null,DiagnosticReport.validateDetails(new JSONObject().put("kind","fact").put("topic","private_topic").put("values",new JSONObject())));
+        java.util.ArrayList<JSONObject> events=new java.util.ArrayList<>();
+        events.add(new JSONObject().put("timestamp","2026-10-06T10:00:00Z").put("message","A").put("details",fact));
+        events.add(new JSONObject().put("timestamp","2026-10-06T10:00:01Z").put("message","B").put("details",new JSONObject().put("kind","fact").put("topic","scene")
+                .put("values",new JSONObject().put("scene","lock").put("previous","shade"))));
+        JSONObject report=DiagnosticReport.report(device,values,events);
+        equal("lock",report.getJSONObject("latest_facts").getJSONObject("scene").getJSONObject("values").getString("scene"));
+        equal("A",report.getJSONObject("latest_facts").getJSONObject("clock").getString("message"));
+        boolean healed=false,runtimeMissing=false;
+        JSONArray diagnosis=report.getJSONArray("diagnosis");
+        for(int i=0;i<diagnosis.length();i++) {
+            String id=diagnosis.getJSONObject(i).getString("id");
+            if(id.equals("clock_tick"))healed=true;if(id.equals("runtime_applied"))runtimeMissing=true;
+        }
+        equal(true,healed);equal(true,runtimeMissing);
+        equal(false,report.toString().contains("private"));
+    }
+
+    /** Range and renderer evidence survive both detail filtering and the received-event boundary. */
+    private static void fluidGradientFacts() throws Exception {
+        for(double range:new double[]{1d,23.4d,50d,100d}) {
+            JSONObject raw=new JSONObject().put("kind","fact").put("topic","fluid").put("private_extra","private payload")
+                    .put("values",new JSONObject().put("gradient_range",range).put("gradient_owned",range<100d)
+                            .put("gradient_drawn",true).put("gradient_rebuilt",false).put("view_width",1312).put("view_height",576)
+                            .put("gradient_unknown_number",17).put("gradient_unknown_boolean",true)
+                            .put("gradient_unknown_text","identifier").put("reason","private payload / path"));
+            JSONObject details=DiagnosticReport.validateDetails(raw);
+            JSONObject received=ModuleDiagnostics.validateEvent(new JSONObject(ModuleDiagnostics.event("fluid","渐变范围诊断",null)
+                    .put("details",details).toString())).getJSONObject("details");
+            for(JSONObject filtered:new JSONObject[]{details,received}) {
+                JSONObject safe=filtered.getJSONObject("values");
+                equal("fact",filtered.getString("kind"));equal("fluid",filtered.getString("topic"));
+                equal(range,safe.optDouble("gradient_range",Double.NaN));equal(range<100d,safe.opt("gradient_owned"));
+                equal(true,safe.opt("gradient_drawn"));equal(false,safe.opt("gradient_rebuilt"));
+                equal(1312,safe.getInt("view_width"));equal(576,safe.getInt("view_height"));
+                equal(6,safe.length());equal(false,filtered.toString().contains("private"));
+            }
+        }
+        JSONObject invalid=new JSONObject("{\"kind\":\"fact\",\"topic\":\"fluid\",\"values\":{\"gradient_range\":1e999,"
+                +"\"gradient_owned\":\"private payload / path\",\"gradient_drawn\":[],\"gradient_rebuilt\":{},"
+                +"\"gradient_unknown_number\":1,\"gradient_unknown_boolean\":true,\"gradient_unknown_text\":\"identifier\"}}");
+        JSONObject filtered=DiagnosticReport.validateDetails(invalid);
+        equal(0,filtered.getJSONObject("values").length());
+        JSONObject received=ModuleDiagnostics.validateEvent(new JSONObject(ModuleDiagnostics.event("fluid","渐变范围诊断",null)
+                .put("details",filtered).toString())).getJSONObject("details");
+        equal(0,received.getJSONObject("values").length());
+        for(String name:new String[]{"gradient_range","gradient_owned","gradient_drawn","gradient_rebuilt"}) {
+            JSONObject privateText=new JSONObject().put("kind","fact").put("topic","fluid")
+                    .put("values",new JSONObject().put(name,"private payload / path"));
+            equal(0,DiagnosticReport.validateDetails(privateText).getJSONObject("values").length());
+        }
     }
     public static void main(String[] args) throws Exception {System.out.println("DiagnosticReportCheck: "+run()+" checks passed");}
 }

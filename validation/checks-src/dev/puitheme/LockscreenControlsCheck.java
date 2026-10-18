@@ -168,9 +168,20 @@ public final class LockscreenControlsCheck {
         int reads=iconResources.reads;
         for(int i=0;i<1000;i++)check(helper.hideLockChild(owner,icon));
         equal(reads,iconResources.reads);check(!helper.hideLockChild(owner,fingerprint));check(!helper.hideLockChild(owner,charging));
+        // The charging / lock tip text beside the lock ("正在充电 28%") goes with it; other text in the container stays.
+        NamedResources tipResources=new NamedResources("com.android.systemui","lockicon_tips_view");
+        TextView tips=new TextView(context){@Override public Resources getResources(){return tipResources;}@Override public int getId(){return 0x7f0a0007;}};
+        NamedResources spaceResources=new NamedResources("com.android.systemui","lockicon_tips_space_view");
+        TextView tipSpace=new TextView(context){@Override public Resources getResources(){return spaceResources;}@Override public int getId(){return 0x7f0a0008;}};
+        owner.addView(tips);owner.addView(tipSpace);
+        check(helper.hideLockChild(owner,tips));check(helper.hideLockChild(owner,tipSpace));
+        int tipReads=tipResources.reads;for(int i=0;i<1000;i++)check(helper.hideLockChild(owner,tips));
+        equal(tipReads,tipResources.reads);check(!helper.hideLockChild(owner,charging));
+        FrameLayout looseOwner=new FrameLayout(context);TextView looseTips=new TextView(context){@Override public Resources getResources(){return tipResources;}@Override public int getId(){return 0x7f0a0007;}};
+        looseOwner.addView(looseTips);check(!helper.hideLockChild(looseOwner,looseTips)); // the same id outside the verified lock container is not enough
         equal(View.VISIBLE,icon.getVisibility());equal(1f,icon.getAlpha());equal(0,icon.layoutRequests);equal(0,owner.layoutRequests);
         check(helper.diagnosticSummary().contains("lockParents=1"));
-        helper.configure(new Bundle());check(!helper.hideLockChild(owner,icon));
+        helper.configure(new Bundle());check(!helper.hideLockChild(owner,icon));check(!helper.hideLockChild(owner,tips));
         helper.configure(b);outer.removeView(owner);new FrameLayout(context).addView(owner);
         check(!helper.hideLockChild(owner,icon)); // Same IDs without verified keyguard ancestor are not enough.
         helper.detach(icon);check(helper.diagnosticSummary().contains("lockParents=0"));

@@ -139,8 +139,62 @@ public final class NotificationClockEdgeCheck {
         check(nativeFail.getSaveCount()==1,"native exception still releases the temporary layer");
     }
 
+    private static void liveAlertRows()throws Throwable{
+        android.view.ViewGroup stack=new android.view.ViewGroup(new Context()){
+            public int getWidth(){return 240;}public int getHeight(){return 360;}
+        };
+        com.oplus.systemui.statusbar.notification.customcard.OplusCustomRow alert=
+            new com.oplus.systemui.statusbar.notification.customcard.OplusCustomRow();
+        alert.actualHeight=90;alert.setTranslationY(112f);stack.addView(alert);
+        Object edge=entry(100.25f,124.25f);PixelCanvas canvas=new PixelCanvas(114f);
+        Object g=geometry(canvas,100.25f,124.25f,24f);
+        Method inBand=method(NotificationClockEdge.class,"notificationInBand",View.class,Canvas.class,GEOMETRY,ENTRY);
+        check(Boolean.TRUE.equals(inBand.invoke(null,stack,canvas,g,edge)),"an isolated native Live Alert activates the same spatial edge as a notification");
+        near(1f,alert.getAlpha(),"classification does not alter custom-row opacity");
+        alert.clipTopAmount=20;
+        check(Boolean.FALSE.equals(inBand.invoke(null,stack,canvas,g,edge)),"native Live Alert top clipping removes non-visible pixels from band detection");
+        alert.clipTopAmount=0;alert.clipBottomAmount=90;
+        check(Boolean.FALSE.equals(inBand.invoke(null,stack,canvas,g,edge)),"fully clipped Live Alert does not blur another card");
+        alert.clipBottomAmount=0;alert.setTranslationY(20f);
+        check(Boolean.TRUE.equals(inBand.invoke(null,stack,canvas,g,edge)),"actual height is used when the Live Alert layout height differs");
+        alert.actualHeight=40;
+        check(Boolean.FALSE.equals(inBand.invoke(null,stack,canvas,g,edge)),"Live Alert wholly behind header does not trigger band");
+        stack.removeView(alert);View footer=new View(new Context());footer.setTranslationY(112f);stack.addView(footer);
+        check(Boolean.FALSE.equals(inBand.invoke(null,stack,canvas,g,edge)),"generic media/footer/plugin host remains outside notification ownership");
+        check(footer.getAlpha()==1f&&alert.getAlpha()==1f,"all row alpha stays native on every path");
+        NotificationClockEdge.detach(stack);NotificationClockEdge.releaseResources();
+        check(footer.getAlpha()==1f&&alert.getAlpha()==1f,"detach and disable require no row-property restoration");
+    }
+
+    private static final class EdgeStack extends android.view.ViewGroup {
+        public Object mOplusDispatchDrawHook,mBlurEffect;
+        EdgeStack(){super(new Context());}
+        public int getWidth(){return 240;}public int getHeight(){return 360;}
+    }
+
+    private static void liveAlertDrawPath()throws Throwable{
+        EdgeStack stack=new EdgeStack();
+        com.oplus.systemui.statusbar.notification.customcard.OplusCustomRow alert=
+            new com.oplus.systemui.statusbar.notification.customcard.OplusCustomRow();
+        alert.actualHeight=90;alert.setTranslationY(112f);stack.addView(alert);
+        PixelCanvas canvas=new PixelCanvas(114f);int[] calls={0};Canvas[] source={null};Object marker=new Object();
+        Object result=NotificationClockEdge.draw(stack,canvas,100.25f,124.25f,24f,8f,c->{calls[0]++;source[0]=c;return marker;},true);
+        check(result==marker&&calls[0]==1,"isolated Live Alert uses one real stack draw");
+        check(source[0] instanceof android.graphics.RecordingCanvas,"Live Alert enters source capture even without ordinary notifications");
+        check(canvas.nodeDraws==2&&canvas.paintFills==3,"Live Alert source shares the actual sharp/blur/fade output pipeline");
+        Field entries=NotificationClockEdge.class.getDeclaredField("ENTRIES");entries.setAccessible(true);
+        Object state=((java.util.Map<?,?>)entries.get(null)).get(stack),renderer=field(state,"renderer");
+        check(renderer!=null,"Live Alert renderer is owned by stack");
+        NotificationClockEdge.draw(stack,new PixelCanvas(114f),100.25f,124.25f,24f,8f,c->null,true);
+        check(field(state,"renderer")==renderer,"unchanged Live Alert geometry reuses render nodes");
+        NotificationClockEdge.detach(stack);
+        check(!((java.util.Map<?,?>)entries.get(null)).containsKey(stack),"stack detach drops Live Alert capture ownership");
+        check(alert.getAlpha()==1f&&alert.getTranslationY()==112f,"source capture and detach preserve row alpha and layout");
+        NotificationClockEdge.releaseResources();
+    }
+
     public static void main(String[] args)throws Throwable{
-        gradientAndGeometry();fractionalFade();hardwareComposition();failureAndNativeOwnership();
+        gradientAndGeometry();fractionalFade();hardwareComposition();failureAndNativeOwnership();liveAlertRows();liveAlertDrawPath();
         System.out.println("Notification clock edge checks passed: "+checks);
     }
 }

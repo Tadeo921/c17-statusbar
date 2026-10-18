@@ -1,7 +1,11 @@
 package android.graphics;
 public class Matrix {
+    public int inversionsForCheck;
     private final float[] values={1,0,0,0,1,0,0,0,1};
     public void setScale(float x,float y){values[0]=x;values[4]=y;}
+    /** What the last setRotate call asked for, for checks. */
+    public float rotationDegreesForCheck,rotationPivotX,rotationPivotY;
+    public void setRotate(float degrees,float px,float py){rotationDegreesForCheck=degrees;rotationPivotX=px;rotationPivotY=py;}
     public boolean postTranslate(float x,float y){values[2]+=x;values[5]+=y;return true;}
     public void getValues(float[] output){System.arraycopy(values,0,output,0,9);}
     public void mapPoints(float[] points){for(int i=0;i+1<points.length;i+=2){float x=points[i],y=points[i+1];float divisor=values[6]*x+values[7]*y+values[8];points[i]=(values[0]*x+values[1]*y+values[2])/divisor;points[i+1]=(values[3]*x+values[4]*y+values[5])/divisor;}}
@@ -11,6 +15,7 @@ public class Matrix {
     public boolean isIdentity(){return values[0]==1&&values[1]==0&&values[2]==0&&values[3]==0&&values[4]==1&&values[5]==0&&values[6]==0&&values[7]==0&&values[8]==1;}
     public void reset(){setTranslate(0f,0f);}
     public boolean invert(Matrix target){
+        inversionsForCheck++;
         float a=values[0],b=values[1],c=values[2],d=values[3],e=values[4],f=values[5],g=values[6],h=values[7],i=values[8];
         float determinant=a*(e*i-f*h)-b*(d*i-f*g)+c*(d*h-e*g);
         if(determinant==0f)return false;
@@ -18,6 +23,11 @@ public class Matrix {
                 (f*g-d*i)/determinant,(a*i-c*g)/determinant,(c*d-a*f)/determinant,
                 (d*h-e*g)/determinant,(b*g-a*h)/determinant,(a*e-b*d)/determinant};
         System.arraycopy(inverse,0,target.values,0,9);return true;
+    }
+    public boolean postConcat(Matrix other){
+        float[] result=new float[9];
+        for(int row=0;row<3;row++)for(int col=0;col<3;col++)for(int k=0;k<3;k++)result[row*3+col]+=other.values[row*3+k]*values[k*3+col];
+        System.arraycopy(result,0,values,0,9);return true;
     }
     public boolean preConcat(Matrix other){
         float[] result=new float[9];

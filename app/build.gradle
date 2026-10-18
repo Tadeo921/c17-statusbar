@@ -37,8 +37,8 @@ android {
         applicationId 'dev.puitheme.iosstatusbar'
         minSdk 26
         targetSdk 35
-        versionCode 75
-        versionName '1.8.2'
+        versionCode 192
+        versionName '1.8.3'
     }
 
     compileOptions {
@@ -113,4 +113,10 @@ dependencies {
     implementation 'top.yukonga.miuix.kmp:miuix-ui-android:0.9.4'
     implementation 'top.yukonga.miuix.kmp:miuix-preference-android:0.9.4'
     implementation 'top.yukonga.miuix.kmp:miuix-icons-android:0.9.4'
+    // Local COUI UI variant; the existing Miuix option remains available.
+    implementation 'io.github.suqi8.coui.kmp:coui-ui-android:1.1.0'
+    implementation 'io.github.suqi8.coui.kmp:coui-preference-android:1.1.0'
+    // Liquid glass navigation (About → 液态玻璃底栏). The library is minSdk 33; the manifest
+    // overrides it and every use is gated by GlassNavigationPreference.supported().
+    implementation 'top.yukonga.miuix.kmp:miuix-blur-android:0.9.4'
 }

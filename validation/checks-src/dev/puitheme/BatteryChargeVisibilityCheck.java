@@ -19,6 +19,7 @@ public final class BatteryChargeVisibilityCheck {
         return b;
     }
     public static void main(String[] args)throws Exception{
+        android.provider.Settings.System.values.put("display_power_percent",1);
         Handler h=new Handler(Looper.getMainLooper());
         BatteryControls controls=new BatteryControls(h,BatteryControlsCheck.Meter.class,BatteryControlsCheck.Horizontal.class,BatteryControlsCheck.Charge.class);
         BatteryControlsCheck.Meter owner=new BatteryControlsCheck.Meter(new android.content.Context());

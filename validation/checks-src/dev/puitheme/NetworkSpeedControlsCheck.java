@@ -168,7 +168,57 @@ public final class NetworkSpeedControlsCheck {
         controls.beforeNativeLayout(interrupted);controls.afterNativeLayout(interrupted,null,null);apply(controls,interrupted);
         equal(24,interrupted.getWidth());
         controls.apply(null,null,null);controls.beforeNativeLayout(null);controls.afterNativeLayout(null,null,null);controls.onViewDetached(null);
+        nativeTextStaysCentred();
+        enlargedTextGetsRoom();
         System.out.println("NetworkSpeedControlsCheck: "+checks+" checks passed");
+    }
+    /** The OEM centres the digits in the host; no setting, position or gap may take that alignment over. */
+    private static void nativeTextStaysCentred(){
+        NetworkSpeedControls controls=new NetworkSpeedControls();NetworkSpeedView host=new NetworkSpeedView();host.nativeLayout();
+        int centred=Gravity.CENTER_HORIZONTAL|Gravity.BOTTOM,unitCentred=Gravity.CENTER_HORIZONTAL|Gravity.TOP;
+        host.mSpeedNumber.setGravity(centred);host.mSpeedUnit.setGravity(unitCentred);
+        FrameLayout.LayoutParams number=params(host.mSpeedNumber),unit=params(host.mSpeedUnit);
+        for(String position:new String[]{"native","cellular_left","right_start","clock_left","clock_right"})for(boolean gap:new boolean[]{false,true}){
+            Bundle prefs=settings("system",4f);prefs.putString(SpeedPosition.POSITION,position);
+            prefs.putBoolean(SpeedPosition.SAFE_GAP_ENABLED,gap);prefs.putFloat(SpeedPosition.SAFE_GAP,-4.27f);
+            controls.configure(prefs);controls.beforeNativeLayout(host);controls.afterNativeLayout(host,host.mSpeedNumber,host.mSpeedUnit);
+            apply(controls,host);host.mSpeedNumber.setText("0.00");host.mSpeedNumber.setText("1024");apply(controls,host);
+            equal(centred,host.mSpeedNumber.getGravity());equal(unitCentred,host.mSpeedUnit.getGravity());
+            equal(number,params(host.mSpeedNumber));equal(unit,params(host.mSpeedUnit));
+        }
+        controls.onViewDetached(host);controls.configure(null);
+        equal(centred,host.mSpeedNumber.getGravity());equal(unitCentred,host.mSpeedUnit.getGravity());
+    }
+    /** A scaled-up number or unit must not be cut off by the host's fixed box; at native size nothing changes. */
+    private static void enlargedTextGetsRoom(){
+        NetworkSpeedControls controls=new NetworkSpeedControls();NetworkSpeedView host=new NetworkSpeedView();host.nativeLayout();
+        controls.configure(settings("system",4f));
+        int nativeWidth=host.getLayoutParams().width;
+        FrameLayout.LayoutParams originalNumber=new FrameLayout.LayoutParams(params(host.mSpeedNumber));
+        FrameLayout.LayoutParams originalUnit=new FrameLayout.LayoutParams(params(host.mSpeedUnit));
+        float number=host.mSpeedNumber.getTextSize(),unit=host.mSpeedUnit.getTextSize();
+        // Without the native sizes the module has not scaled anything: the layout stays the OEM's.
+        host.mSpeedNumber.setTextSize(0,number*3);host.mSpeedUnit.setTextSize(0,unit*3);apply(controls,host);
+        equal(nativeWidth,host.getLayoutParams().width);same(originalNumber,params(host.mSpeedNumber));
+        host.mSpeedNumber.setTextSize(0,number);host.mSpeedUnit.setTextSize(0,unit);
+        controls.nativeSizes(host,number,unit);
+        apply(controls,host);
+        equal(nativeWidth,host.getLayoutParams().width);same(originalNumber,params(host.mSpeedNumber));same(originalUnit,params(host.mSpeedUnit));
+        for(float factor:new float[]{1.2f,2f,3f}){
+            host.mSpeedNumber.setTextSize(0,number*factor);host.mSpeedUnit.setTextSize(0,unit*factor);apply(controls,host);
+            int widest=(int)Math.ceil(Math.max(host.mSpeedNumber.getPaint().measureText(host.mSpeedNumber.getText().toString()),
+                    host.mSpeedUnit.getPaint().measureText(host.mSpeedUnit.getText().toString())));
+            require(host.getLayoutParams().width>=widest,"the host is at least as wide as its widest line at "+factor);
+            if(factor>=2f)equal(ViewGroup.LayoutParams.WRAP_CONTENT,params(host.mSpeedNumber).height);
+            if(factor>=2f)equal(ViewGroup.LayoutParams.WRAP_CONTENT,params(host.mSpeedUnit).height);
+            equal(originalNumber.bottomMargin,params(host.mSpeedNumber).bottomMargin);equal(originalUnit.topMargin,params(host.mSpeedUnit).topMargin);
+            equal(originalNumber.gravity,params(host.mSpeedNumber).gravity);
+        }
+        host.mSpeedNumber.setTextSize(0,number);host.mSpeedUnit.setTextSize(0,unit);apply(controls,host);
+        equal(nativeWidth,host.getLayoutParams().width);same(originalNumber,params(host.mSpeedNumber));same(originalUnit,params(host.mSpeedUnit));
+        host.mSpeedNumber.setTextSize(0,number*3);host.mSpeedUnit.setTextSize(0,unit*3);apply(controls,host);
+        controls.onViewDetached(host);
+        equal(nativeWidth,host.getLayoutParams().width);same(originalNumber,params(host.mSpeedNumber));same(originalUnit,params(host.mSpeedUnit));
     }
     private static void same(FrameLayout.LayoutParams expected,FrameLayout.LayoutParams actual){
         equal(expected.width,actual.width);equal(expected.height,actual.height);equal(expected.gravity,actual.gravity);

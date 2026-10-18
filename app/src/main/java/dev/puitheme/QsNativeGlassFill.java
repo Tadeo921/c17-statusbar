@@ -22,10 +22,11 @@ final class QsNativeGlassFill {
     private static final Pattern BASE_ARGUMENT=Pattern.compile("vec4\\(u_multiBlendParams\\[i \\+ 1\\],\\s*u_multiBlendParams\\[i \\+ 2\\],\\s*u_multiBlendParams\\[i \\+ 3\\],\\s*u_multiBlendParams\\[i \\+ 4\\]\\)");
     private static final String MAIN="half4 main(float2 position) {";
     private static final Object[] NO_ARGUMENTS=new Object[0];
-    private static final String FILL_CODE="uniform shader c17QsFill;\nuniform float2 c17QsSlots;\n"
+    private static final String FILL_CODE="uniform shader c17QsFill;\nuniform float2 c17QsSlots;\nuniform int c17QsKeepNativeRgb;\nuniform float4 c17QsDeviceTint;\n"
             +"vec4 c17QsBase(vec4 value, int index, float2 position) {\n"
             +" if(float(index)!=c17QsSlots.x && float(index)!=c17QsSlots.y) return value;\n"
             +" half4 fill=c17QsFill.eval(position);\n"
+            +" if(c17QsKeepNativeRgb==1) return vec4(value.rgb,value.a*fill.a);\n"
             +" return vec4(value.rgb*(fill.rgb/max(float(fill.a),0.000001)),value.a*fill.a);\n}\n";
     private final Map<Object,Cached> cache=Collections.synchronizedMap(new WeakHashMap<>());
     private final ThreadLocal<String> reason=new ThreadLocal<>();
@@ -37,7 +38,7 @@ final class QsNativeGlassFill {
         Cached(String source,RuntimeShader shader,SourceSignature signature){this.source=source;this.shader=shader;this.signature=signature;}
     }
     /** Mirrors the confirmed OEM builder's structural key, never its changing optical uniforms. */
-    private static final class SourceSignature {
+    static final class SourceSignature {
         final WeakReference<RuntimeShader> original;final Object mask,corner;final int count;final boolean removeOptics;
         final EffectSignature[] effects;
         SourceSignature(RuntimeShader original,Object mask,int count,Object corner,EffectSignature[] effects,boolean removeOptics) {
@@ -115,8 +116,12 @@ final class QsNativeGlassFill {
         if(!Boolean.TRUE.equals(QsTileAppearance.field(engine,"enableShader")))return reject("native shader disabled");
         Object multi=QsTileAppearance.field(nativeShader,"multiBlendParam"),summary=QsTileAppearance.field(nativeShader,"summaryBlendParam");
         if(!(multi instanceof List)||!(summary instanceof List))return reject("native blend lists absent");
-        List<?> params=(List<?>)multi,all=(List<?>)summary;int[] slots=activeSlots(params,all);
-        if(slots==null&&deviceCard)slots=inactiveDeviceSlots(params,all);
+        List<?> params=(List<?>)multi,all=(List<?>)summary;
+        // Connected SDK cards use the same SepQSActive material as normal active
+        // tiles; admitting only SepQSInactive made their white base immutable.
+        int[] active=activeSlots(params,all),slots=deviceCard?inactiveDeviceSlots(params,all):active;
+        boolean keepNativeRgb=deviceCard&&slots!=null;
+        if(deviceCard&&slots==null)slots=active;
         if(slots==null&&activeTransition)slots=transitionSlots(params,all);
         if(slots==null)return reject("native active slots unsupported multi "+params.size()+" summary "+all.size()+" foregroundTop "+nativeParam(params,2)+" foregroundBottom "+nativeParam(params,3));
         Object corner=QsTileAppearance.call(QsTileAppearance.field(nativeShader,"mCornerParams"),"getType");
@@ -148,6 +153,11 @@ final class QsNativeGlassFill {
         cached.fillBounds.left=0;cached.fillBounds.top=0;cached.fillBounds.right=bounds.right-bounds.left;cached.fillBounds.bottom=bounds.bottom-bounds.top;
         replacement.setInputShader("c17QsFill",QsTileAppearance.shader(style,cached.fillBounds));
         replacement.setFloatUniform("c17QsSlots",slots[0]*5f,slots[1]*5f);
+        replacement.setIntUniform("c17QsKeepNativeRgb",keepNativeRgb?1:0);
+        // The configured active fill wins over the optional C17 inactive acrylic
+        // RGB policy. Native alpha/shape/foreground are still applied once.
+        int deviceTint=keepNativeRgb?C17HighlightRemoval.deviceFillTint(engine):0;
+        replacement.setFloatUniform("c17QsDeviceTint",((deviceTint>>>16)&255)/255f,((deviceTint>>>8)&255)/255f,(deviceTint&255)/255f,(deviceTint>>>24)/255f);
         Object nativePaint=QsTileAppearance.field(engine,"drawableShaderPaint");
         Swap swap=new Swap(nativeShader,(RuntimeShader)original,replacement,nativePaint instanceof Paint?(Paint)nativePaint:null);
         if(!QsTileAppearance.setField(nativeShader,"shader",replacement))return reject("native shader field unavailable");
@@ -215,7 +225,7 @@ final class QsNativeGlassFill {
         float[] result=new float[params.size()*5];
         fillUniforms(params,result);return result;
     }
-    private static void fillUniforms(List<?> params,float[] result) {
+    static void fillUniforms(List<?> params,float[] result) {
         for(int i=0;i<params.size();i++) {
             Object param=params.get(i),mode=QsTileAppearance.field(param,"mode"),color=QsTileAppearance.field(param,"color");
             if(!(mode instanceof Number)||!(color instanceof Number))throw new IllegalArgumentException("Unknown native material color parameter");
@@ -228,6 +238,12 @@ final class QsNativeGlassFill {
         Matcher matcher=BASE_ARGUMENT.matcher(nativeSource);if(!matcher.find())return null;
         String argument=matcher.group();if(matcher.find())return null;
         String body=BASE_ARGUMENT.matcher(nativeSource).replaceFirst(Matcher.quoteReplacement("c17QsBase("+argument+", i, position)"));
+        String end="return outputCol*shape;}";int at=body.lastIndexOf(end);
+        if(at<0){end="return outputCol;}";at=body.lastIndexOf(end);}
+        if(at<0||body.indexOf(end)!=at)return null;
+        // Device opacity changes only the confirmed base alpha. Apply the same optional
+        // acrylic RGB policy at the native final return so haze/shape keep their meaning.
+        body=body.substring(0,at)+"if(c17QsKeepNativeRgb==1) outputCol = half4(mix(outputCol.rgb, half3(c17QsDeviceTint.rgb), c17QsDeviceTint.a), outputCol.a);\n"+body.substring(at);
         return body.replace(MAIN,FILL_CODE+MAIN);
     }
 }

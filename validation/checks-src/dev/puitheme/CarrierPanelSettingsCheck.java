@@ -18,7 +18,13 @@ public final class CarrierPanelSettingsCheck {
     public static void main(String[] args) {
         equal(11, FeatureOptions.GROUPS.length);
         equal(3, CarrierPanels.GROUPS.length);
-        equal(97, FeatureOptions.DEFAULTS.size());
+        equal(152, FeatureOptions.DEFAULTS.size());
+        for(String key:new String[]{FluidCloudStyle.FOLLOW_NOTIFICATION,FluidCloudStyle.DESKTOP_HIGHLIGHTS,FluidCloudStyle.DESKTOP_BACKGROUND}) {
+            equal(false,FeatureOptions.DEFAULTS.get(key)); equal("fluid_cloud_style",FeatureOptions.GROUP_BY_KEY.get(key));
+        }
+        for(String key:new String[]{FluidCloudAccent.ENABLED,FluidCloudAccent.MASK_ENABLED}) {
+            equal(false,FeatureOptions.DEFAULTS.get(key)); equal("fluid_cloud_accent",FeatureOptions.GROUP_BY_KEY.get(key));
+        }
         // Three independent code63 switches do not acquire carrier-panel ownership.
         for(String key:new String[]{FeatureOptions.STACK_LANDSCAPE_ENABLED,NativeDataActivity.MASTER,NativeDataActivity.COLOR_ENABLED}){
             equal(false,FeatureOptions.DEFAULTS.get(key));equal(false,FeatureOptions.GROUP_BY_KEY.containsKey(key));

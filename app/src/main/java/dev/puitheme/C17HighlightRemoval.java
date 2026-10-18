@@ -93,6 +93,50 @@ public final class C17HighlightRemoval {
     private final Map<Class<?>, NotificationAccess> notificationAccess = new ConcurrentHashMap<>();
     private final Map<Object, BlurOwner> blurOwners = Collections.synchronizedMap(new WeakHashMap<>());
     private final Map<View, StrokePaint> sliderStrokes = Collections.synchronizedMap(new WeakHashMap<>());
+    // Exact OplusCustomRow.mBackgroundNormal identities supplied at native bind events.
+    // Do not classify immersive wallpaper/media artwork as notification backgrounds.
+    private final Map<View, Boolean> fluidNotifications = Collections.synchronizedMap(new WeakHashMap<>());
+    // A native MetaBall gradient must keep its own colours/alpha while optics
+    // are removed. It cannot be replaced by a uniform finished-card RGB filter.
+    private final Map<View, Boolean> fluidNativeAccents = Collections.synchronizedMap(new WeakHashMap<>());
+    private final Map<View, Boolean> lockMediaCompositions = Collections.synchronizedMap(new WeakHashMap<>());
+    /** A fluid-cloud card that carries a media colour as a top-to-bottom gradient layer (ARGB at the top). */
+    private final Map<View, Fade> fluidGradients = Collections.synchronizedMap(new WeakHashMap<>());
+    /** A fluid-cloud card's fill, drawn over the card as one flat colour, as the colour of an ordinary notification is, while the gate says so. */
+    private final Map<View, Fade> fluidOverlays = Collections.synchronizedMap(new WeakHashMap<>());
+    private final Map<View, Integer> overlayLogged = Collections.synchronizedMap(new WeakHashMap<>());
+    private int overlayLogs;
+    /** How far down a card the gradient layer runs before it has faded out completely (0..1 of the card's height). */
+    private volatile float gradientRange = 1f;
+    private static final java.util.function.BooleanSupplier ALWAYS = () -> true;
+    /** A colour of a fluid layer: it fades from what was on the screen to its target in {@link #COLOUR_FADE_MS}, so a new track, the
+     * media going away or a changed setting never pops. A leaving layer fades to transparent and is then forgotten. */
+    static final class Fade {
+        final int from, to; final long at; final java.util.function.BooleanSupplier needed; final boolean leaving;
+        Fade(int from, int to, long at, java.util.function.BooleanSupplier needed, boolean leaving) {
+            this.from = from; this.to = to; this.at = at; this.needed = needed; this.leaving = leaving;
+        }
+        int shown(long now) {
+            long elapsed = now - at;
+            if (elapsed >= COLOUR_FADE_MS) return to;
+            if (elapsed <= 0L) return from;
+            float t = elapsed / (float) COLOUR_FADE_MS;
+            return blend(from, to, t * t * (3f - 2f * t));
+        }
+        boolean done(long now) { return now - at >= COLOUR_FADE_MS; }
+    }
+    /** A new colour on a card, or a card losing its colour: from the colour shown at this instant (transparent in the new colour when
+     * there was none, so nothing flashes through black) to the target. Null when nothing changes. */
+    static Fade next(Fade old, Integer argb, java.util.function.BooleanSupplier needed, long now) {
+        if (argb == null) {
+            if (old == null || old.leaving) return null;
+            return new Fade(old.shown(now), old.to & 0x00ffffff, now, old.needed, true);
+        }
+        if (old != null && !old.leaving && old.to == argb && old.needed == needed) return null;
+        int from = old == null ? argb & 0x00ffffff : old.shown(now);
+        if ((from >>> 24) == 0) from = argb & 0x00ffffff;
+        return new Fade(from, argb, now, needed, false);
+    }
     private final Map<Drawable, Boolean> mediaLights = Collections.synchronizedMap(new WeakHashMap<>());
     private final Map<Object, BlurOwner> mediaSpotHosts = Collections.synchronizedMap(new WeakHashMap<>());
     private final ThreadLocal<NotificationTint> tintingNotification = new ThreadLocal<>();
@@ -111,6 +155,17 @@ public final class C17HighlightRemoval {
     private final C17AcrylicMaterial acrylic = new C17AcrylicMaterial();
     private final C17DeviceAcrylic deviceAcrylic = new C17DeviceAcrylic();
     private volatile boolean backgroundEnabled;
+    /** Non-null while the media colour is shown or fading; draw reads the colour through mediaFollowShown(). */
+    private volatile Paint mediaFollowPaint;
+    private volatile int mediaFollowArgb;
+    // The shown colour crosses over from mediaFollowFrom to mediaFollowArgb, so AOD, wake and track changes never pop.
+    private volatile int mediaFollowFrom;
+    private volatile long mediaFollowAt;
+    private Paint fadePaint;
+    private int fadeArgb;
+    static final long FOLLOW_FADE_MS = 240L;
+    /** The colour layers of the fluid-cloud cards change over this long (the follow colour of ordinary notifications uses FOLLOW_FADE_MS). */
+    static final long COLOUR_FADE_MS = 450L;
     private volatile boolean notificationEnabled = true, controlEnabled = true, headsUpEnabled = true, uniformNotificationEnabled;
     private volatile CardColors cardColors = new CardColors(DEFAULT_LIGHT_BACKGROUND, DEFAULT_DARK_BACKGROUND);
     private volatile int lightBackground = DEFAULT_LIGHT_BACKGROUND, darkBackground = DEFAULT_DARK_BACKGROUND;
@@ -122,9 +177,96 @@ public final class C17HighlightRemoval {
 
     public boolean enabled() { return enabled; }
 
+    /** False while the optical feature is off and nothing is left to restore: the hot draw hooks then skip all of it. */
+    public boolean optionsActive() { return !released && (enabled || restorationPending); }
+
+    /** The device card fallback only matters with the feature and its control scope on. */
+    public boolean deviceBackgroundWanted() { return !released && enabled && controlEnabled; }
+
+    /** The fluid-cloud policy decides whether a registered notification body follows the C17 optics policy and
+     * whether a music card keeps its native highlight. Colour never travels through here: the unified and
+     * media colour layer covers every notification card, fluid cloud or not, in every scene.
+     */
+    public synchronized void setFluidNotificationBackground(View host, boolean follow) {
+        setFluidNotificationBackground(host, follow, false);
+    }
+
+    public synchronized void setFluidNotificationBackground(View host, boolean follow, boolean keepHighlight) {
+        if (released || host == null || !type(host.getClass(), NOTIFICATION_BACKGROUND)) return;
+        Boolean old = fluidNotifications.put(host, follow);
+        boolean nativeAccent = follow && keepHighlight;
+        boolean previousNative = Boolean.TRUE.equals(fluidNativeAccents.get(host));
+        if (nativeAccent) fluidNativeAccents.put(host, true); else fluidNativeAccents.remove(host);
+        if (old != null && old.booleanValue() == follow && previousNative == nativeAccent) return;
+        for (Map.Entry<Drawable, Binding> entry : engineSnapshot()) {
+            if (entry.getValue().host.get() != host) continue;
+            restoreEngine(entry.getKey());
+            entry.getValue().primed = Long.MIN_VALUE;
+            dirty(entry.getKey(), entry.getValue());
+            prime(entry.getKey(), entry.getValue());
+        }
+        invalidateView(host);
+    }
+
+    /** The card draws its media colour as a gradient layer over its own material (null: none). Drawn after the native
+     * background, inside the same layer, so it keeps the native shape and coverage like the unified colour does. */
+    public void setFluidGradient(View host, Integer argb) {
+        if (released || host == null || !type(host.getClass(), NOTIFICATION_BACKGROUND)) return;
+        synchronized (fluidGradients) {
+            Fade next = next(fluidGradients.get(host), argb, ALWAYS, android.os.SystemClock.uptimeMillis());
+            if (next == null) return;
+            fluidGradients.put(host, next);
+        }
+        invalidateView(host);
+    }
+    /** The media layer has the same priority over a custom unified tint as the
+     * old ordinary flat media tint. Only a proven lock body opts into it. */
+    public void setLockMediaComposition(View host,boolean active) {
+        if(released||host==null||!type(host.getClass(),NOTIFICATION_BACKGROUND))return;
+        boolean previous=Boolean.TRUE.equals(lockMediaCompositions.get(host));
+        if(previous==active)return;
+        if(active)lockMediaCompositions.put(host,true);else lockMediaCompositions.remove(host);
+        invalidateView(host);
+    }
+
+    /** The fill a card wants, drawn as a flat colour over the card while {@code needed} is true (null argb or gate: none). The gate is
+     * read at each draw and only reads fields; a card is invalidated when this changes, not per frame. */
+    public void setFluidOverlay(View host, Integer argb, java.util.function.BooleanSupplier needed) {
+        if (released || host == null || !type(host.getClass(), NOTIFICATION_BACKGROUND)) return;
+        synchronized (fluidOverlays) {
+            Fade next = next(fluidOverlays.get(host), argb == null || needed == null ? null : argb, needed, android.os.SystemClock.uptimeMillis());
+            if (next == null) return;
+            fluidOverlays.put(host, next);
+        }
+        invalidateView(host);
+    }
+
+    /** A native custom-row body was replaced/recycled; it no longer owns this opt-in. */
+    public synchronized void forgetFluidNotificationBackground(View host) {
+        if (host == null) return;
+        lockMediaCompositions.remove(host);
+        if (fluidOverlays.remove(host) != null && !released) invalidateView(host);
+        fluidNativeAccents.remove(host);
+        if (fluidGradients.remove(host) != null && !released) invalidateView(host);
+        if (fluidNotifications.remove(host) == null || released) return;
+        for (Map.Entry<Drawable, Binding> entry : engineSnapshot()) {
+            if (entry.getValue().host.get() != host) continue;
+            restoreEngine(entry.getKey()); entry.getValue().primed = Long.MIN_VALUE;
+            dirty(entry.getKey(), entry.getValue()); prime(entry.getKey(), entry.getValue());
+        }
+        invalidateView(host);
+    }
+
     static boolean removesOptics(Drawable engine) {
         RecordScope scope = ACTIVE_RECORD.get();
         return scope != null && scope.removesOptics(engine);
+    }
+
+    /** Shared device base policy for the opacity shader; its alpha is a tint mix,
+     * not another opacity multiplier. Foreground/spotlight owners are excluded. */
+    static int deviceFillTint(Drawable engine) {
+        RecordScope scope = ACTIVE_RECORD.get();
+        return scope == null ? 0 : scope.deviceFillTint(engine);
     }
 
     static void preparedCustomMaterial(Drawable engine, RuntimeShader shader, boolean opticsRemoved) {
@@ -343,6 +485,16 @@ public final class C17HighlightRemoval {
             Binding binding = current == null ? null : engines.get(current);
             return active && current == engine && !released && binding != null && opticsEnabled(binding.host.get());
         }
+        private int deviceFillTint(Drawable engine) {
+            Binding binding = current == null ? null : engines.get(current);
+            View host = binding == null ? null : binding.host.get();
+            if (!backgroundEnabled || !removesOptics(engine) || host == null
+                    || binding.deviceBase == null || !binding.deviceBase.matches(host)) return 0;
+            boolean night = (host.getResources().getConfiguration().uiMode
+                    & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+                    == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+            return night ? darkBackground : lightBackground;
+        }
         @Override public void close() {
             if (!active) return; active = false;
             if (recording.get() == current) { if (previous == null) recording.remove(); else recording.set(previous); }
@@ -524,7 +676,23 @@ public final class C17HighlightRemoval {
     public Object drawNotificationBackground(View host, Canvas canvas, ContentDraw nativeDraw) throws Throwable {
         try (SurfaceScope owner = beginSurface(host)) {
             NotificationTint previous = tintingNotification.get();
-            if (!uniformNotification(host) || !type(host.getClass(), NOTIFICATION_BACKGROUND)
+            long now = android.os.SystemClock.uptimeMillis();
+            // A heads-up banner keeps its own material, as it does under the unified colour.
+            Integer gradient = fluidGradients.isEmpty() || scope(host) != NOTIFICATION ? null : shownLayer(fluidGradients, host, now);
+            // A fluid-cloud card's fill is also drawn over the card as one flat colour (lock screen and AOD), like an ordinary notification's.
+            Integer flat = null;
+            if (!fluidOverlays.isEmpty() && scope(host) == NOTIFICATION) {
+                Fade overlay = fluidOverlays.get(host);
+                if (overlay != null && overlay.needed.getAsBoolean()) {
+                    flat = shownLayer(fluidOverlays, host, now);
+                    if (overlayLogs < 40 && overlayLogged.put(host, overlay.to) == null) {
+                        overlayLogs++;
+                        android.util.Log.i("C17FluidScene", "overlay flat drawn argb=#" + Integer.toHexString(overlay.to));
+                    }
+                }
+            }
+            boolean uniform = uniformNotification(host);
+            if (!uniform && gradient == null && flat == null || !type(host.getClass(), NOTIFICATION_BACKGROUND)
                     || canvas == null || !owner.active || previous != null && previous.host == host && previous.canvas == canvas)
                 return nativeDraw.draw(canvas);
             NotificationTint tint = owner.tint;
@@ -532,12 +700,18 @@ public final class C17HighlightRemoval {
             if (!notificationBounds(host, tint.bounds)) return nativeDraw.draw(canvas);
             boolean night = (host.getResources().getConfiguration().uiMode
                     & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
-            Paint fill = night ? cardColors.dark : cardColors.light;
+            Paint fill = uniform ? notificationFill(host, night) : null;
+            if (fill == null && gradient == null && flat == null) return nativeDraw.draw(canvas);
             final int saved;
-            try { saved = canvas.saveLayer(tint.bounds, fill); }
+            try { saved = canvas.saveLayer(tint.bounds, fill != null ? fill : tint.plain()); }
             catch (RuntimeException unavailable) { return nativeDraw.draw(canvas); }
             tint.host = host; tint.canvas = canvas; tint.count = 0; tintingNotification.set(tint);
-            try { return nativeDraw.draw(canvas); }
+            try {
+                Object result = nativeDraw.draw(canvas);
+                if (gradient != null) tint.drawGradient(canvas, gradient, gradientRange);
+                if (flat != null) tint.drawFlat(canvas, flat);
+                return result;
+            }
             finally {
                 if (tintingNotification.get() == tint) {
                     if (previous == null) tintingNotification.remove(); else tintingNotification.set(previous);
@@ -597,7 +771,8 @@ public final class C17HighlightRemoval {
     public Object drawContent(Drawable engine, Canvas canvas, ContentDraw nativeDraw) throws Throwable {
         Binding binding = engine == null ? null : engines.get(engine);
         View host = binding == null ? null : binding.host.get();
-        if (released || !opticsEnabled(host) || uniformNotification(host)
+        if (released || !opticsEnabled(host) || uniformNotification(host) || Boolean.TRUE.equals(fluidNativeAccents.get(host))
+                || Boolean.TRUE.equals(lockMediaCompositions.get(host))
                 || !backgroundEnabled && !controlSurface(host)) return nativeDraw.draw(canvas);
         RecordScope record = ACTIVE_RECORD.get();
         if (record != null && record.removesOptics(engine) && record.customShader != null
@@ -631,8 +806,23 @@ public final class C17HighlightRemoval {
         return deviceAcrylic.drawGradient(drawable, canvas, color, backgroundEnabled, nativeDraw);
     }
 
+    /** The colour a fading layer shows at this instant (null: nothing to draw). A fade in progress asks the card for its next frame; a
+     * layer that has faded out is forgotten. */
+    private Integer shownLayer(Map<View, Fade> layers, View host, long now) {
+        Fade layer = layers.get(host);
+        if (layer == null) return null;
+        int shown = layer.shown(now);
+        if (!layer.done(now)) host.postInvalidateOnAnimation();
+        else if (layer.leaving) synchronized (layers) { if (layers.get(host) == layer) layers.remove(host); }
+        return (shown >>> 24) == 0 ? null : Integer.valueOf(shown);
+    }
+
     public synchronized void configure(Bundle settings) {
         if (released) return;
+        Object range = settings == null ? null : settings.get(FluidCloudAccent.GRADIENT_RANGE);
+        float nextRange = range instanceof Number ? ((Number) range).floatValue() / 100f : FluidCloudAccent.DEFAULT_GRADIENT_RANGE / 100f;
+        nextRange = Float.isFinite(nextRange) ? Math.max(.05f, Math.min(1f, nextRange)) : 1f;
+        if (nextRange != gradientRange) { gradientRange = nextRange; invalidateSurfaces(); }
         boolean next = settings != null && Boolean.TRUE.equals(settings.get(ENABLED)) && !SafetyMode.enabled(settings);
         boolean nextNotification = settings == null || settings.getBoolean(NOTIFICATION_ENABLED, true);
         boolean nextControl = settings == null || settings.getBoolean(CONTROL_ENABLED, true);
@@ -663,11 +853,12 @@ public final class C17HighlightRemoval {
     }
 
     public synchronized void release() {
-        restorationPending = true; enabled = false; uniformNotificationEnabled = false; revision++;
+        restorationPending = true; enabled = false; uniformNotificationEnabled = false; mediaFollowPaint = null; revision++;
         restoreAll(); invalidateSurfaces(); released = true;
         engines.clear(); shaders.clear(); surfaces.clear();
         engineAccess.clear(); materialAccess.clear(); effectAccess.clear(); surfaceTypes.clear(); scopeTypes.clear();
-        notificationOwners.clear();
+        notificationOwners.clear(); fluidNotifications.clear(); fluidNativeAccents.clear(); fluidOverlays.clear(); fluidGradients.clear();
+        lockMediaCompositions.clear();
         blurAccess.clear(); proxyAccess.clear(); wrapperAccess.clear(); notificationAccess.clear(); blurOwners.clear(); sliderStrokes.clear();
         acrylic.clear(); deviceAcrylic.clear();
         invalidateMediaLights(); mediaLights.clear(); mediaSpotHosts.clear(); tintingNotification.remove();
@@ -680,6 +871,9 @@ public final class C17HighlightRemoval {
         deviceAcrylic.detach(host);
         surfaces.remove(host);
         notificationOwners.remove(host);
+        fluidNotifications.remove(host);
+        fluidNativeAccents.remove(host);
+        lockMediaCompositions.remove(host);
         sliderStrokes.remove(host);
         synchronized (blurOwners) {
             java.util.Iterator<Map.Entry<Object,BlurOwner>> owners = blurOwners.entrySet().iterator();
@@ -849,11 +1043,95 @@ public final class C17HighlightRemoval {
     private boolean opticsEnabled(View host) {
         if (!enabled || released || host == null) return false;
         int value = scope(host);
+        // A fluid-cloud card takes the optics policy only while the fluid-cloud policy owns it, and a music
+        // card whose highlight the user chose to keep skips the optics too. Ordinary cards are not registered.
+        if ((value == NOTIFICATION || value == HEADS_UP) && (Boolean.FALSE.equals(fluidNotifications.get(host))
+                || Boolean.TRUE.equals(fluidNativeAccents.get(host)))) return false;
         return value == NOTIFICATION ? notificationEnabled : value == HEADS_UP ? headsUpEnabled : value == CONTROL && controlEnabled;
     }
 
+    /** The unified colour layer is the last one over every notification card (shade, lock screen, AOD),
+     * ordinary or fluid cloud alike. It no longer depends on which other fluid-cloud features are
+     * active or on the scene, so entering or leaving AOD cannot switch it. Heads-up banners keep
+     * their own material. */
     private boolean uniformNotification(View host) {
-        return !released && uniformNotificationEnabled && host != null && scope(host) == NOTIFICATION;
+        if (released || host == null) return false;
+        if(Boolean.TRUE.equals(lockMediaCompositions.get(host)))return false;
+        return scope(host) == NOTIFICATION && (uniformNotificationEnabled
+                || mediaFollowPaint != null && !fluidNotifications.containsKey(host));
+    }
+
+    /** Media colour first (the user asked for notifications to follow it), then the acrylic colour pair.
+     * A fluid-cloud card already has its own media colour from the fluid-cloud policy; laying the follow
+     * colour over it would tint it twice and make it differ from the other scenes, so it only reaches ordinary cards. */
+    private Paint notificationFill(View host, boolean night) {
+        if (!fluidNotifications.containsKey(host)) {
+            Paint media = mediaFollowShown(host);
+            if (media != null) return media;
+        }
+        return uniformNotificationEnabled ? (night ? cardColors.dark : cardColors.light) : null;
+    }
+
+    /** The media colour at this instant of its cross-fade, or null once it has faded away. */
+    private Paint mediaFollowShown(View host) {
+        Paint marker = mediaFollowPaint;
+        if (marker == null) return null;
+        long elapsed = android.os.SystemClock.uptimeMillis() - mediaFollowAt;
+        float progress = elapsed >= FOLLOW_FADE_MS ? 1f : Math.max(0f, elapsed / (float) FOLLOW_FADE_MS);
+        int target = mediaFollowArgb;
+        int shown = progress >= 1f ? target : blend(mediaFollowFrom, target, progress);
+        if (progress < 1f && host != null) host.postInvalidateOnAnimation();
+        if ((shown >>> 24) == 0) {
+            if (progress >= 1f && (target >>> 24) == 0) mediaFollowPaint = null;
+            return null;
+        }
+        if (progress >= 1f) return marker;
+        synchronized (this) {
+            if (fadePaint == null || fadeArgb != shown) { fadePaint = CardColors.fill(shown); fadeArgb = shown; }
+            return fadePaint;
+        }
+    }
+
+    static int blend(int from, int to, float amount) {
+        int a = Math.round((from >>> 24) + ((to >>> 24) - (from >>> 24)) * amount);
+        int r = Math.round(((from >> 16) & 255) + (((to >> 16) & 255) - ((from >> 16) & 255)) * amount);
+        int g = Math.round(((from >> 8) & 255) + (((to >> 8) & 255) - ((from >> 8) & 255)) * amount);
+        int b = Math.round((from & 255) + ((to & 255) - (from & 255)) * amount);
+        return a << 24 | r << 16 | g << 8 | b;
+    }
+
+    /** Notification cards follow the current media accent colour; null stops following.
+     * The colour already carries the user's strength as its alpha and is drawn over the same layer
+     * as the unified colour, so ordinary notifications and fluid-cloud rows are treated alike. */
+    public void setMediaFollowColor(Integer argb) {
+        synchronized (this) {
+            if (released) return;
+            int shownNow = mediaFollowPaint == null ? 0 : currentFollow();
+            int next;
+            if (argb == null) {
+                // Fade the colour that is shown out in place; nothing is left once it is gone.
+                if (mediaFollowPaint == null || (mediaFollowArgb >>> 24) == 0) return;
+                next = mediaFollowArgb & 0x00ffffff;
+            } else {
+                next = argb;
+                if (mediaFollowPaint != null && mediaFollowArgb == next) return;
+            }
+            // From fully transparent in the new colour, so a card does not flash through the old hue.
+            mediaFollowFrom = (shownNow >>> 24) == 0 ? next & 0x00ffffff : shownNow;
+            mediaFollowArgb = next;
+            mediaFollowAt = android.os.SystemClock.uptimeMillis();
+            mediaFollowPaint = CardColors.fill(next);
+        }
+        invalidateSurfaces();
+    }
+
+    /** Check seam: jump the media colour cross-fade to its end. */
+    void finishFollowFadeForCheck() { mediaFollowAt = android.os.SystemClock.uptimeMillis() - FOLLOW_FADE_MS - 1; }
+
+    private int currentFollow() {
+        long elapsed = android.os.SystemClock.uptimeMillis() - mediaFollowAt;
+        if (elapsed >= FOLLOW_FADE_MS) return mediaFollowArgb;
+        return blend(mediaFollowFrom, mediaFollowArgb, Math.max(0f, elapsed / (float) FOLLOW_FADE_MS));
     }
 
     private int scope(View host) {
@@ -927,6 +1205,36 @@ public final class C17HighlightRemoval {
         final RectF bounds = new RectF();
         final Drawable[] icons = new Drawable[4];
         View host; Canvas canvas; int count;
+        private Paint plain, gradientPaint, flatPaint;
+        private int gradientColor; private float gradientTop = Float.NaN, gradientBottom = Float.NaN, gradientEnd = Float.NaN;
+        /** A layer that changes nothing by itself: only the gradient is added on top of what the native draw produced. */
+        Paint plain() { if (plain == null) plain = new Paint(); return plain; }
+        /** Colour at the top fading to nothing at the bottom, only where the native draw left pixels (SRC_ATOP): the card keeps
+         * its own shape, corners and coverage. The shader is rebuilt only when the colour or the card's height changes. */
+        /** One flat colour, only where the native draw left pixels (SRC_ATOP): the card keeps its shape, corners and coverage. */
+        void drawFlat(Canvas canvas, int argb) {
+            if (flatPaint == null) {
+                flatPaint = new Paint();
+                flatPaint.setXfermode(new android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_ATOP));
+            }
+            flatPaint.setColor(argb);
+            canvas.drawRect(bounds, flatPaint);
+        }
+        /** The colour at the top fading to nothing at {@code range} of the card's height (1: at the bottom), where the native draw left
+         * pixels (SRC_ATOP). The shader is rebuilt only when the colour, the card's height or the range changes. */
+        void drawGradient(Canvas canvas, int argb, float range) {
+            if (gradientPaint == null) {
+                gradientPaint = new Paint();
+                gradientPaint.setXfermode(new android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_ATOP));
+            }
+            float end = bounds.top + Math.max(1f, bounds.height() * range);
+            if (gradientColor != argb || gradientTop != bounds.top || gradientBottom != bounds.bottom || gradientEnd != end) {
+                gradientPaint.setShader(new android.graphics.LinearGradient(0f, bounds.top, 0f, end, argb, argb & 0x00ffffff,
+                        android.graphics.Shader.TileMode.CLAMP));
+                gradientColor = argb; gradientTop = bounds.top; gradientBottom = bounds.bottom; gradientEnd = end;
+            }
+            canvas.drawRect(bounds, gradientPaint);
+        }
     }
 
     private static final class NotificationAccess {

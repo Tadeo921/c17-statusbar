@@ -89,7 +89,7 @@ final class C17DeviceAcrylic {
         if (card == null || !card.isAttachedToWindow()) return null;
         String name = bodyName(card); if (name.isEmpty()) return null;
         try {
-            int id = card.getResources().getIdentifier(name, "id", "com.android.systemui");
+            int id = ResourceIds.get(card.getResources(), name, "id", "com.android.systemui");
             View body = id == 0 ? null : card.findViewById(id);
             if (body == null || !body.isAttachedToWindow() || !ancestor(body, card)
                     || !name.equals(body.getResources().getResourceEntryName(body.getId()))

@@ -47,6 +47,11 @@ public final class FontCatalogCheck {
             equal("https",FontDownloadRepository.downloadUrl(entry).getProtocol());
             equal("raw.githubusercontent.com",FontDownloadRepository.downloadUrl(entry).getHost());
             check(entry.downloadUrl.contains(FontCatalog.DISTRIBUTION_COMMIT));
+            java.net.URL mirror=FontDownloadRepository.mirrorUrl(entry);
+            if(entry.bytes>FontDownloadRepository.MIRROR_MAX_BYTES)check(mirror==null);
+            else check(mirror!=null&&"https".equals(mirror.getProtocol())&&"cdn.jsdelivr.net".equals(mirror.getHost())
+                    &&mirror.getPath().equals("/gh/google/fonts@"+FontCatalog.DISTRIBUTION_COMMIT+FontDownloadRepository.downloadUrl(entry).getPath()
+                    .substring(("/google/fonts/"+FontCatalog.DISTRIBUTION_COMMIT).length())));
             check(entry.sourceUrl.startsWith("https://github.com/"));
             equal("SIL Open Font License 1.1",entry.licenseName);
             check(entry.licenseAsset.equals("fonts/catalog/licenses/"+entry.id+"-OFL.txt"));

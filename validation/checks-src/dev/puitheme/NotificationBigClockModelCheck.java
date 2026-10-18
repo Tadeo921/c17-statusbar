@@ -8,6 +8,7 @@ public final class NotificationBigClockModelCheck {
         return NotificationBigClockModel.calculate(1280f, 1.5f, 100f, 36f, 600f, 300f, 0f, scroll, over, fraction);
     }
     public static void main(String[] args) {
+        componentSpace();
         expect(NotificationBigClockModel.eligible(true, true, 0, false, 1f));
         expect(!NotificationBigClockModel.eligible(false, true, 0, false, 1f));
         expect(!NotificationBigClockModel.eligible(true, false, 0, false, 1f));
@@ -127,6 +128,27 @@ public final class NotificationBigClockModelCheck {
             expect(budget <= height * .2f && budget <= 72f && budget >= 0f);
         }
         System.out.println("Notification big clock model checks passed: " + checks);
+    }
+    private static void componentSpace() {
+        NotificationBigClockModel.Frame expanded=measured(0,0f,1f),compact=measured(10000,0f,1f);
+        expect(NotificationBigClockModel.withComponents(expanded,0f,2f)==expanded);
+        expect(NotificationBigClockModel.withComponents(expanded,Float.NaN,2f)==expanded);
+        for(NotificationBigClockModel.Frame frame:new NotificationBigClockModel.Frame[]{expanded,compact}) {
+            NotificationBigClockModel.Frame row=NotificationBigClockModel.withComponents(frame,192f,2f);
+            expect(row.clockTop==frame.clockTop&&row.dateTop==frame.dateTop&&row.clockHeight==frame.clockHeight);
+            expect(row.progress==frame.progress&&row.entryAlpha==frame.entryAlpha&&row.weight==frame.weight);
+            expect(row.reservedBottom==frame.reservedBottom+208f);
+            expect(row.collapseDistance==frame.collapseDistance);
+        }
+        for(float available:new float[]{0f,20f,63f,64f,192f,600f}) {
+            float reserved=500f,safe=20f,viewport=reserved+safe+176f+available;
+            float height=NotificationBigClockModel.componentHeight(800f,viewport,reserved,safe,2f);
+            expect(height<=available&&height<=800f);
+            expect(height==0f||height>=64f);
+            NotificationBigClockModel.Frame base=new NotificationBigClockModel.Frame(0f,0f,100f,0f,reserved,1f,100f,0f,1f,600);
+            NotificationBigClockModel.Frame with=NotificationBigClockModel.withComponents(base,height,2f);
+            expect(with.reservedBottom+safe+160f<=viewport);
+        }
     }
     private static NotificationBigClockModel.Frame measured(int scroll, float over, float fraction) {
         return NotificationBigClockModel.measured(1280f, 1.5f, 48f, 320f, 115f, 28f,

@@ -1,7 +1,20 @@
-# 可复用检查源码
+# 桌面检查
 
-此目录保留本地检查入口与参考材料。`run-checks.ps1` 使用本次正式 Gradle 编译生成的生产 Java 类，以及 Android SDK `37.0` 与 LibXposed API `101`。生产 hooks 保持 Java 8 字节码（版本 `52`）；检查输出保留在被忽略的本地目录。实际执行版本、数量和结果以根目录 [VALIDATION.md](../VALIDATION.md) 为准，不使用私有目录中的生产覆盖类代替正式构建。
+在仓库根目录运行，使用 JDK 17、Android SDK 37.0、Build Tools 36.0.0 与项目 Gradle 工具链：
 
-检查覆盖参数试用恢复、可变字体与下载事务、原生电池字重、网络开关、通知图标、磁贴与面板圆角、1×1图标测量、顶部固定图标和分页、音乐缓存、清除动效、安全模式与卸载释放。宿主 fixture 检查策略与绘制调用边界，不能代替手机图形栈、真实手势、帧率或功耗测试；两者分别记录。历史设备范围见 [项目进度与接手说明](../docs/PROGRESS-2026-10-01.zh-CN.md)。
+```powershell
+& tools/dev/compile.ps1
+& tools/dev/checks.ps1
+```
 
-配置目录检查逐项核对参数入口、主开关默认关闭、蜂窝数据箭头强制隐藏、圆角硬范围0–30dp、通知数量整数校验、颜色配对、互斥和性能提示，以及导入导出注册表。字体和通知图片的本机文件不随配置 JSON 导出。
+定向检查示例：
+
+```powershell
+& tools/dev/checks.ps1 -Names 'IconManagementRuntimeCheck','SystemWeatherProviderCheck'
+```
+
+`tools/dev/checks.ps1` 和 `run-checks.ps1` 共用 `check-runtime-dependencies.ps1`，从真实 AndroidX core 1.18.0 AAR 提取 `classes.jar`，用于生产 `PathParser`；也可通过 `C17_ANDROIDX_CORE_JAR` 指定该依赖。缺少缓存时先构建 App。测试 Android 图形 fixture 先于此库加载，不替换矢量路径解析器。
+
+公开版以原创 C17 图包与合成素材覆盖通用逻辑，不包含私有 PUI 图包；需要原始主题的来源检查须显式提供本地素材。跳过私有来源核对不等于该项验收通过。
+
+桌面检查覆盖配置、导入、绘制、生命周期和恢复分支，不代表 Android Skia、OEM 动画或真机观感已全部验收。当前发布结果见根目录 [VALIDATION.md](../VALIDATION.md)。

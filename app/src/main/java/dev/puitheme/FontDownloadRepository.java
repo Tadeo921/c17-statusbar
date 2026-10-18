@@ -17,7 +17,11 @@ import javax.net.ssl.HttpsURLConnection;
 
 /** Worker-only, pinned downloads. Publication is the existing lifecycle-guarded font transaction. */
 public final class FontDownloadRepository {
-    private static final long MAX_CACHE_BYTES=64L*1024*1024,MAX_DOWNLOAD_MS=180000L;
+    /** A stalled connection ends at READ_TIMEOUT_MS; the total only stops an endless trickle. 180 s was too short
+     * for the 17-25 MB Chinese families on ordinary mobile networks. */
+    private static final long MAX_CACHE_BYTES=64L*1024*1024,MAX_DOWNLOAD_MS=15L*60*1000;
+    /** jsDelivr serves a GitHub file only up to this size. */
+    static final long MIRROR_MAX_BYTES=20L*1024*1024;
     private static final int CONNECT_TIMEOUT_MS=12000,READ_TIMEOUT_MS=12000;
     private FontDownloadRepository() { }
     public interface Progress { void onProgress(long received,long total); }
@@ -84,12 +88,32 @@ public final class FontDownloadRepository {
             throw new IOException("字体下载来源不受支持");
         return url;
     }
+    /** The same pinned commit through jsDelivr, for networks where raw.githubusercontent.com is unreachable.
+     * Its bytes pass the identical size, SHA-256 and weight-axis checks, so it cannot deliver a different file. */
+    public static URL mirrorUrl(FontCatalog.Entry entry) throws IOException {
+        URL official=downloadUrl(entry);
+        if(entry.bytes>MIRROR_MAX_BYTES)return null;
+        String path=official.getPath().substring(("/google/fonts/"+FontCatalog.DISTRIBUTION_COMMIT).length());
+        return new URL("https://cdn.jsdelivr.net/gh/google/fonts@"+FontCatalog.DISTRIBUTION_COMMIT+path);
+    }
+    /** Official source first, then the mirror. A user cancellation never moves on to another source. */
     private static void download(FontCatalog.Entry entry,File target,Progress progress,
+            BooleanSupplier cancelled) throws Exception {
+        URL mirror=mirrorUrl(entry);
+        try { download(downloadUrl(entry),entry,target,progress,cancelled); }
+        catch(IOException official) {
+            FontFileValidator.checkCancelled(cancelled);
+            if(mirror==null)throw official;
+            try { download(mirror,entry,target,progress,cancelled); }
+            catch(IOException fallback) { FontFileValidator.checkCancelled(cancelled);official.addSuppressed(fallback);throw official; }
+        }
+    }
+    private static void download(URL source,FontCatalog.Entry entry,File target,Progress progress,
             BooleanSupplier cancelled) throws Exception {
         File temporary=File.createTempFile("download-",".part",target.getParentFile());
         HttpsURLConnection connection=null;boolean published=false;
         try {
-            connection=(HttpsURLConnection)downloadUrl(entry).openConnection();
+            connection=(HttpsURLConnection)source.openConnection();
             connection.setConnectTimeout(CONNECT_TIMEOUT_MS);connection.setReadTimeout(READ_TIMEOUT_MS);
             connection.setInstanceFollowRedirects(false);
             connection.setRequestProperty("Accept-Encoding","identity");

@@ -40,7 +40,7 @@ public final class QsTileAppearance {
         flags.put(MASTER,false);
         for(String scene:new String[]{"light","dark"}) {
             String key=prefix(scene);flags.put(key+"_gradient_enabled",false);
-            numbers.put(key+"_opacity",100f);numbers.put(key+"_gradient_angle",0f);
+            numbers.put(key+"_opacity",100f);numbers.put(key+"_gradient_angle",0f);numbers.put(key+"_gradient_range",100f);
             colors.put(key+"_color",0xffffffff);colors.put(key+"_gradient_color",0xffffffff);
         }
         BOOLEANS=Collections.unmodifiableMap(flags);NUMBERS=Collections.unmodifiableMap(numbers);COLORS=Collections.unmodifiableMap(colors);
@@ -60,6 +60,7 @@ public final class QsTileAppearance {
         {"SquareEntranceCardView","square_entrance_constraintLayout"}
     };
     private final Map<View,Integer> tiles=Collections.synchronizedMap(new WeakHashMap<>());
+    private final Map<View,Boolean> fullFillTiles=Collections.synchronizedMap(new WeakHashMap<>());
     private final Map<Drawable,WeakReference<View>> backgrounds=Collections.synchronizedMap(new WeakHashMap<>());
     private final Map<Drawable,WeakReference<Drawable>> fillSources=Collections.synchronizedMap(new WeakHashMap<>());
     private final Map<View,Boolean> sliders=Collections.synchronizedMap(new WeakHashMap<>());
@@ -67,7 +68,11 @@ public final class QsTileAppearance {
     private final Map<View,DeviceSource> deviceSources=Collections.synchronizedMap(new WeakHashMap<>());
     private final Handler main=new Handler(Looper.getMainLooper());
     private final Map<View,Integer> pendingUiViews=new WeakHashMap<>();
-    private static final int UI_TILE=1,UI_DEVICE=2,UI_DETACH=4;
+    private static final int UI_TILE=1,UI_DEVICE=2,UI_DETACH=4,UI_HIGHLIGHT=8,UI_DETAIL=16;
+    /** The round buttons of the brightness / volume secondary page, and that page's own slider layout. */
+    public static final String DETAIL_TILE="com.oplus.systemui.qs.slider.detail.widget.QsDetailTileBaseView";
+    private static final String DETAIL_SLIDER_LAYOUT="com.oplus.systemui.qs.slider.OplusQsDetailToggleSliderLayout";
+    private static final String HIGHLIGHT_TILE="com.oplus.systemui.qs.base.tile.OplusQSHighlightTileView";
     private final Map<Drawable,WeakReference<View>> glassTracks=Collections.synchronizedMap(new WeakHashMap<>());
     private final Map<Drawable,WeakReference<Drawable>> glassSources=Collections.synchronizedMap(new WeakHashMap<>());
     private final ThreadLocal<Set<Paint>> activePaints=new ThreadLocal<>();
@@ -80,12 +85,24 @@ public final class QsTileAppearance {
     private final QsNativeGlassFill glass=new QsNativeGlassFill();
     static final class Style {
         final int color,color2;final float opacity,angle;final boolean gradient;
+        /** How much of the run the change of colour takes (0.05..1); the ends outside it stay solid. */
+        final float range;
         // A style is immutable. Native paint alpha and glass uniforms are deliberately
         // outside this cache, so press/color/optical animations remain live.
         private final GradientEntry[] shaders=new GradientEntry[16];
         private GradientEntry recent;
         private int nextShader;
-        Style(int color,int color2,float opacity,float angle,boolean gradient){this.color=color;this.color2=color2;this.opacity=opacity;this.angle=angle;this.gradient=gradient;}
+        private final NativeGradientEntry[] nativeShaders=new NativeGradientEntry[16];
+        private int nextNativeShader;
+        Style(int color,int color2,float opacity,float angle,boolean gradient){this(color,color2,opacity,angle,gradient,1f);}
+        Style(int color,int color2,float opacity,float angle,boolean gradient,float range){
+            this.color=color;this.color2=color2;this.opacity=opacity;this.angle=angle;this.gradient=gradient;
+            this.range=Float.isFinite(range)?Math.max(.05f,Math.min(1f,range)):1f;
+        }
+    }
+    private static final class NativeGradientEntry {
+        final int rgb;final GradientEntry gradient;
+        NativeGradientEntry(int rgb,Rect bounds,Shader shader){this.rgb=rgb;gradient=new GradientEntry(bounds,shader);}
     }
     private static final class GradientEntry {
         final int left,top,right,bottom;final Shader shader;
@@ -96,12 +113,16 @@ public final class QsTileAppearance {
     private static final class DrawBuffers {
         final List<Paint> paints=new ArrayList<>(),changed=new ArrayList<>();
         final Map<Object,Boolean> seen=new IdentityHashMap<>();
+        final Map<Paint,Integer> nativeRgb=new IdentityHashMap<>();
+        final Map<Paint,Shader> appliedShaders=new IdentityHashMap<>();
         DrawBuffers next;boolean busy;
-        void clear(){paints.clear();changed.clear();seen.clear();busy=false;}
+        void clear(){paints.clear();changed.clear();seen.clear();nativeRgb.clear();appliedShaders.clear();busy=false;}
     }
     private static final class DeviceSource {
         final WeakReference<View> body;final WeakReference<Drawable> background;
-        DeviceSource(View body,Drawable background){this.body=new WeakReference<>(body);this.background=new WeakReference<>(background);}
+        final boolean active;
+        final Rect initialBounds=new Rect();
+        DeviceSource(View body,Drawable background,boolean active){this.body=new WeakReference<>(body);this.background=new WeakReference<>(background);this.active=active;}
         boolean matches(View body,Drawable background){return this.body.get()==body&&this.background.get()==background;}
     }
     private DrawBuffers acquireBuffers() {
@@ -124,19 +145,20 @@ public final class QsTileAppearance {
     private static Style readStyle(Bundle settings,String scene) {
         String key=prefix(scene);
         return new Style(color(settings.get(key+"_color"),-1),color(settings.get(key+"_gradient_color"),-1),
-                clamp(number(settings.get(key+"_opacity"),100f),0f,100f),angle(number(settings.get(key+"_gradient_angle"),0f)),settings.getBoolean(key+"_gradient_enabled",false));
+                clamp(number(settings.get(key+"_opacity"),100f),0f,100f),angle(number(settings.get(key+"_gradient_angle"),0f)),settings.getBoolean(key+"_gradient_enabled",false),
+                clamp(number(settings.get(key+"_gradient_range"),100f),5f,100f)/100f);
     }
     /** Run after native tile state/theme/drawable updates. Big glass cards are deliberately excluded. */
     public void refreshTile(View view) {
         if(!isTile(view))return;
         if(dispatchUi(view,UI_TILE))return;
         onTileState(view,call(view,"getTileState"));
-        if(!largeTile(view)) {
+        if(!largeTile(view)||fullFillTiles.containsKey(view)) {
             register(view,call(view,"getBgDrawable"),0,new IdentityHashMap<>());
             register(view,call(view,"getThemeDrawable"),0,new IdentityHashMap<>());
             registerView(view,call(view,"getBg"));
         }
-        // In 2x1/2x2 cards only the original active circle behind the icon is styled.
+        // Ordinary large cards keep their circle; the independent 2x1 fill owns only its native body.
         Object icon=call(view,"getIconView");if(icon==null)icon=call(view,"getIcon");
         if(icon==null)icon=field(view,"iconView");
         if(icon!=null) {
@@ -146,10 +168,39 @@ public final class QsTileAppearance {
             registerView(view,field(icon,"iconBgView"));
         }
         try {
-            int id=view.getResources().getIdentifier("oplus_qs_tile_icon_bg","id","com.android.systemui");
+            int id=ResourceIds.get(view.getResources(), "oplus_qs_tile_icon_bg","id","com.android.systemui");
             if(id!=0)registerView(view,view.findViewById(id));
         }catch(RuntimeException absent){ }
         if(tracing())trace("register:"+view.getClass().getSimpleName(),"tile="+view.getClass().getSimpleName()+", state="+tiles.get(view)+", large="+largeTile(view)+", icon="+(icon==null?"absent":icon.getClass().getSimpleName()));
+    }
+    public static boolean isHighlightTile(View view){return type(view,HIGHLIGHT_TILE);}
+    public static boolean isDetailTile(View view){return type(view,DETAIL_TILE);}
+    /** The buttons on the brightness / volume secondary page (auto brightness, dark mode, spatial audio ...) are another native
+     * view class whose background is the same tile drawable family, so their active fill takes the same colour and opacity.
+     * The page is short-lived: it registers when it is built while the feature is on, and the state is the tile's int (2 = active). */
+    public void refreshDetailTile(View view) {
+        if(!enabled||!isDetailTile(view)||dispatchUi(view,UI_DETAIL))return;
+        Object value=field(call(view,"getState"),"state");
+        tiles.put(view,value instanceof Number?((Number)value).intValue():-1);
+        register(view,call(view,"getBgDrawable"),0,new IdentityHashMap<>());
+        registerView(view,call(view,"getIvBg"));
+        if(tracing())trace("register:"+view.getClass().getSimpleName(),"secondary page tile, state="+tiles.get(view));
+    }
+    /** The WLAN / Bluetooth / mobile data / hotspot tiles that open a secondary page are a different native class from the
+     * resizeable tiles; their active fill follows the same colour and opacity. State is the tile's int (2 = active). */
+    public void refreshHighlightTile(View view) {
+        if(!isHighlightTile(view)||dispatchUi(view,UI_HIGHLIGHT))return;
+        Object state=field(view,"mState");
+        tiles.put(view,state instanceof Number?((Number)state).intValue():-1);
+        register(view,field(view,"mBgDrawable"),0,new IdentityHashMap<>());
+        registerView(view,field(view,"mBg"));
+        Object icon=field(view,"iconView");
+        if(icon!=null) {
+            register(view,call(icon,"getIconBgDrawable"),0,new IdentityHashMap<>());
+            register(view,call(icon,"getBgDrawable"),0,new IdentityHashMap<>());
+            registerView(view,field(icon,"iconBgView"));
+        }
+        if(tracing())trace("register:"+view.getClass().getSimpleName(),"highlight tile, state="+tiles.get(view));
     }
     private void registerView(View owner,Object object) {
         if(!(object instanceof View))return;
@@ -159,6 +210,11 @@ public final class QsTileAppearance {
         // An unconditional invalidate here both loops and crashes SysUiTileBg.
     }
     public static boolean isDeviceCard(View view){return deviceBodyName(view)!=null;}
+    /** The same answer for a whole class, so the draw hook can cache it once instead of walking per view per frame. */
+    public static boolean isDeviceCardType(Class<?> start){
+        for(String[] entry:DEVICE_BODIES)if(typeOf(start,DEVICE_PACKAGE+entry[0]))return true;
+        return false;
+    }
     private static String deviceBodyName(View view) {
         for(String[] entry:DEVICE_BODIES)if(type(view,DEVICE_PACKAGE+entry[0]))return entry[1];
         return null;
@@ -166,7 +222,7 @@ public final class QsTileAppearance {
     private static View deviceBody(View view) {
         String name=deviceBodyName(view);if(name==null)return null;
         try {
-            int id=view.getResources().getIdentifier(name,"id","com.android.systemui");
+            int id=ResourceIds.get(view.getResources(), name,"id","com.android.systemui");
             View body=id==0?null:view.findViewById(id);
             return body!=null&&name.equals(resourceName(body))?body:null;
         }catch(RuntimeException absent){return null;}
@@ -180,10 +236,19 @@ public final class QsTileAppearance {
     }
     private void registerDeviceSource(View view,View body,Drawable background) {
         deviceCards.put(view,Boolean.TRUE);
-        deviceSources.put(view,new DeviceSource(body,background));
+        deviceSources.put(view,new DeviceSource(body,background,deviceActive(view)));
         register(view,background,0,new IdentityHashMap<>());
-        if(tracing())trace("device:"+view.getClass().getName(),"device card="+view.getClass().getSimpleName()+", base="+resourceName(body));
+        if(tracing())trace("device:"+view.getClass().getName(),"device card="+view.getClass().getSimpleName()+", base="+resourceName(body)+", active="+deviceActive(view));
     }
+    /** Verified SDK model fields: Rectangle.v, Square.q; state 1 uses SepQSActive.
+     * Read on native refresh/replacement, never scan battery labels or infer state from RGB. */
+    private static boolean deviceActive(View view) {
+        Object model=type(view,DEVICE_PACKAGE+"RectangleDeviceCardView")?field(view,"v")
+                :type(view,DEVICE_PACKAGE+"SquareDeviceCardView")?field(view,"q"):null;
+        if(!type(model,"com.oplus.deviceplugin.sdk.entity.PanelDevice"))return false;
+        Object value=call(model,"getDeviceState");return value instanceof Number&&((Number)value).intValue()==1;
+    }
+    private boolean activeDeviceSource(View view) {DeviceSource source=deviceSources.get(view);return source!=null&&source.active;}
     /** Wrap View.draw, before its inner background draws, retaining native clipping and all children. */
     public void drawDeviceCard(View view,Canvas canvas,DrawAction nativeDraw) throws Throwable {
         if(!enabled){nativeDraw.draw(canvas);return;}
@@ -194,17 +259,49 @@ public final class QsTileAppearance {
         // g()/theme/config events still refresh nested drawable state. An unchanged
         // draw must not re-register its entire native graph or recreate weak references.
         if(source==null||!source.matches(body,drawable))registerDeviceSource(view,body,drawable);
-        // SDK g() selects SepInactive for this body even when a connected device
-        // has an active icon. A normal inactive tile also keeps its native fill.
-        nativeDraw.draw(canvas);
+        // GradientDrawable is styled at its own native draw after the independent
+        // C17 acrylic RGB policy. Glass is styled at the engine recording point.
+        if(type(drawable,"android.graphics.drawable.GradientDrawable")||type(drawable,AUTO_BLUR)){nativeDraw.draw(canvas);return;}
+        drawDeviceFill(drawable,view,body,canvas,nativeDraw);
+    }
+    /** After C17's native device tint, before this exact inner solid base draws. */
+    public void drawDeviceBackground(Drawable drawable,Canvas canvas,DrawAction nativeDraw) throws Throwable {
+        View view=enabled?owner(drawable):null;
+        DeviceSource source=view==null?null:deviceSources.get(view);
+        View body=source==null?null:source.body.get();
+        if(!isDeviceCard(view)||body==null||deviceBody(view)!=body||source.background.get()!=drawable||body.getBackground()!=drawable){nativeDraw.draw(canvas);return;}
+        drawDeviceFill(drawable,view,body,canvas,nativeDraw);
+    }
+    private void drawDeviceFill(Drawable drawable,View view,View body,Canvas canvas,DrawAction nativeDraw) throws Throwable {
+        Style style=style(view);
+        boolean keepNativeRgb=!activeDeviceSource(view);
+        if(keepNativeRgb&&!deviceOpacityChanges(style)){nativeDraw.draw(canvas);return;}
+        DrawBuffers buffers=acquireBuffers();
+        try {
+            collectFills(drawable,buffers.paints,0,buffers.seen,true,keepNativeRgb?buffers.nativeRgb:null);
+            if(tracing())trace("deviceOpacity:"+view.getClass().getName(),"device opacity "+view.getClass().getSimpleName()+", native RGB paints "+buffers.nativeRgb.size()+", fill percent "+style.opacity);
+            Rect bounds=drawable.getBounds();
+            if(!valid(bounds)) {
+                DeviceSource source=deviceSources.get(view);
+                if(source!=null){bounds=source.initialBounds;bounds.set(0,0,body.getWidth(),body.getHeight());}
+            }
+            withFills(buffers,style,bounds,canvas,nativeDraw,keepNativeRgb);
+        }finally{buffers.clear();}
     }
     public void onTileState(View view,Object state) {
         if(view!=null&&dispatchUi(view,UI_TILE))return;
         if(isTile(view)){Object value=field(state,"state");tiles.put(view,value instanceof Number?((Number)value).intValue():-1);}
     }
+    /** Called only after the independent full-fill owner has changed/restored the native inner drawable. */
+    void fullFillChanged(View view,boolean filled) {
+        detach(view);
+        if(filled)fullFillTiles.put(view,Boolean.TRUE);
+        refreshTile(view);
+    }
+    Style fullFillStyle(View view) { return enabled?style(view):null; }
     public void detach(View view) {
         if(view==null||dispatchUi(view,UI_DETACH))return;
-        tiles.remove(view);sliders.remove(view);deviceCards.remove(view);deviceSources.remove(view);
+        tiles.remove(view);fullFillTiles.remove(view);sliders.remove(view);deviceCards.remove(view);deviceSources.remove(view);
         synchronized(backgrounds){backgrounds.entrySet().removeIf(item->item.getValue().get()==null||item.getValue().get()==view);}
         synchronized(fillSources){fillSources.keySet().removeIf(drawable->!backgrounds.containsKey(drawable));}
         synchronized(glassTracks) {
@@ -229,6 +326,8 @@ public final class QsTileAppearance {
                 if(work==UI_DETACH||!owner.isAttachedToWindow()){detach(owner);return;}
                 if((work&UI_TILE)!=0)refreshTile(owner);
                 if((work&UI_DEVICE)!=0)refreshDeviceCard(owner);
+                if((work&UI_HIGHLIGHT)!=0)refreshHighlightTile(owner);
+                if((work&UI_DETAIL)!=0)refreshDetailTile(owner);
             })) synchronized(pendingUiViews){pendingUiViews.remove(view);}
         }
         return true;
@@ -243,7 +342,7 @@ public final class QsTileAppearance {
         if(!Integer.valueOf(2).equals(tiles.get(owner))){nativeDraw.draw(canvas);return;}
         DrawBuffers buffers=acquireBuffers();
         try {
-            collectFills(drawable,buffers.paints,0,buffers.seen);
+            collectFills(drawable,buffers.paints,0,buffers.seen,fullFillTiles.containsKey(owner));
             if(tracing())trace("fill:"+drawable.getClass().getName(),"drawable="+drawable.getClass().getName()+", state="+tiles.get(owner)+", eligiblePaints="+buffers.paints.size()+", maskWhite="+white(field(drawable,"maskColor"))+", colorWhite="+white(call(field(drawable,"colorDrawable"),"getColor")));
             withFills(buffers,style(owner),drawable.getBounds(),canvas,nativeDraw);
         }finally{buffers.clear();}
@@ -284,8 +383,9 @@ public final class QsTileAppearance {
         }else if(actual instanceof Drawable) {
             DrawBuffers buffers=acquireBuffers();
             try {
-                collectFills((Drawable)actual,buffers.paints,0,buffers.seen,isDeviceCard(target));
-                withFills(buffers,style(target),drawable.getBounds(),canvas,nativeDraw);
+                boolean device=isDeviceCard(target),keepNativeRgb=device&&!activeDeviceSource(target);
+                collectFills((Drawable)actual,buffers.paints,0,buffers.seen,device,keepNativeRgb?buffers.nativeRgb:null);
+                withFills(buffers,style(target),drawable.getBounds(),canvas,nativeDraw,keepNativeRgb);
             }finally{buffers.clear();}
         }else nativeDraw.draw(canvas);
     }
@@ -293,7 +393,7 @@ public final class QsTileAppearance {
     public void drawGlassContent(Drawable engine,Canvas canvas,DrawAction nativeDraw) throws Throwable {
         WeakReference<View> ref=glassTracks.get(engine);View view=ref==null?null:ref.get();
         if(enabled&&tracing())trace("record:"+engine.getClass().getName(),"glass recorder="+engine.getClass().getName()+", ownerKnown="+(view!=null));
-        if(!enabled||view==null||!activeFillOwner(view)){nativeDraw.draw(canvas);return;}
+        if(!enabled||view==null||!activeFillOwner(view)||isDeviceCard(view)&&!activeDeviceSource(view)&&!deviceOpacityChanges(style(view))){nativeDraw.draw(canvas);return;}
         Object lock=field(engine,"dataLock");if(lock==null){nativeDraw.draw(canvas);return;}
         synchronized(lock) {
             QsNativeGlassFill.Swap swap=null;
@@ -313,33 +413,41 @@ public final class QsTileAppearance {
     }
     private boolean activeFillOwner(View view) {
         if(isSlider(view))return qsSlider(view);
-        // The exact SDK inner body is native inactive; never apply the active
-        // user's fill merely because the device card is interactive/connected.
-        if(isDeviceCard(view))return false;
+        if(isDetailTile(view)){Object value=field(call(view,"getState"),"state");return value instanceof Number&&((Number)value).intValue()==2;}
+        // SDK SepInactive retains its own RGB, independently of connected/active icons.
+        // Admission is the previously verified inner body, never the whole card.
+        if(isDeviceCard(view)){DeviceSource source=deviceSources.get(view);View body=source==null?null:source.body.get();return body!=null&&deviceBody(view)==body&&source.background.get()==body.getBackground();}
         if(!isTile(view))return false;
         // Glass content recording may run off the UI thread; only read native state here.
         Object state=call(view,"getTileState"),value=field(state,"state");
         return value instanceof Number&&((Number)value).intValue()==2;
     }
     private void withFills(DrawBuffers buffers,Style style,Rect bounds,Canvas canvas,DrawAction nativeDraw) throws Throwable {
+        withFills(buffers,style,bounds,canvas,nativeDraw,false);
+    }
+    private void withFills(DrawBuffers buffers,Style style,Rect bounds,Canvas canvas,DrawAction nativeDraw,boolean keepNativeRgb) throws Throwable {
         if(buffers.paints.isEmpty()||!valid(bounds)){nativeDraw.draw(canvas);return;}
         Set<Paint> inUse=activePaints.get();if(inUse==null){inUse=Collections.newSetFromMap(new IdentityHashMap<>());activePaints.set(inUse);}
         try {
             Shader shader=null;
             for(int i=0;i<buffers.paints.size();i++){Paint paint=buffers.paints.get(i);if(!inUse.contains(paint)&&paint.getShader()==null) {
-                if(shader==null)shader=shader(style,bounds);
-                buffers.changed.add(paint);inUse.add(paint);paint.setShader(shader);
+                if(keepNativeRgb){Integer rgb=buffers.nativeRgb.get(paint);if(rgb==null)continue;shader=nativeShader(style,bounds,rgb);}
+                else if(shader==null)shader=shader(style,bounds);
+                buffers.changed.add(paint);buffers.appliedShaders.put(paint,shader);inUse.add(paint);paint.setShader(shader);
             }}
         }catch(RuntimeException unavailable){error(unavailable);}
         try {nativeDraw.draw(canvas);}
         finally {
-            for(int i=buffers.changed.size()-1;i>=0;i--){Paint paint=buffers.changed.get(i);paint.setShader(null);inUse.remove(paint);}
+            for(int i=buffers.changed.size()-1;i>=0;i--){Paint paint=buffers.changed.get(i);if(paint.getShader()==buffers.appliedShaders.get(paint))paint.setShader(null);inUse.remove(paint);}
         }
     }
     private static void collectFills(Drawable drawable,List<Paint> result,int depth,Map<Object,Boolean> seen) {
         collectFills(drawable,result,depth,seen,false);
     }
     private static void collectFills(Drawable drawable,List<Paint> result,int depth,Map<Object,Boolean> seen,boolean deviceBase) {
+        collectFills(drawable,result,depth,seen,deviceBase,null);
+    }
+    private static void collectFills(Drawable drawable,List<Paint> result,int depth,Map<Object,Boolean> seen,boolean deviceBase,Map<Paint,Integer> rgb) {
         if(drawable==null||depth>10||seen.put(drawable,true)!=null)return;
         Object value=null;
         if(type(drawable,MIX_TILE)) {if(deviceBase||eligibleTileColor(drawable,field(drawable,"maskColor")))value=field(drawable,"paint");}
@@ -358,16 +466,25 @@ public final class QsTileAppearance {
                 if(fill instanceof Paint&&(deviceBase||white(((Paint)fill).getColor())))value=fill;
             }
         }
-        if(value instanceof Paint&&!result.contains(value))result.add((Paint)value);
+        if(value instanceof Paint&&!result.contains(value)){
+            Paint paint=(Paint)value;result.add(paint);
+            if(rgb!=null){
+                Object source=type(drawable,MIX_TILE)?field(drawable,"maskColor"):type(drawable,GRADIENT_TILE)?call(field(drawable,"colorDrawable"),"getColor")
+                        :type(drawable,PLATFORM_BLUR)||type(drawable,"com.oplusos.systemui.common.blurability.staticblur.StaticBlurDrawable")?field(drawable,"blurMaskColor")
+                        :type(drawable,"com.oplusos.systemui.common.view.SmoothCornersGradientDrawable")?field(drawable,"colorValue")
+                        :type(drawable,"android.graphics.drawable.ColorDrawable")?call(drawable,"getColor"):paint.getColor();
+                if(source instanceof Number)rgb.put(paint,((Number)source).intValue()&0xffffff);
+            }
+        }
         // Mix/Gradient private Paint is the only eligible fill of that primitive; do not recolor its glass child twice.
         if(type(drawable,MIX_TILE)||type(drawable,GRADIENT_TILE))return;
-        collectChildFill(drawable,call(drawable,"getDrawable"),result,depth,seen,deviceBase);
-        collectChildFill(drawable,call(drawable,"getCurrent"),result,depth,seen,deviceBase);
-        collectChildFill(drawable,field(drawable,"backgroundDrawable"),result,depth,seen,deviceBase);
-        if(!deviceBase)collectChildFill(drawable,field(drawable,"foregroundDrawable"),result,depth,seen,false);
+        collectChildFill(drawable,call(drawable,"getDrawable"),result,depth,seen,deviceBase,rgb);
+        collectChildFill(drawable,call(drawable,"getCurrent"),result,depth,seen,deviceBase,rgb);
+        collectChildFill(drawable,field(drawable,"backgroundDrawable"),result,depth,seen,deviceBase,rgb);
+        if(!deviceBase)collectChildFill(drawable,field(drawable,"foregroundDrawable"),result,depth,seen,false,rgb);
     }
-    private static void collectChildFill(Drawable parent,Object child,List<Paint> result,int depth,Map<Object,Boolean> seen,boolean deviceBase) {
-        if(child instanceof Drawable&&child!=parent)collectFills((Drawable)child,result,depth+1,seen,deviceBase);
+    private static void collectChildFill(Drawable parent,Object child,List<Paint> result,int depth,Map<Object,Boolean> seen,boolean deviceBase,Map<Paint,Integer> rgb) {
+        if(child instanceof Drawable&&child!=parent)collectFills((Drawable)child,result,depth+1,seen,deviceBase,rgb);
     }
     private Style style(View view) {
         boolean night=(view.getResources().getConfiguration().uiMode&Configuration.UI_MODE_NIGHT_MASK)==Configuration.UI_MODE_NIGHT_YES;
@@ -398,11 +515,26 @@ public final class QsTileAppearance {
             return shader;
         }
     }
+    private static boolean deviceOpacityChanges(Style style) {
+        return withOpacity(style.color,style.opacity,255)>>>24!=255
+                ||style.gradient&&withOpacity(style.color2,style.opacity,255)>>>24!=255;
+    }
+    private static Shader nativeShader(Style style,Rect bounds,int rgb) {
+        synchronized(style) {
+            for(NativeGradientEntry entry:style.nativeShaders)if(entry!=null&&entry.rgb==rgb&&entry.gradient.matches(bounds))return entry.gradient.shader;
+            Style nativeStyle=new Style((style.color&0xff000000)|rgb,(style.color2&0xff000000)|rgb,style.opacity,style.angle,style.gradient,style.range);
+            Shader value=createShader(nativeStyle,bounds);
+            style.nativeShaders[style.nextNativeShader]=new NativeGradientEntry(rgb,bounds,value);
+            style.nextNativeShader=(style.nextNativeShader+1)%style.nativeShaders.length;
+            return value;
+        }
+    }
     private static Shader createShader(Style style,Rect bounds) {
         int a=withOpacity(style.color,style.opacity,255),b=withOpacity(style.gradient?style.color2:style.color,style.opacity,255);
         double radians=Math.toRadians(style.angle);float dx=(float)Math.cos(radians),dy=(float)Math.sin(radians);
         float cx=((float)bounds.left+bounds.right)/2f,cy=((float)bounds.top+bounds.bottom)/2f;
-        float reach=(Math.abs(dx)*(bounds.right-bounds.left)+Math.abs(dy)*(bounds.bottom-bounds.top))/2f;
+        // The transition range shortens the run around the middle; CLAMP keeps both ends solid.
+        float reach=(Math.abs(dx)*(bounds.right-bounds.left)+Math.abs(dy)*(bounds.bottom-bounds.top))/2f*style.range;
         return new LinearGradient(cx-dx*reach,cy-dy*reach,cx+dx*reach,cy+dy*reach,new int[]{a,b},new float[]{0f,1f},Shader.TileMode.CLAMP);
     }
     static int withOpacity(int color,float opacity,int nativeAlpha) {
@@ -414,6 +546,8 @@ public final class QsTileAppearance {
         View cursor=view;for(int i=0;i<20&&cursor!=null;i++) {
             String name=resourceName(cursor);
             if(name.equals("qs_volume_slider_layout")||name.equals("brightness_slider")||name.equals("brightness_seekbar_container"))return true;
+            // The secondary page's slider sits in its own layout class, whatever its view id is.
+            if(type(cursor,DETAIL_SLIDER_LAYOUT))return true;
             ViewParent parent=cursor.getParent();cursor=parent instanceof View?(View)parent:null;
         }return false;
     }
@@ -432,7 +566,7 @@ public final class QsTileAppearance {
                 }
                 if(!name.equals("qs_tile_bg")&&!name.equals("oplus_qs_tile_icon_bg"))return null;
                 View cursor=background;for(int j=0;j<16&&cursor!=null;j++) {
-                    if(isTile(cursor)){if(name.equals("qs_tile_bg")&&largeTile(cursor))return null;refreshTile(cursor);return cursor;}
+                    if(isTile(cursor)){if(name.equals("qs_tile_bg")&&largeTile(cursor)&&!fullFillTiles.containsKey(cursor))return null;refreshTile(cursor);return cursor;}
                     ViewParent parent=cursor.getParent();cursor=parent instanceof View?(View)parent:null;
                 }return null;
             }else return null;
@@ -459,7 +593,10 @@ public final class QsTileAppearance {
     }
     private static boolean isTile(View view){return type(view,TILE_BASE);}
     private static boolean isSlider(View view){return type(view,SLIDER_BASE);}
-    static boolean type(Object value,String name) {if(value==null)return false;for(Class<?> cls=value.getClass();cls!=null;cls=cls.getSuperclass())if(cls.getName().equals(name))return true;return false;}
+    static boolean type(Object value,String name) {return value!=null&&typeOf(value.getClass(),name);}
+    static boolean typeOf(Class<?> start,String name) {for(Class<?> cls=start;cls!=null;cls=cls.getSuperclass())if(cls.getName().equals(name))return true;return false;}
+    /** Whether the device card body hook can do anything at all; false lets every GradientDrawable draw straight through. */
+    public boolean deviceBackgroundWanted(){return enabled;}
     private static final Object[] NO_ARGUMENTS=new Object[0];
     static Object call(Object target,String name){return call(target,name,NO_ARGUMENTS);}
     static Object call(Object target,String name,Object... args) {

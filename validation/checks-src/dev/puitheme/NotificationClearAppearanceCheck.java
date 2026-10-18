@@ -40,7 +40,7 @@ public final class NotificationClearAppearanceCheck {
         old.memory.values.put(StatusBarSettings.alphaKey(NotificationClearAppearance.COLOR_LIGHT),false);
         Map<String,Object> before=new LinkedHashMap<>(old.memory.values);
         Map<String,Object> inherited=NotificationClearAppearance.inheritedLandscape(before);
-        equal(12,inherited.size());equal(true,NotificationClearAppearance.migrate(old.preferences,metadata.preferences,true));
+        equal(13,inherited.size());equal(true,NotificationClearAppearance.migrate(old.preferences,metadata.preferences,true));
         for(String key:before.keySet())equal(before.get(key),old.memory.values.get(key));
         for(String key:inherited.keySet())equal(inherited.get(key),old.memory.values.get(key));
         old.memory.values.put(NotificationClearAppearance.COLOR_LIGHT,0xffabcdef);
@@ -103,6 +103,127 @@ public final class NotificationClearAppearanceCheck {
         // Disabled customization preserves the paint update performed by native rendering.
         equal(original,engine.recorded);equal(original,nativeShader.shader);equal(original,engine.drawableShaderPaint.getShader());
     }
+    public static final class LiveCorner {public String type="ROUND";public String getType(){return type;}}
+    public static final class LiveMaterialShader extends com.oplus.posteffect.agsl.DrawableShader {
+        public final LiveCorner mCornerParams=new LiveCorner();
+        public final java.util.List<Object> effects=new java.util.ArrayList<>();
+        public Shader bitmap=new LinearGradient(0,0,1,1,new int[]{1,1},new float[]{0,1},Shader.TileMode.CLAMP);
+        @Override public java.util.List getAllEffects(){allEffectsReads++;return effects;}
+        @Override public void setBaseUniform(android.graphics.RuntimeShader target){super.setBaseUniform(target);target.setInputShader("uniBDFBitmap",bitmap);}
+    }
+    public static final class LiveMaterial extends com.oplusos.systemui.common.blurability.platformblur.PlatformBlurDrawable {
+        public Object currentBlurMixConfig;
+    }
+    private static final class Recording {
+        final NotificationClearAppearance appearance=new NotificationClearAppearance();
+        final QsTileAppearance unrelated=new QsTileAppearance();
+        final OplusClearAllButton button=new OplusClearAllButton();
+        final com.oplusos.systemui.common.blurability.drawable.AutoBlurDrawable wrapper=new com.oplusos.systemui.common.blurability.drawable.AutoBlurDrawable();
+        LiveMaterial material=new LiveMaterial();
+        com.oplus.posteffect.BlurDrawable engine=material.blurDrawable;
+        final LiveMaterialShader shader=new LiveMaterialShader();
+        final com.oplus.posteffect.agsl.effects.InnerShadowEffect effect=new com.oplus.posteffect.agsl.effects.InnerShadowEffect();
+        final Bundle settings=new Bundle();
+        final Canvas canvas=new Canvas();
+        int nativeDraws;
+        Recording() {
+            effect.name="nativeGlassHighlight";shader.effects.add(effect);
+            equal(true,QsTileAppearance.setField(engine,"drawableShader",shader));
+            material.currentBlurMixConfig=config();
+            equal(true,QsTileAppearance.setField(wrapper.viewBlurProxy,"actual",material));
+            engine.setBounds(0,0,96,48);wrapper.setBounds(0,0,96,48);button.setBackground(wrapper);
+            settings.putBoolean(NotificationClearAppearance.MASTER,true);settings.putInt(NotificationClearAppearance.COLOR_LIGHT,0xff123456);
+            appearance.configure(settings);appearance.bind(button);
+            ModuleDiagnostics.configure(new Bundle());
+        }
+        Object config() {
+            com.oplusos.systemui.common.blurability.BlurMixConfig.BlurMixMultiWithShader value=
+                    new com.oplusos.systemui.common.blurability.BlurMixConfig.BlurMixMultiWithShader(
+                            new com.oplusos.systemui.common.blurability.MixColorWithShader(5,shader.multiBlendParam.get(2).color,3,shader.multiBlendParam.get(3).color),
+                            new com.oplusos.systemui.common.blurability.MixColorWithShader(5,shader.multiBlendParam.get(0).color,2,shader.multiBlendParam.get(1).color),1f,false,0);
+            equal(true,QsTileAppearance.setField(value,"mixMultiShaderParams",shader.multiBlendParam));return value;
+        }
+        android.graphics.RuntimeShader draw() throws Throwable {
+            android.graphics.RuntimeShader original=shader.shader;Shader paint=engine.drawableShaderPaint.getShader();
+            appearance.drawBlur(wrapper,canvas,target->appearance.drawGlassContent(engine,target,
+                    nested->unrelated.drawGlassContent(engine,nested,actual->{nativeDraws++;engine.onDrawContent(actual);} )));
+            equal(original,shader.shader);equal(paint,engine.drawableShaderPaint.getShader());
+            equal(true,engine.recorded!=original);return engine.recorded;
+        }
+        void rebuiltOnce() throws Throwable {
+            int before=com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds;draw();
+            equal(before+1,com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds);draw();
+            equal(before+1,com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds);
+        }
+    }
+    /** Actual clear ownership chain: cache only source work, never live bitmap/shape/optical uploads. */
+    private static void materialWork() throws Throwable {
+        Recording record=new Recording();int before=com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds;
+        int uploads=com.oplus.posteffect.agsl.DrawableShader.baseUploads,reads=com.oplus.posteffect.agsl.DrawableShader.allEffectsReads;
+        android.graphics.RuntimeShader first=record.draw();
+        for(int i=0;i<1000;i++) {
+            record.shader.localMatrixScalePointF.x=i+1f;record.effect.opticalValue=i+.25f;
+            record.shader.multiBlendParam.get(0).color=((i&255)<<24)|0x123456;
+            record.shader.enableBlend=(i&1)==0;
+            record.shader.bitmap=new LinearGradient(0,0,1,1,new int[]{i,i},new float[]{0,1},Shader.TileMode.CLAMP);
+            android.graphics.RuntimeShader current=record.draw();equal(first,current);
+            equal(record.shader.bitmap,current.inputs.get("uniBDFBitmap"));
+            equal(i+1f,current.floats.get("nativeMatrixScale")[0]);equal(i+.25f,current.floats.get(record.effect.name)[0]);
+            equal((i&255)/255f,current.floats.get("u_multiBlendParams")[9]);equal((i&1)==0?1:0,current.ints.get("uEnableBlend"));
+        }
+        int builds=com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds-before;
+        System.out.println("Clear material work: nativeDraws="+record.nativeDraws+", sourceBuilds="+builds+", baseUploads="+(com.oplus.posteffect.agsl.DrawableShader.baseUploads-uploads));
+        equal(1001,record.nativeDraws);equal(1001,com.oplus.posteffect.agsl.DrawableShader.baseUploads-uploads);
+        equal(1001,com.oplus.posteffect.agsl.DrawableShader.allEffectsReads-reads);equal(1001,record.effect.uploads);
+        equal(1,builds);
+        Map<?,?> cache=(Map<?,?>)QsTileAppearance.field(record.appearance,"shaders");Object cached=cache.get(record.shader);
+        Object uniformScratch=QsTileAppearance.field(cached,"blendUniforms"),boundsScratch=QsTileAppearance.field(cached,"fillBounds");
+        equal(true,uniformScratch instanceof float[]);equal(true,boundsScratch instanceof android.graphics.Rect);
+        for(int i=0;i<20;i++)record.draw();equal(uniformScratch,QsTileAppearance.field(cached,"blendUniforms"));equal(boundsScratch,QsTileAppearance.field(cached,"fillBounds"));
+        equal(0,((java.util.Set<?>)QsTileAppearance.field(record.appearance,"traceStages")).size());
+        record.shader.blendAlgorithmMask++;record.rebuiltOnce();record.shader.mCornerParams.type="G2";record.rebuiltOnce();
+        record.effect.order++;record.rebuiltOnce();record.effect.name="changedHighlight";record.rebuiltOnce();
+        record.effect.structuralKey=42;record.rebuiltOnce();record.effect.enabled=false;record.rebuiltOnce();record.effect.enabled=true;record.rebuiltOnce();
+        record.shader.shader=new android.graphics.RuntimeShader("native replacement");record.rebuiltOnce();
+        record.material.currentBlurMixConfig=record.config();record.rebuiltOnce();
+        java.util.ArrayList<com.oplus.posteffect.agsl.ShaderBlendParam> changed=new java.util.ArrayList<>(record.shader.multiBlendParam);
+        equal(true,QsTileAppearance.setField(record.shader,"multiBlendParam",changed));
+        equal(true,QsTileAppearance.setField(record.material.currentBlurMixConfig,"mixMultiShaderParams",changed));record.rebuiltOnce();
+        equal(true,QsTileAppearance.setField(record.shader,"summaryBlendParam",new java.util.ArrayList<>(record.shader.summaryBlendParam)));record.rebuiltOnce();
+        LiveMaterial newMaterial=new LiveMaterial();newMaterial.blurDrawable=record.engine;newMaterial.currentBlurMixConfig=record.material.currentBlurMixConfig;
+        record.material=newMaterial;equal(true,QsTileAppearance.setField(record.wrapper.viewBlurProxy,"actual",newMaterial));record.rebuiltOnce();
+        record.engine=new com.oplus.posteffect.BlurDrawable();record.engine.setBounds(0,0,96,48);newMaterial.blurDrawable=record.engine;
+        equal(true,QsTileAppearance.setField(record.engine,"drawableShader",record.shader));record.rebuiltOnce();
+        before=com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds;
+        record.engine.setBounds(10,20,210,120);record.draw();equal(before,com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds);
+        LinearGradient fill=(LinearGradient)record.engine.recorded.inputs.get("c17QsFill");equal(100f,(fill.left+fill.right)/2f);equal(50f,(fill.top+fill.bottom)/2f);
+        record.settings.putInt(NotificationClearAppearance.COLOR_LIGHT,0xffabcdef);record.appearance.configure(record.settings);record.draw();
+        equal(before,com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds);equal(0xffabcdef,((LinearGradient)record.engine.recorded.inputs.get("c17QsFill")).colors[0]);
+        record.effect.structuralKey=new StringBuilder("mutable");before=com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds;
+        record.draw();((StringBuilder)record.effect.structuralKey).append(" changed");record.draw();equal(before+2,com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds);
+        record.effect.structuralKey=true;record.effect.failKey=true;before=com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds;
+        record.draw();record.draw();equal(before+2,com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds);record.effect.failKey=false;
+        record.shader.effects.set(0,new com.oplus.posteffect.agsl.DrawableShader().effects.get(0));before=com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds;
+        record.draw();record.draw();equal(before+2,com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds);
+        int[] nativePasses={0};com.oplus.posteffect.drawable.BlendDrawable foreign=new com.oplus.posteffect.drawable.BlendDrawable();
+        record.appearance.drawGlassContent(foreign,record.canvas,target->record.unrelated.drawGlassContent(foreign,target,actual->nativePasses[0]++));
+        equal(1,nativePasses[0]);equal(before+2,com.oplus.posteffect.agsl.BlurDrawableShaderBaseStringKt.builds);
+        android.graphics.RuntimeShader original=record.shader.shader;
+        com.oplus.posteffect.agsl.DrawableShader.failBaseUniform=true;
+        try {
+            record.appearance.drawBlur(record.wrapper,record.canvas,target->record.appearance.drawGlassContent(record.engine,target,record.engine::onDrawContent));
+            equal(original,record.engine.recorded);equal(original,record.shader.shader);
+        } finally {com.oplus.posteffect.agsl.DrawableShader.failBaseUniform=false;}
+        boolean thrown=false;Shader paint=record.engine.drawableShaderPaint.getShader();
+        try {
+            record.appearance.drawBlur(record.wrapper,record.canvas,target->record.appearance.drawGlassContent(record.engine,target,actual->{
+                record.engine.onDrawContent(actual);throw new IllegalStateException("native draw failed");
+            }));
+        } catch(IllegalStateException nativeFailure){thrown=true;}
+        equal(true,thrown);equal(original,record.shader.shader);equal(paint,record.engine.drawableShaderPaint.getShader());
+        equal(null,((ThreadLocal<?>)QsTileAppearance.field(record.appearance,"drawingEngines")).get());
+        record.appearance.forget(record.button);
+    }
     public static void main(String[] args) throws Throwable {
         migration();
         equal(false,NotificationClearAppearance.BOOLEANS.get(NotificationClearAppearance.LANDSCAPE_MASTER));
@@ -139,6 +260,7 @@ public final class NotificationClearAppearanceCheck {
         settings.putBoolean(StatusBarSettings.SAFE_MODE,true);appearance.configure(settings);equal(null,draw(appearance,button,background));
         equal(.7f,button.getAlpha());equal(12f,button.getTranslationX());equal(23f,button.getTranslationY());
         glass(appearance,button,settings);
+        materialWork();
         appearance.configure(null);equal(null,draw(appearance,button,background));appearance.forget(button);
         System.out.println("NotificationClearAppearanceCheck passed: "+checks);
     }

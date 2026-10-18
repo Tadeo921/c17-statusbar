@@ -60,7 +60,11 @@ public final class IconPackRuntime {
                 if(!layer.enabled||(!layer.autoMatch&&!explicitSources.contains(layer.id)))continue;if(!current(token))return;
                 try{
                     byte[] bytes;
-                    try(InputStream input=resolverContext.getContentResolver().openInputStream(IconPackRepository.manifestUri(layer.id))){
+                    ResidentCache cache=ResidentCache.current;
+                    if(cache!=null){
+                        bytes=cache.iconEntry(layer.id,"manifest.json",()->resolverContext.getContentResolver().openInputStream(IconPackRepository.manifestUri(layer.id)),IconPackManifest.MAX_BYTES);
+                        if(bytes==null)continue;
+                    }else try(InputStream input=resolverContext.getContentResolver().openInputStream(IconPackRepository.manifestUri(layer.id))){
                         if(input==null)continue;bytes=IconPackArchive.readEntry(input,IconPackManifest.MAX_BYTES);
                     }
                     packs.add(new IconPackSelection.Pack(layer.id,IconPackManifest.parse(bytes),layer.autoMatch));
@@ -77,13 +81,19 @@ public final class IconPackRuntime {
                 return bitmap==null?null:new IconPackSelection.Decoded<>(bitmap,bitmap.getWidth()*bitmap.getHeight());
             });
             synchronized(IconPackRuntime.class){if(!current(token))return;loaded=Collections.unmodifiableMap(result);}
+            ResidentCache cache=ResidentCache.current;
+            if(cache!=null){Set<String> ids=new HashSet<>();for(IconPackRepository.Layer layer:requested)ids.add(layer.id);cache.retainIcons(ids);}
             invalidate(onChanged);
         });
     }
     private static synchronized boolean current(long token){return enabled&&generation==token&&!ModuleLifecycle.removed();}
     private static Bitmap readMask(Context context,String id,String asset,int remaining)throws IOException{
         byte[] bytes;
-        try(InputStream input=context.getContentResolver().openInputStream(IconPackRepository.assetUri(id,asset))){
+        ResidentCache cache=ResidentCache.current;
+        if(cache!=null){
+            bytes=cache.iconEntry(id,asset,()->context.getContentResolver().openInputStream(IconPackRepository.assetUri(id,asset)),IconPackArchive.MAX_ENTRY);
+            if(bytes==null)return null;
+        }else try(InputStream input=context.getContentResolver().openInputStream(IconPackRepository.assetUri(id,asset))){
             if(input==null)return null;bytes=IconPackArchive.readEntry(input,IconPackArchive.MAX_ENTRY);
         }
         BitmapFactory.Options bounds=new BitmapFactory.Options();bounds.inJustDecodeBounds=true;

@@ -1,0 +1,10 @@
+SPDX-License-Identifier: GPL-3.0-only
+Copyright (C) 2026 aiingjie
+
+C17示例库 is original artwork made from the geometric source in
+tools/icon-management-v3/generate_original.py. It contains no Apple, OEM,
+PUI, SF Symbols, downloaded icon set, or traced image assets.
+
+The artwork and generator are licensed under GNU General Public License,
+version 3 only. The full license is available in the parent project LICENSE:
+https://www.gnu.org/licenses/gpl-3.0.txt

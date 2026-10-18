@@ -29,6 +29,7 @@ public abstract class Drawable {
     public void setCallback(Callback callback) { this.callback = callback; }
     public Callback getCallback() { return callback; }
     public Rect getBounds() { return bounds; }
+    public final void copyBounds(Rect output) { output.set(bounds.left,bounds.top,bounds.right,bounds.bottom); }
     public void setBounds(int l, int t, int r, int b) { bounds.left=l; bounds.top=t; bounds.right=r; bounds.bottom=b;onBoundsChange(bounds); }
     public void setBounds(Rect value){setBounds(value.left,value.top,value.right,value.bottom);}
     protected void onBoundsChange(Rect value) { }
@@ -40,12 +41,17 @@ public abstract class Drawable {
     public Drawable mutate() {return this;}
     public void setTintList(android.content.res.ColorStateList colors) { }
     public void setTintMode(android.graphics.PorterDuff.Mode mode) { }
+    public void setTintBlendMode(android.graphics.BlendMode mode) { }
     public int getMinimumWidth() {return getIntrinsicWidth();}
     public int getMinimumHeight() {return getIntrinsicHeight();}
     public boolean getPadding(Rect result) {return false;}
     public boolean isStateful() {return false;}
     public void invalidateSelf() { if (callback != null) callback.invalidateDrawable(this); }
     public Drawable getCurrent(){return this;}
+    public void getOutline(android.graphics.Outline outline){}
     public ConstantState getConstantState(){return null;}
-    public abstract static class ConstantState {public abstract Drawable newDrawable();}
+    public abstract static class ConstantState {
+        public abstract Drawable newDrawable();
+        public Drawable newDrawable(android.content.res.Resources resources){return newDrawable();}
+    }
 }

@@ -64,7 +64,7 @@ public final class NotificationNativeStackCheck {
         private WriteFlow _isStackedNotification=new Flow();
         public boolean getCurrentIsStackedNotification(){return currentIsStackedNotification;}
     }
-    public static final class Ambient { public int scroll;public int getScrollY(){return scroll;} }
+    public static final class Ambient { public int scroll;public boolean mShadeExpanded=true;public int getScrollY(){return scroll;} }
     public static final class Extension {
         public Object current;
         private Object getCurrentStackRuler(){return current;}
@@ -81,8 +81,108 @@ public final class NotificationNativeStackCheck {
         return nativeStack;
     }
     public static void main(String[] args)throws Throwable {
-        nativeScrollAndDimensions();scopesAndFallback();directionDependencies();nativeSceneAndFlow();liveOrientationAndFlow();savedClockDependency();
+        upwardGesture();nativeScrollAndDimensions();scopesAndFallback();directionDependencies();nativeSceneAndFlow();liveOrientationAndFlow();savedClockDependency();
+        foldBackAndTransition();managedRows();
         System.out.println("Notification native stack checks passed: "+checks);
+    }
+    public static final class GestureStack extends View {
+        final Resources resources=new Resources();int updates;
+        GestureStack(){super(new Context());resources.getDisplayMetrics().density=2;}
+        @Override public Resources getResources(){return resources;}
+        public void requestChildrenUpdate(){updates++;}
+    }
+    private static void managedRows()throws Throwable {
+        NotificationNativeStack helper=helper(1);Ruler ruler=new Ruler();Extension extension=new Extension();extension.current=ruler;
+        Ambient ambient=new Ambient();android.view.ViewGroup parent=new android.view.ViewGroup(new Context());
+        List<Row> rows=new ArrayList<>();Row first=new Row(100,120),rear=new Row(232,120);rows.add(first);rows.add(rear);
+        parent.addView(first);parent.addView(rear);
+        check(!helper.manages(rear));helper.currentStacked(ruler,false);check(!helper.manages(rear));
+        NotificationNativeStack.NativeAction update=()->{helper.bottomBorder(ruler.stackAlgorithmManager,rows,1000);return null;};
+        helper.withNativeUpdate(extension,ambient,update);check(helper.manages(first));check(helper.manages(rear));
+        ambient.mShadeExpanded=false;check(!helper.manages(rear));ambient.mShadeExpanded=true;
+        rear.child=true;check(!helper.manages(rear));rear.child=false;
+        rear.mDismissed=true;check(!helper.manages(rear));rear.mDismissed=false;
+        rear.changing=true;check(!helper.manages(rear));rear.changing=false;
+        parent.removeView(rear);check(!helper.manages(rear));parent.addView(rear);
+        rows.remove(rear);helper.withNativeUpdate(extension,ambient,update);check(!helper.manages(rear));
+        rows.add(rear);helper.withNativeUpdate(extension,ambient,update);check(helper.manages(rear));
+        helper.withNativeUpdate(extension,ambient,false,update);check(!helper.manages(rear));
+        helper.withNativeUpdate(extension,ambient,update);check(helper.manages(rear));
+        try{helper.withNativeUpdate(extension,ambient,()->{update.run();throw new IllegalStateException("native failure");});}
+        catch(IllegalStateException expected){check(!helper.manages(rear));}
+        helper.withNativeUpdate(extension,ambient,update);check(helper.manages(rear));
+        extension.current=new Object();check(!helper.manages(rear));
+        extension.current=ruler;helper.withNativeUpdate(extension,ambient,update);check(helper.manages(rear));
+        ruler.context.resources.getConfiguration().orientation=Configuration.ORIENTATION_LANDSCAPE;check(!helper.manages(rear));
+        ruler.context.resources.getConfiguration().orientation=Configuration.ORIENTATION_PORTRAIT;
+        helper.configure(null);check(!helper.manages(rear));helper.configure(settings(1));check(!helper.manages(rear));
+        helper.withNativeUpdate(extension,ambient,update);check(helper.manages(rear));helper.hooksReady(false);check(!helper.manages(rear));
+        helper.hooksReady(true);helper.withNativeUpdate(extension,ambient,update);check(helper.manages(rear));helper.reset();check(!helper.manages(rear));
+    }
+    private static android.view.MotionEvent gesture(int action,float y){return new android.view.MotionEvent(action,0,y,0);}
+    private static void upwardGesture()throws Throwable {
+        NotificationNativeStack helper=helper(1);GestureStack stack=new GestureStack();
+        check(!helper.touch(stack,gesture(0,100)));check(!helper.touch(stack,gesture(2,300)));
+        check(!helper.pulledOpen()&&stack.updates==0&&stack.layoutRequests==0); // Downward spring stays native.
+        check(!helper.touch(stack,gesture(1,300)));check(!helper.touch(stack,gesture(2,0)));check(!helper.pulledOpen());
+        helper.touch(stack,gesture(0,100));check(!helper.touch(stack,gesture(2,85)));check(!helper.pulledOpen());
+        check(helper.touch(stack,gesture(2,84)));check(helper.pulledOpen()&&stack.updates==1&&stack.layoutRequests==1);
+        check(!helper.touch(stack,gesture(2,20)));check(stack.updates==1); // One native recomputation, never per move.
+        helper.reset();helper.hooksReady(true);check(!helper.pulledOpen());
+        helper.touch(stack,gesture(0,100));helper.touch(stack,gesture(3,100));check(!helper.touch(stack,gesture(2,0)));
+        helper.touch(stack,gesture(0,100));helper.touch(stack,gesture(5,100));check(!helper.touch(stack,gesture(2,0)));
+        stack.canScrollUpForCheck=true;helper.touch(stack,gesture(0,100));check(!helper.touch(stack,gesture(2,0)));
+        stack.canScrollUpForCheck=false;helper.touch(stack,gesture(0,100));helper.configure(null);
+        check(!helper.touch(stack,gesture(2,0))&&!helper.pulledOpen());
+    }
+    /** User feedback: scrolling back did not fold the stack, and open/fold jumped instead of easing. */
+    private static void foldBackAndTransition()throws Throwable {
+        long clock=android.os.SystemClock.uptime;
+        NotificationNativeStack helper=helper(1);Ruler ruler=new Ruler();Extension extension=new Extension();extension.current=ruler;
+        Ambient ambient=new Ambient();List<Row> rows=new ArrayList<>();rows.add(new Row(100,120));rows.add(new Row(232,120));
+        float[] border=new float[1];
+        NotificationNativeStack.NativeAction update=()->{
+            rows.get(0).target.y=100-ambient.scroll;rows.get(1).target.y=232-ambient.scroll;
+            border[0]=helper.bottomBorder(ruler.stackAlgorithmManager,rows,1000);return null;
+        };
+        // Without a known list there is nothing to drive frames: open/fold stay immediate.
+        helper.withNativeUpdate(extension,ambient,true,update);equal(244,border[0]);
+        ambient.scroll=30;helper.withNativeUpdate(extension,ambient,true,update);equal(1000,border[0]);check(helper.pulledOpen());
+        ambient.scroll=4;helper.withNativeUpdate(extension,ambient,true,update);equal(1000,border[0]);check(helper.pulledOpen());
+        ambient.scroll=0;helper.withNativeUpdate(extension,ambient,true,update);
+        check(!helper.pulledOpen());equal(244,border[0]); // Scrolled back to the top: folded again.
+        ambient.scroll=12;helper.withNativeUpdate(extension,ambient,true,update);check(helper.pulledOpen());equal(1000,border[0]);
+        ambient.scroll=0;helper.withNativeUpdate(extension,ambient,true,update);check(!helper.pulledOpen());equal(244,border[0]);
+
+        // A pull opened at the top (nothing scrolled) stays open at the top until pulled down.
+        GestureStack stack=new GestureStack();
+        helper.touch(stack,gesture(0,100));check(helper.touch(stack,gesture(2,80)));check(helper.pulledOpen());
+        int updates=stack.updates;
+        helper.withNativeUpdate(extension,ambient,true,update);equal(244,border[0]); // Eases from the folded border.
+        check(stack.animationFrames.size()==1);
+        helper.withNativeUpdate(extension,ambient,true,update);check(stack.animationFrames.size()==1); // One frame at a time.
+        android.os.SystemClock.uptime=clock+160;
+        helper.withNativeUpdate(extension,ambient,true,update);equal(244+(1000-244)*.875f,border[0]);
+        stack.animationFrames.remove(0).run();check(stack.updates==updates+1);
+        android.os.SystemClock.uptime=clock+400;
+        helper.withNativeUpdate(extension,ambient,true,update);equal(1000,border[0]);check(stack.animationFrames.isEmpty());
+        helper.withNativeUpdate(extension,ambient,true,update);equal(1000,border[0]);check(helper.pulledOpen());
+        // Upward motion in an open stack is ordinary scrolling, not a fold.
+        helper.touch(stack,gesture(0,100));check(!helper.touch(stack,gesture(2,40)));check(helper.pulledOpen());
+        helper.touch(stack,gesture(1,40));
+        // Not at the top: a downward drag is native scrolling.
+        stack.canScrollUpForCheck=true;helper.touch(stack,gesture(0,100));check(!helper.touch(stack,gesture(2,160)));check(helper.pulledOpen());
+        stack.canScrollUpForCheck=false;helper.touch(stack,gesture(1,160));
+        helper.touch(stack,gesture(0,100));check(!helper.touch(stack,gesture(2,115)));check(helper.pulledOpen());
+        check(helper.touch(stack,gesture(2,116)));check(!helper.pulledOpen());
+        helper.withNativeUpdate(extension,ambient,true,update);equal(1000,border[0]);
+        android.os.SystemClock.uptime=clock+400+400;
+        helper.withNativeUpdate(extension,ambient,true,update);equal(244,border[0]);
+        // Closing the shade or turning the stack off folds immediately, without a pending transition.
+        helper.touch(stack,gesture(0,100));check(helper.touch(stack,gesture(2,60)));
+        helper.configure(null);check(!helper.pulledOpen());
+        helper.configure(settings(1));helper.withNativeUpdate(extension,ambient,true,update);equal(244,border[0]);
+        android.os.SystemClock.uptime=clock;
     }
     private static void liveOrientationAndFlow()throws Throwable {
         NotificationNativeStack helper=helper(1);Ruler ruler=new Ruler();Extension extension=new Extension();
@@ -178,8 +278,8 @@ public final class NotificationNativeStackCheck {
                 float nativeY=180;for(Row row:rows){row.target.y=nativeY-scroll;nativeY+=row.target.height+12;}
                 helper.withNativeUpdate(extension,ambient,true,()->{
                     check(helper.currentStacked(ruler,false));
-                    equal(expected,helper.bottomBorder(ruler.stackAlgorithmManager,rows,4000));
-                    equal(Math.min(600,expected),helper.bottomBorder(ruler.stackAlgorithmManager,rows,600));
+                    equal(ambient.scroll == 0 ? expected : 4000,helper.bottomBorder(ruler.stackAlgorithmManager,rows,4000));
+                    equal(ambient.scroll == 0 ? Math.min(600,expected) : 600,helper.bottomBorder(ruler.stackAlgorithmManager,rows,600));
                     for(int i=0;i<rows.size();i++) {
                         Row row=rows.get(i);equal(100+i*8,row.target.height);
                         equal(1f,row.getScaleY());

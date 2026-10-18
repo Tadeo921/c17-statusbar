@@ -37,6 +37,7 @@ public final class BatteryControls {
     private final Map<View, Entry> owners = new WeakHashMap<>();
     private final Map<Drawable, Entry> drawables = new WeakHashMap<>();
     private boolean enabled = true, interactive = true, hideCharge;
+    private java.util.function.Consumer<View> percentStyleChanged;
     private final ThreadLocal<ChargeDrawScope> chargeDraws = new ThreadLocal<>();
     private float hold = 3f, fade = 1f;
     private boolean scheduled;
@@ -64,6 +65,7 @@ public final class BatteryControls {
         Locale locale;
         String levelText;
         boolean nativeVisible, hiddenByModule, nativeCharging;
+        BatteryNativeStyle.Monitor percentStyle;
         Entry(View owner) { this.owner = new WeakReference<>(owner); }
     }
 
@@ -106,6 +108,7 @@ public final class BatteryControls {
         textStyle.configure(settings);
         appearance.configure(settings,colors,alpha);
         puiStyle.configure(settings);
+        for (View owner : owners.keySet().toArray(new View[0])) owner.invalidate();
         hideCharge = FeatureOptions.from(settings).effective("battery", HIDE_CHARGE);
         configure(FeatureOptions.from(settings).effective("battery",StatusBarSettings.BATTERY_CHARGE_INSIDE),
                 setting(settings,StatusBarSettings.BATTERY_HOLD,3f),setting(settings,StatusBarSettings.BATTERY_FADE,1f));
@@ -128,8 +131,11 @@ public final class BatteryControls {
     }
 
     public void prepareDraw(Drawable drawable) throws Exception {
-        if(horizontal.isInstance(drawable))puiStyle.prepare(drawable);
+        Entry entry=drawables.get(drawable);
+        if(horizontal.isInstance(drawable))puiStyle.prepare(drawable,entry!=null&&entry.percentStyle.enabled());
     }
+
+    public void onPercentStyleChanged(java.util.function.Consumer<View> changed) {percentStyleChanged=changed;}
 
     /** Only the bolt read during this exact owned draw is suppressed. Keep the native
      * charging model intact for fill colors, accessibility and subsequent bindings. */
@@ -168,6 +174,7 @@ public final class BatteryControls {
         appearance.detach(owner);
         Entry entry = owners.remove(owner);
         if (entry != null) {
+            entry.percentStyle.close();
             Drawable drawable = entry.drawable.get();
             puiStyle.detach(owner,drawable);
             if (drawable != null) drawables.remove(drawable);
@@ -185,31 +192,42 @@ public final class BatteryControls {
     public void sync(View owner, Object charge, View external) {
         try {
             Entry entry = owners.get(owner);
-            if (entry == null) { entry = new Entry(owner); owners.put(owner, entry); }
+            if (entry == null) {
+                entry = new Entry(owner);owners.put(owner,entry);
+                final WeakReference<View> target=new WeakReference<>(owner);
+                entry.percentStyle=new BatteryNativeStyle.Monitor(owner.getContext(),handler,()->{
+                    View view=target.get();
+                    if(view!=null) {
+                        sync(view);
+                        if(percentStyleChanged!=null)percentStyleChanged.accept(view);
+                    }
+                });
+            }
+            entry.percentStyle.refresh();
             entry.cycle.configure(hold, fade);
             Object candidate = getStyle.invoke(owner);
             Drawable drawable = horizontal.isInstance(candidate) ? (Drawable) candidate : null;
             Drawable previous = entry.drawable.get();
             if (previous != drawable) {
-                if(previous!=null)puiStyle.restore(previous);
+                if(previous!=null)puiStyle.detach(owner,previous);
                 if (previous != null) drawables.remove(previous);
                 entry.drawable = new WeakReference<>(drawable);
                 if (drawable != null) drawables.put(drawable, entry);
             }
             if (external != null) entry.external = new WeakReference<>(external);
             if (entry.external.get() == null) {
-                int id = owner.getResources().getIdentifier("battery_charge", "id", "com.android.systemui");
+                int id = ResourceIds.get(owner.getResources(), "battery_charge", "id", "com.android.systemui");
                 if (id != 0) entry.external = new WeakReference<>(owner.findViewById(id));
             }
             entry.nativeVisible = charge != null && chargeVisible.getBoolean(charge);
             int level = drawable != null ? (Integer) getLevel.invoke(drawable) : -1;
-            boolean inside = drawable != null && percentIn.getBoolean(drawable) && level >= 0 && level <= 100;
+            boolean inside = entry.percentStyle.enabled()&&drawable != null && percentIn.getBoolean(drawable) && level >= 0 && level <= 100;
             entry.nativeCharging=(entry.nativeVisible&&chargeId.getInt(charge)>0)
                     ||(drawable!=null&&((Integer)getChargeId.invoke(drawable))>0);
             boolean charging = inside && entry.nativeCharging;
             entry.cycle.setCharging(charging, SystemClock.uptimeMillis());
             appearance.apply(drawable,entry.nativeCharging);
-            if(drawable!=null){puiStyle.prepare(drawable);puiStyle.updateView(owner,drawable);}
+            if(drawable!=null){puiStyle.prepare(drawable,entry.percentStyle.enabled());puiStyle.updateView(owner,drawable,entry.percentStyle.enabled());}
             appearance.updateView(owner);
             View outside = entry.external.get();
             if (hideCharge && entry.nativeCharging || enabled && charging) {
@@ -278,7 +296,7 @@ public final class BatteryControls {
     /** Runs inside the native battery layer, so opacity and native cutout colors stay correct. */
     public boolean drawContent(Drawable drawable, Canvas canvas, RectF content) throws Exception {
         Entry entry = drawables.get(drawable);
-        if (entry == null || !percentIn.getBoolean(drawable)) return false;
+        if (entry == null || !entry.percentStyle.enabled() || !percentIn.getBoolean(drawable)) return false;
         boolean animate=enabled&&!hideCharge&&entry.cycle.isCharging();
         boolean customText=appearance.hasCustom("battery_text");
         boolean customStyle=textStyle.enabled();

@@ -38,13 +38,13 @@ public final class SettingsStartupLoaderCheck {
     }
     private static final class Fixture {
         final Loop loop=new Loop();final SettingsStartupLoader loader;
-        Bundle offered,applied;boolean removed,observed=true,failRead,failApply,accept=true;
+        Bundle offered,applied;boolean removed,observed=true,failRead,failApply,accept=true,ready=true;
         int reads,applies,prepares;final List<Boolean> forces=new ArrayList<>();
         Fixture(){loader=new SettingsStartupLoader(loop,()->{
             equal(2,loop.lane);reads++;if(failRead)throw new IllegalStateException("provider unavailable");return offered==null?null:new Bundle(offered);
         },(snapshot,force)->{
             equal(1,loop.lane);applies++;forces.add(force);if(failApply)throw new IllegalStateException("consumer not ready");applied=new Bundle(snapshot);return accept;
-        },()->removed,()->{equal(1,loop.lane);prepares++;return observed;});}
+        },()->removed,()->{equal(1,loop.lane);prepares++;return observed;},()->{equal(1,loop.lane);return ready;});}
         void start(){loader.start();loop.mains();}
         void signal(boolean force){loader.signal(force);loop.mains();}
         void finish(){loop.worker();}
@@ -83,6 +83,15 @@ public final class SettingsStartupLoaderCheck {
         Fixture observe=new Fixture();observe.offered=saved(false);observe.observed=false;observe.start();observe.finish();
         equal(1,observe.applies);equal(1,observe.loop.pendingTimers());
         observe.observed=true;observe.offered=saved(true);observe.loop.timer();observe.finish();equal(2,observe.reads);equal(true,observe.applied.get(StatusBarSettings.SAFE_MODE));equal(0,observe.loop.pendingTimers());
+        Fixture bindOnce=new Fixture();bindOnce.offered=saved(false);bindOnce.observed=false;bindOnce.signal(true);bindOnce.finish();
+        equal(true,bindOnce.forces.get(0));bindOnce.loop.timer();bindOnce.finish();
+        equal(false,bindOnce.forces.get(1)); // A successful rebind is consumed while observation is still recovering.
+        Fixture confirm=new Fixture();confirm.offered=saved(false);confirm.ready=false;confirm.signal(true);confirm.finish();
+        equal(true,confirm.forces.get(0));equal(1,confirm.loop.pendingTimers());confirm.loop.timer();confirm.finish();
+        equal(false,confirm.forces.get(1));equal(1,confirm.loop.pendingTimers());
+        confirm.ready=true;confirm.loop.timer();confirm.finish();equal(false,confirm.forces.get(2));equal(0,confirm.loop.pendingTimers());
+        Fixture failedBind=new Fixture();failedBind.offered=saved(false);failedBind.failApply=true;failedBind.signal(true);failedBind.finish();
+        failedBind.failApply=false;failedBind.loop.timer();failedBind.finish();equal(true,failedBind.forces.get(1));
         Fixture applyFailed=new Fixture();applyFailed.offered=saved(true);applyFailed.failApply=true;applyFailed.start();applyFailed.finish();equal(null,applyFailed.applied);equal(1,applyFailed.loop.pendingTimers());applyFailed.failApply=false;applyFailed.loop.timer();applyFailed.finish();equal(true,applyFailed.applied.get(StatusBarSettings.SAFE_MODE));equal(0,applyFailed.loop.pendingTimers());
         Fixture retryApply=new Fixture();retryApply.offered=saved(false);retryApply.accept=false;retryApply.start();retryApply.finish();equal(1,retryApply.loop.pendingTimers());retryApply.accept=true;retryApply.loop.timer();retryApply.finish();equal(0,retryApply.loop.pendingTimers());
 

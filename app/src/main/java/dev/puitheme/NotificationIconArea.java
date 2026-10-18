@@ -36,12 +36,13 @@ public final class NotificationIconArea {
     public static final String X = "notification_icons_offset_x", Y = "notification_icons_offset_y", SIZE = "notification_icons_size";
     public static final String COUNT_ENABLED="notification_icons_count_enabled", MAX_COUNT="notification_icons_max_count";
     public static final String SPACING_ENABLED="notification_icons_spacing_enabled", SPACING="notification_icons_spacing";
+    public static final String FOLLOW_LAUNCHER="notification_icons_follow_launcher_pack";
     public static final Map<String, Boolean> BOOLEANS;
     public static final Map<String, Float> NUMBERS;
     public static final Map<String, Integer> COLORS;
     public static final Map<String, String> STRINGS;
     static {
-        Map<String,Boolean> b = new LinkedHashMap<>(); b.put(MASTER,false); b.put(POSITION,true); b.put(SIZE_ENABLED,true); b.put(COLOR_ENABLED,false);b.put(COUNT_ENABLED,false);b.put(SPACING_ENABLED,false); BOOLEANS=Collections.unmodifiableMap(b);
+        Map<String,Boolean> b = new LinkedHashMap<>(); b.put(MASTER,false); b.put(POSITION,true); b.put(SIZE_ENABLED,true); b.put(COLOR_ENABLED,false);b.put(COUNT_ENABLED,false);b.put(SPACING_ENABLED,false);b.put(FOLLOW_LAUNCHER,false); BOOLEANS=Collections.unmodifiableMap(b);
         Map<String,Float> n = new LinkedHashMap<>(); n.put(X,0f); n.put(Y,0f); n.put(SIZE,20f);n.put(MAX_COUNT,3f);n.put(SPACING,0f); NUMBERS=Collections.unmodifiableMap(n);
         Map<String,Integer> c = new LinkedHashMap<>(); c.put("notification_icons_color_light",Color.BLACK); c.put("notification_icons_color_dark",Color.WHITE); COLORS=Collections.unmodifiableMap(c);
         Map<String,String> s = new LinkedHashMap<>(); s.put(MODE,"native"); s.put(TEXT,"♥"); s.put(IMAGE_NAME,""); s.put(IMAGE_REVISION,""); STRINGS=Collections.unmodifiableMap(s);
@@ -52,6 +53,11 @@ public final class NotificationIconArea {
     private final Map<View,PackageIdentity> packages = new WeakHashMap<>();
     private final NotificationIconOverrides overrides=new NotificationIconOverrides();
     private final NotificationAppIconRuntime applicationIcons=new NotificationAppIconRuntime(this::applicationIconsChanged);
+    private final NotificationAppIconRuntime launcherIcons=new NotificationAppIconRuntime(this::applicationIconsChanged,true);
+    private WeakReference<Context> iconContext=new WeakReference<>(null);
+    private final Set<String> cardIconSources=new LinkedHashSet<>();
+    private Runnable cardIconsChanged;
+    private boolean launcherSourcesPending;
     private final ThreadLocal<GlyphPool> glyphPools=new ThreadLocal<>();
     private final ThreadLocal<GlyphScope> drawingGlyph=new ThreadLocal<>();
     private final Map<ViewGroup,WeakReference<ViewGroup>> phoneBindings = new WeakHashMap<>();
@@ -104,8 +110,10 @@ public final class NotificationIconArea {
         if(released)return;
         boolean previousSpacing=spacingActive();float previousGap=NumericPolicy.finite(settings.get(SPACING),0f);
         settings=new Bundle(options);
+        if(context!=null)iconContext=new WeakReference<>(context);
         overrides.configure(options);
         applicationIcons.configure(context,overrides.sourcePackages());
+        launcherIcons.configure(context,followLauncher()?launcherSources():Collections.emptySet());
         displayText=customText(options.getString(TEXT,"♥"));
         enabled=active(options)||overrides.enabled();
         discardStaleArtwork();
@@ -114,12 +122,21 @@ public final class NotificationIconArea {
             imageRequest=wanted; final int generation=++imageGeneration; bitmap=null;
             if (!wanted.isEmpty() && context!=null) images.execute(() -> {
                 Bitmap loaded=null;
-                try(InputStream input=context.getContentResolver().openInputStream(Uri.parse(NotificationIconRepository.URI))) {
+                ResidentCache cache=ResidentCache.current;
+                try(InputStream input=cache!=null?null:context.getContentResolver().openInputStream(Uri.parse(NotificationIconRepository.URI))) {
                     BitmapFactory.Options decode=new BitmapFactory.Options(); decode.inJustDecodeBounds=true;
                     // Provider owns normalized <=128px PNG. Still bound stream for a replaced provider/file.
-                    java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream(); byte[] buffer=new byte[4096];int count;
-                    while(input!=null&&(count=input.read(buffer))!=-1) { if(bytes.size()+count>128*1024)throw new java.io.IOException("Oversize icon");bytes.write(buffer,0,count); }
-                    byte[] data=bytes.toByteArray();BitmapFactory.decodeByteArray(data,0,data.length,decode);
+                    byte[] data;
+                    if(cache!=null){
+                        // The resident cache keeps it in SystemUI's own storage, keyed by its content hash.
+                        data=cache.entry("notification-icon",wanted,()->context.getContentResolver().openInputStream(Uri.parse(NotificationIconRepository.URI)),128*1024);
+                        if(data==null)data=new byte[0];
+                    }else{
+                        java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream(); byte[] buffer=new byte[4096];int count;
+                        while(input!=null&&(count=input.read(buffer))!=-1) { if(bytes.size()+count>128*1024)throw new java.io.IOException("Oversize icon");bytes.write(buffer,0,count); }
+                        data=bytes.toByteArray();
+                    }
+                    BitmapFactory.decodeByteArray(data,0,data.length,decode);
                     byte[] digest=java.security.MessageDigest.getInstance("SHA-256").digest(data);StringBuilder hash=new StringBuilder(64);
                     for(byte value:digest){hash.append(Character.forDigit((value>>>4)&15,16));hash.append(Character.forDigit(value&15,16));}
                     if(!wanted.equals(hash.toString()))throw new java.io.IOException("Icon revision mismatch");
@@ -148,19 +165,56 @@ public final class NotificationIconArea {
             State state=states.get(owner);if(state==null)continue;
             state.dirty=true;invalidateNativeIcons(owner);owner.invalidate();
         }
+        if(cardIconsChanged!=null)cardIconsChanged.run();
     }
     private void discardStaleArtwork(){
         // Owners and icon views can remain attached after customization is switched off.
         // Drop their bitmap baselines now; an inactive draw never rebuilds these records.
         if(!enabled){nativeSizes.clear();return;}
-        nativeSizes.entrySet().removeIf(entry->{NativeSize size=entry.getValue();return size.artwork!=null
-                &&(size.rule==null||size.artwork!=applicationIcons.icon(size.rule.sourcePackage));});
+        nativeSizes.entrySet().removeIf(entry->{NativeSize size=entry.getValue();
+            PackageIdentity identity=packages.get(entry.getKey());
+            return size.artwork!=null&&(size.rule==null
+                ?!followLauncher()||identity==null||size.artwork!=launcherIcons.icon(identity.packageName)
+                :size.artwork!=applicationIcons.icon(size.rule.sourcePackage));});
+    }
+    private boolean followLauncher(){return active(settings)&&settings.getBoolean(FOLLOW_LAUNCHER,false)
+            &&"native".equals(mode(settings.getString(MODE)));}
+    /** Notification headers share the same bounded pixels and package/theme observers as Phone icons. */
+    void cardIconSources(Context context,Collection<String> sources,Runnable changed){
+        if(released)return;
+        cardIconsChanged=changed;cardIconSources.clear();
+        if(sources!=null)for(String pkg:sources){cardIconSources.add(pkg);if(cardIconSources.size()>=NotificationAppIconRuntime.MAX_ICONS)break;}
+        if(context!=null)iconContext=new WeakReference<>(context);
+        launcherIcons.configure(iconContext.get(),followLauncher()?launcherSources():Collections.emptySet());
+    }
+    boolean cardFollowsLauncher(){return !released&&followLauncher();}
+    NotificationIconOverrides.Rule cardOverride(String packageName){return released?null:overrides.match(packageName);}
+    Bitmap cardArtwork(String packageName,NotificationIconOverrides.Rule rule){
+        if(released)return null;
+        return rule!=null&&rule.isAppIcon()?applicationIcons.icon(rule.sourcePackage)
+                :rule==null&&followLauncher()?launcherIcons.icon(packageName):null;
+    }
+    private Set<String> launcherSources(){
+        Set<String> result=new LinkedHashSet<>();
+        for(State state:new ArrayList<>(states.values()))for(WeakReference<View> reference:state.icons){
+            View view=reference.get();PackageIdentity identity=view==null?null:packages.get(view);
+            if(identity!=null&&identity.packageName!=null){result.add(identity.packageName);
+                if(result.size()>=NotificationAppIconRuntime.MAX_ICONS)return result;}
+        }
+        for(String pkg:cardIconSources){result.add(pkg);if(result.size()>=NotificationAppIconRuntime.MAX_ICONS)break;}
+        return result;
+    }
+    /** Drawing queues a bounded source update; receiver registration and PM loads stay off draw. */
+    private void scheduleLauncherSources(){
+        if(launcherSourcesPending||!followLauncher())return;launcherSourcesPending=true;
+        main.post(()->{launcherSourcesPending=false;if(!released)
+            launcherIcons.configure(iconContext.get(),followLauncher()?launcherSources():Collections.emptySet());});
     }
     public boolean ownsDrawing(Object owner) { return enabled && containerClass!=null && containerClass.isInstance(owner); }
     /** The real status-bar binder identifies this host even when its ancestor resource names change. */
     public void bindPhoneArea(ViewGroup area) {
         if(released||area==null||containerClass==null)return;
-        int id=area.getResources().getIdentifier("notificationIcons","id","com.android.systemui");
+        int id=ResourceIds.get(area.getResources(), "notificationIcons","id","com.android.systemui");
         View child=id==0?null:area.findViewById(id);
         if(!(child instanceof ViewGroup)||!containerClass.isInstance(child)||child==area)return;
         ViewGroup owner=(ViewGroup)child;
@@ -197,6 +251,7 @@ public final class NotificationIconArea {
             State inactive=states.get(owner);if(inactive!=null)restoreCount(owner,inactive,true);
             return nativeDraw.run();
         }
+        if(!laidOut(owner))return nativeDraw.run();
         probe(owner,2,"native dispatchDraw intercepted");
         State state=states.get(owner);if(state==null){if(!phoneArea(owner))return nativeDraw.run();state=new State();states.put(owner,state);}
         if(state.dirty){if(!phoneArea(owner)){restoreCount(owner,state,true);forgetRestored(owner,state);probe(owner,16,"draw outside status-bar scope");return nativeDraw.run();}update(owner,state);}
@@ -205,6 +260,12 @@ public final class NotificationIconArea {
         if("image".equals(mode)&&bitmap==null)mode="native";
         if("native".equals(mode)&&countActive()&&safeCount(settings.get(MAX_COUNT),owner.getChildCount())==0)return null;
         if(state.icons.isEmpty()){probe(owner,4,"no eligible native notification children");return nativeDraw.run();}
+        View first=null;float alpha=0f;
+        for(WeakReference<View> ref:state.icons){View icon=ref.get();
+            if(icon!=null&&icon.getParent()==owner&&icon.getVisibility()==View.VISIBLE&&laidOut(icon)){
+                if(first==null)first=icon;alpha=Math.max(alpha,icon.getAlpha());
+            }}
+        if(first==null)return nativeDraw.run();
         if(ModuleDiagnostics.enabled())probe(owner,32,"eligible native notification children "+state.icons.size());
         float density=owner.getResources().getDisplayMetrics().density;
         float size=customize&&settings.getBoolean(SIZE_ENABLED,true)?safeSize(settings.get(SIZE),density):state.height;
@@ -222,9 +283,7 @@ public final class NotificationIconArea {
                 // application artwork and the native transition/overflow dot as well.
                 return nativeDraw.run();
             }
-            View first=null;float alpha=0f;
-            for(WeakReference<View> ref:state.icons){View icon=ref.get();if(icon!=null&&icon.getParent()==owner&&icon.getVisibility()==View.VISIBLE){if(first==null)first=icon;alpha=Math.max(alpha,icon.getAlpha());}}
-            if(first==null||alpha<=0f)return null;
+            if(alpha<=0f)return null;
             int nativeTint=state.nativeTint;
             nativeTint=nativeTint(first,nativeTint);
             int color=settings.getBoolean(COLOR_ENABLED,false)?customColor(nativeTint):nativeTint;
@@ -260,11 +319,13 @@ public final class NotificationIconArea {
                     if(visibility==0){
                         float target=active(settings)&&settings.getBoolean(SIZE_ENABLED,true)
                                 ?safeSize(settings.get(SIZE),owner.getResources().getDisplayMetrics().density):height;
-                        NotificationIconOverrides.Rule rule=overrides.enabled()?overrides.match(packageName(icon,source,bundle)):null;
+                        String pkg=overrides.enabled()||followLauncher()?packageName(icon,source,bundle):null;
+                        NotificationIconOverrides.Rule rule=overrides.enabled()?overrides.match(pkg):null;
                         NativeSize old=previous.get(icon);long revision=overrides.revision();int color=nativeTint(icon,state.nativeTint);
                         boolean colorOverride=active(settings)&&settings.getBoolean(COLOR_ENABLED,false);
                         if(colorOverride)color=customColor(color);
-                        Bitmap artwork=rule!=null&&rule.isAppIcon()?applicationIcons.icon(rule.sourcePackage):null;
+                        Bitmap artwork=rule!=null&&rule.isAppIcon()?applicationIcons.icon(rule.sourcePackage)
+                                :rule==null&&followLauncher()?launcherIcons.icon(pkg):null;
                         NativeSize next=old!=null&&old.height==height&&old.target==target&&old.nativeScale==state.nativeScale
                                 &&old.rule==rule&&old.revision==revision&&old.color==color&&old.colorOverride==colorOverride&&old.artwork==artwork?old
                                 :new NativeSize(owner,height,target,state.nativeScale,rule,revision,color,colorOverride,artwork);
@@ -279,6 +340,7 @@ public final class NotificationIconArea {
             } catch(Exception ignored){ }
         }
         state.dirty=false;
+        scheduleLauncherSources();
     }
     /** Real ordinary SBNs are immutable identities. Bundles can represent several apps: a
      * mixed/unknown native bundle deliberately stays native rather than borrowing its first app. */
@@ -341,14 +403,15 @@ public final class NotificationIconArea {
      * after its invoke-super ImageView.onDraw branch, and must never inherit glyph resizing. */
     public Object drawNativeIcon(View icon,Canvas canvas,Draw nativeDraw)throws Throwable {
         boolean customize=active(settings),replace=overrides.enabled();
-        if((!customize&&!replace)||canvas==null)return nativeDraw.run();
+        if((!customize&&!replace)||canvas==null||!laidOut(icon))return nativeDraw.run();
         String display=customize?mode(settings.getString(MODE)):"native";
         if(!"native".equals(display)&&!("image".equals(display)&&bitmap==null))return nativeDraw.run();
         NativeSize baseline=nativeSizes.get(icon);
         ViewGroup owner=baseline==null?null:baseline.owner.get();
-        if(owner==null||icon.getParent()!=owner||!states.containsKey(owner))return nativeDraw.run();
+        if(owner==null||icon.getParent()!=owner||!states.containsKey(owner)||!laidOut(owner))return nativeDraw.run();
         if(!(customize&&(settings.getBoolean(SIZE_ENABLED,true)||settings.getBoolean(COLOR_ENABLED,false)))
-                &&!(replace&&baseline.rule!=null&&baseline.revision==overrides.revision()))return nativeDraw.run();
+                &&!(replace&&baseline.rule!=null&&baseline.revision==overrides.revision())
+                &&!(followLauncher()&&baseline.rule==null&&baseline.artwork!=null))return nativeDraw.run();
         GlyphPool pool=glyphPools.get();if(pool==null){pool=new GlyphPool();glyphPools.set(pool);}
         if(pool.depth==pool.frames.length)return nativeDraw.run();
         GlyphScope scope=pool.frames[pool.depth++];scope.icon=icon;scope.canvas=canvas;scope.baseline=baseline;
@@ -361,8 +424,15 @@ public final class NotificationIconArea {
      * the surrounding StatusBarIconView dot/appear animation stay native. */
     public Object drawNativeGlyph(View icon,Canvas canvas,Draw nativeDraw)throws Throwable {
         GlyphScope scope=drawingGlyph.get();
-        if(scope==null||scope.icon!=icon||scope.canvas!=canvas)return nativeDraw.run();
+        if(scope==null||scope.icon!=icon||scope.canvas!=canvas||!laidOut(icon))return nativeDraw.run();
         NativeSize baseline=scope.baseline;
+        if(!laidOut(baseline.owner.get()))return nativeDraw.run();
+        if(baseline.rule==null&&followLauncher()&&baseline.artwork!=null&&baseline.paint!=null){
+            PackageIdentity identity=packages.get(icon);
+            if(identity!=null&&baseline.artwork==launcherIcons.icon(identity.packageName)){
+                drawArtwork(icon,canvas,baseline);return null;
+            }
+        }
         if(baseline.rule!=null&&overrides.enabled()&&baseline.revision==overrides.revision()&&baseline.paint!=null){
             // StatusBarIconView already owns iconScale * appearAmount. ImageView's matrix is
             // bypassed only for this replacement, so compensate nativeScale once when preparing.
@@ -371,12 +441,7 @@ public final class NotificationIconArea {
                 // Package changes invalidate the bitmap identity immediately; no stale pixels
                 // can be reused while the container waits for its next native recording.
                 if(image!=null&&image==applicationIcons.icon(baseline.rule.sourcePackage)){
-                    float side=NumericPolicy.pixels(baseline.target/baseline.nativeScale,1f);
-                    float ratio=(float)image.getWidth()/image.getHeight();
-                    float width=ratio>=1?side:side*ratio,height=ratio>=1?side/ratio:side;
-                    float cx=icon.getWidth()/2f,cy=icon.getHeight()/2f;
-                    baseline.imageTarget.set(cx-width/2,cy-height/2,cx+width/2,cy+height/2);
-                    canvas.drawBitmap(image,null,baseline.imageTarget,baseline.paint);return null;
+                    drawArtwork(icon,canvas,baseline);return null;
                 }
             }else{
                 canvas.drawText(baseline.rule.text,icon.getWidth()/2f,icon.getHeight()/2f-baseline.textCenter,baseline.paint);return null;
@@ -392,6 +457,20 @@ public final class NotificationIconArea {
             return nativeDraw.run();
         }
         finally{canvas.restoreToCount(save);}
+    }
+    /** Drawable pixels may arrive before native measurement/layout. A zero-size leaf has
+     * no glyph centre yet; keep its native draw/dot lifecycle instead of painting at (0,0). */
+    private static boolean laidOut(View view){
+        return view!=null&&view.getWidth()>0&&view.getHeight()>0
+                &&view.getMeasuredWidth()>0&&view.getMeasuredHeight()>0;
+    }
+    private static void drawArtwork(View icon,Canvas canvas,NativeSize baseline){
+        Bitmap image=baseline.artwork;float side=NumericPolicy.pixels(baseline.target/baseline.nativeScale,1f);
+        float ratio=(float)image.getWidth()/image.getHeight();
+        float width=ratio>=1?side:side*ratio,height=ratio>=1?side/ratio:side;
+        float cx=icon.getWidth()/2f,cy=icon.getHeight()/2f;
+        baseline.imageTarget.set(cx-width/2,cy-height/2,cx+width/2,cy+height/2);
+        canvas.drawBitmap(image,null,baseline.imageTarget,baseline.paint);
     }
     static boolean active(Bundle settings){return settings!=null&&!SafetyMode.enabled(settings)&&!ModuleLifecycle.removed()&&settings.getBoolean(MASTER,false);}
     static String mode(String value){return "heart".equals(value)||"text".equals(value)||"image".equals(value)?value:"native";}
@@ -519,13 +598,13 @@ public final class NotificationIconArea {
     }
     public void releaseRuntime(){
         boolean restoreSpacing=spacingActive();
-        if(released)return;enabled=false;overrides.releaseRuntime();applicationIcons.releaseRuntime();settings=new Bundle();imageGeneration++;bitmap=null;imageRequest="";
+        if(released)return;enabled=false;overrides.releaseRuntime();applicationIcons.releaseRuntime();launcherIcons.releaseRuntime();iconContext.clear();settings=new Bundle();imageGeneration++;bitmap=null;imageRequest="";
         for(ViewGroup owner:new ArrayList<>(states.keySet())){
             State state=states.get(owner);if(state!=null)restoreCount(owner,state,true);
             invalidateNativeIcons(owner);owner.invalidate();
         }
         if(restoreSpacing)refreshSpacing();
-        states.clear();nativeSizes.clear();packages.clear();phoneBindings.clear();probes.clear();released=true;spacingReady=false;spacingCalculation.remove();images.shutdownNow();drawingGlyph.remove();glyphPools.remove();
+        states.clear();nativeSizes.clear();packages.clear();phoneBindings.clear();probes.clear();cardIconSources.clear();cardIconsChanged=null;released=true;spacingReady=false;spacingCalculation.remove();images.shutdownNow();drawingGlyph.remove();glyphPools.remove();
     }
     private void applyCount(ViewGroup owner,State state,boolean refresh) {
         if(maxIcons==null||Boolean.TRUE.equals(applyingCount.get()))return;
@@ -627,9 +706,9 @@ public final class NotificationIconArea {
             imageTarget=artwork==null?null:new RectF();
             if(colorOverride){tintPaint=new Paint(Paint.ANTI_ALIAS_FLAG);tintPaint.setColorFilter(new android.graphics.PorterDuffColorFilter(color,android.graphics.PorterDuff.Mode.SRC_IN));}
             else tintPaint=null;
-            if(rule!=null&&nativeScale>0&&Float.isFinite(nativeScale)){
+            if((rule!=null||artwork!=null)&&nativeScale>0&&Float.isFinite(nativeScale)){
                 paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
-                if(rule.isAppIcon()){textCenter=0;return;}
+                if(rule==null||rule.isAppIcon()){textCenter=0;return;}
                 paint.setTextAlign(Paint.Align.CENTER);paint.setColor(color);
                 float side=NumericPolicy.textPixels(target/nativeScale);paint.setTextSize(side);
                 Paint.FontMetrics metrics=new Paint.FontMetrics();paint.getFontMetrics(metrics);

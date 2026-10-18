@@ -53,6 +53,7 @@ public final class LockscreenControls {
     private final Map<View,Boolean> lockOwners=new WeakHashMap<>();
     private final Map<ViewGroup,NativeLock> nativeLocks=new WeakHashMap<>();
     private final Map<View,Boolean> lockResources=new WeakHashMap<>();
+    private final Map<View,Boolean> tipResources=new WeakHashMap<>();
     private final Map<TextView,Boolean> pluginDateResources=new WeakHashMap<>();
 
     private static final class DateState {
@@ -265,11 +266,15 @@ public final class LockscreenControls {
             }else if(child instanceof ViewGroup)bindCustom((ViewGroup)child);
         }
     }
+    /** The small lock is hidden; the child draw hook exists only then. */
+    public boolean hidesLock() { return hideLock && !ModuleLifecycle.removed(); }
     public boolean hideLockChild(ViewGroup parent,View child) {
         if(!hideLock||ModuleLifecycle.removed()||parent==null||child==null)return false;
         NativeLock nativeLock=nativeLocks.get(parent);
         if(nativeLock!=null) {
             if(nativeLock.valid(parent,child))return true;
+            // The charging / lock tip text is drawn beside the lock inside this same container.
+            if(tip(child)&&nativeLock.outer.get()!=null&&parent.getParent()==nativeLock.outer.get())return true;
             View icon=nativeLock.icon.get();
             if(icon==null||!nativeLock.valid(parent,icon))nativeLocks.remove(parent);
         }
@@ -305,7 +310,7 @@ public final class LockscreenControls {
         }finally{writing=previous;}
     }
     public void releaseRuntime() {
-        dateEnabled=false;hideLock=false;refresh();dates.clear();dateOwners.clear();lockOwners.clear();nativeLocks.clear();lockResources.clear();pluginDateResources.clear();clocks.clear();locks.clear();
+        dateEnabled=false;hideLock=false;refresh();dates.clear();dateOwners.clear();lockOwners.clear();nativeLocks.clear();lockResources.clear();tipResources.clear();pluginDateResources.clear();clocks.clear();locks.clear();
     }
     /** Called after native parent/ID changes. Do not retain custom text on a recycled child. */
     public void classificationChanged(View view) {
@@ -418,6 +423,15 @@ public final class LockscreenControls {
     private void restore(TextView text,DateState state) {
         boolean previous=writing;writing=true;
         try{if(!same(text.getText(),state.nativeText))text.setText(state.nativeText);}finally{writing=previous;}
+    }
+    /** The tip text next to the small lock ("正在充电 28%", "充电完成"): resolved once per view, never per draw. */
+    private boolean tip(View child) {
+        Boolean known=tipResources.get(child);
+        if(known==null){
+            known=resource(child,SYSTEM_UI,"lockicon_tips_view")||resource(child,SYSTEM_UI,"lockicon_tips_space_view");
+            tipResources.put(child,known);
+        }
+        return known;
     }
     private boolean bindNativeLock(ImageView icon) {
         Boolean known=lockResources.get(icon);

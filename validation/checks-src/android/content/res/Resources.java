@@ -10,7 +10,16 @@ public class Resources {
     public DisplayMetrics getDisplayMetrics() { return metrics; }
     public Configuration getConfiguration() {return configuration;}
     public static Resources getSystem() { return new Resources(); }
-    public String getResourceEntryName(int id) { return "clock"; }
+    /** Names for the checks that need them; without any the fixture answers "clock" as before. */
+    public final java.util.Map<Integer,String> entryNames=new java.util.HashMap<>();
+    public String getResourceEntryName(int id) {
+        if(entryNames.isEmpty())return "clock";
+        String name=entryNames.get(id);
+        if(name==null)throw new NotFoundException("resource "+id);
+        return name;
+    }
     public String getResourcePackageName(int id) { return "com.android.systemui"; }
     public int getIdentifier(String name,String type,String pkg) { return 0; }
+    public String getString(int id) { throw new NotFoundException("string:"+id); }
+    public int getColor(int id,Theme theme) { throw new NotFoundException("color:"+id); }
 }

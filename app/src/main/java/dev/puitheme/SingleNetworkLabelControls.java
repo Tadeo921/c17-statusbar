@@ -2,8 +2,14 @@
 // Copyright (C) 2026 aiingjie
 package dev.puitheme;
 
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Build;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ReplacementSpan;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.TextView;
@@ -29,6 +35,9 @@ final class SingleNetworkLabelControls {
     private static final Map<View,Boolean> MANAGED=Collections.synchronizedMap(new WeakHashMap<>());
     static boolean managed(View view){return view!=null&&MANAGED.containsKey(view);}
     private final Map<Object,Row> rows=new WeakHashMap<>();
+    // OEM may rebuild a Binding around the same native text. Only the glyph owns
+    // its native baseline, placement transaction and current binding/model.
+    private final Map<TextView,Row> glyphs=new WeakHashMap<>();
     private Access access;
     private FeatureOptions features=FeatureOptions.from(Collections.emptyMap());
     private String label="";private int subscription=-1,weight=600;
@@ -38,17 +47,74 @@ final class SingleNetworkLabelControls {
     private boolean replaying,released;
     private long nativeEvents,boundEvents,applications;
     private long fontRevision=-1;
+    private StatusBarLayoutSettings.Snapshot layout=StatusBarLayoutSettings.Snapshot.parse(null);
+    private boolean layoutDirty;
+    private NetworkSharedSlotLayout sharedLayout;
+    void sharedLayout(NetworkSharedSlotLayout value) {
+        sharedLayout = value;
+        for (Row row : glyphs.values()) row.placement.sharedLayout(value);
+    }
+    void configureLayout(android.os.Bundle values) {
+        StatusBarLayoutSettings.Snapshot next=StatusBarLayoutSettings.Snapshot.parse(values);
+        layoutDirty|=next.enabled!=layout.enabled||next.wifiLabelShared!=layout.wifiLabelShared||next.order(StatusBarLayoutSettings.LABEL)!=layout.order(StatusBarLayoutSettings.LABEL)
+                ||next.left(StatusBarLayoutSettings.LABEL)!=layout.left(StatusBarLayoutSettings.LABEL)
+                ||next.right(StatusBarLayoutSettings.LABEL)!=layout.right(StatusBarLayoutSettings.LABEL);
+        layout=next;
+        for(Row row:glyphs.values()) {
+            row.placement.observeSharedHost();
+            row.placement.configure(layout.enabled&&!layout.wifiLabelShared?layout.order(StatusBarLayoutSettings.LABEL):0,
+                    layout.enabled&&!layout.wifiLabelShared?layout.left(StatusBarLayoutSettings.LABEL):0f,
+                    layout.enabled&&!layout.wifiLabelShared?layout.right(StatusBarLayoutSettings.LABEL):0f);
+        }
+    }
     private static final class Row {
-        final WeakReference<TextView> text;final WeakReference<View> image;
-        final int subscription;
+        final WeakReference<TextView> text;WeakReference<View> image;
+        WeakReference<Object> binding=new WeakReference<>(null);
+        int subscription;
         final SingleNetworkLabelPlacement placement;
         Object model;boolean modelKnown,owned;
-        int depth,color,minWidth;float size,x,y,spacing;
+        int depth,color,minWidth,padLeft,padTop,padRight,padBottom;
+        float size,x,y,spacing,scaleX,scaleY;
+        boolean fontPadding;
         Typeface face;String axes;
+        CharSequence nativeText,nativeDescription,appliedText;
+        GlyphSpan glyph;
         Row(TextView text,View image,int sub){this.text=new WeakReference<>(text);this.image=new WeakReference<>(image);subscription=sub;
             placement=new SingleNetworkLabelPlacement(text);capture(text);}
         void capture(TextView view){color=view.getCurrentTextColor();minWidth=view.getMinimumWidth();size=view.getTextSize();
-            x=view.getTranslationX();y=view.getTranslationY();spacing=view.getLetterSpacing();face=view.getTypeface();axes=view.getFontVariationSettings();}
+            x=view.getTranslationX();y=view.getTranslationY();spacing=view.getLetterSpacing();face=view.getTypeface();axes=view.getFontVariationSettings();
+            scaleX=view.getScaleX();scaleY=view.getScaleY();fontPadding=view.getIncludeFontPadding();
+            padLeft=view.getPaddingLeft();padTop=view.getPaddingTop();padRight=view.getPaddingRight();padBottom=view.getPaddingBottom();
+            nativeText=view.getText();nativeDescription=view.getContentDescription();}
+    }
+    /** Match the current Compose NetworkLabelView, not the OEM badge's font box.
+     * A real TextView span retains its native binder/accessibility host while its
+     * line metrics and drawing both use the same independent 20dp glyph slot.
+     * The immutable drawing plan is built only on radio/style/binding events. */
+    private static final class GlyphSpan extends ReplacementSpan {
+        final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
+        final Rect bounds=new Rect();
+        final String label,axes;
+        final Typeface face;
+        final float density;
+        final int advance,height,color;
+        GlyphSpan(String label,float density,TextView view){
+            this.label=label;this.density=density;face=view.getTypeface();axes=view.getFontVariationSettings();color=view.getCurrentTextColor();
+            FontWeight.restore(paint,face,axes);paint.setFakeBoldText(false);
+            paint.setTextSize(13f*density);paint.setColor(color);
+            advance=NumericPolicy.layoutPixels(Math.ceil(paint.measureText(label)+2*density));
+            height=NumericPolicy.layoutPixels(20d*density);
+            paint.getTextBounds(label,0,label.length(),bounds);
+        }
+        boolean matches(String label,float density,TextView view){return this.label.equals(label)&&this.density==density
+                &&face==view.getTypeface()&&Objects.equals(axes,view.getFontVariationSettings())&&color==view.getCurrentTextColor();}
+        @Override public int getSize(Paint ignored,CharSequence text,int start,int end,Paint.FontMetricsInt metrics){
+            if(metrics!=null){metrics.top=metrics.ascent=-height/2;metrics.bottom=metrics.descent=height-height/2;metrics.leading=0;}
+            return advance;
+        }
+        @Override public void draw(Canvas canvas,CharSequence text,int start,int end,float x,int top,int baseline,int bottom,Paint ignored){
+            canvas.drawText(label,x+advance/2f-bounds.exactCenterX(),baseline+(height%2)/2f-bounds.exactCenterY(),paint);
+        }
     }
     SingleNetworkLabelControls(){ }
     SingleNetworkLabelControls(Access access){this.access=access;}
@@ -79,15 +145,16 @@ final class SingleNetworkLabelControls {
     void bound(Object binding){
         if(replaying||released)return;
         try{Row row=row(binding);if(row==null)return;boundEvents++;
-            row.model=access.model(binding);row.modelKnown=true;apply(binding,row);
+            if(row.binding.get()!=binding)return;
+            row.model=access.model(binding);row.modelKnown=true;apply(row);
         }catch(ReflectiveOperationException|RuntimeException failure){ModuleDiagnostics.error("single_label","Native network factory binding unavailable",failure);}
     }
     /** The current main-SIM model only. The caller still applies Wi-Fi/radio visibility gates. */
     String nativeLabel(int activeSub){
         if(released||access==null||activeSub<0)return "";
-        for(Map.Entry<Object,Row> entry:new ArrayList<>(rows.entrySet())){
-            Row row=entry.getValue();if(row.subscription!=activeSub||row.text.get()==null)continue;
-            try{String current=access.nativeLabel(entry.getKey());if(current!=null&&!NetworkLabel.normalize(current).isEmpty())return current;}
+        for(Row row:new ArrayList<>(glyphs.values())){
+            Object binding=row.binding.get();if(row.subscription!=activeSub||row.text.get()==null||binding==null)continue;
+            try{String current=access.nativeLabel(binding);if(current!=null&&!NetworkLabel.normalize(current).isEmpty())return current;}
             catch(ReflectiveOperationException|RuntimeException unavailable){/* Preserve native state; never reuse a previous SIM's text. */}
         }
         return "";
@@ -95,46 +162,62 @@ final class SingleNetworkLabelControls {
     void update(FeatureOptions options,String label,int activeSub,float x,float y,float scale,float width,int weight,
             Map<String,Integer> colors,Map<String,Boolean> alphas){
         if(released)return;label=label==null?"":label;long fontRevision=FontRepository.styleRevision();
-        if(this.features.values().equals(options.values())&&this.features.safeMode()==options.safeMode()
+        if(!layoutDirty&&this.features.values().equals(options.values())&&this.features.safeMode()==options.safeMode()
                 &&this.label.equals(label)&&subscription==activeSub&&this.x==x&&this.y==y&&this.scale==scale&&this.width==width
                 &&this.weight==weight&&this.colors.equals(colors)&&this.alphas.equals(alphas)&&this.fontRevision==fontRevision)return;
         this.fontRevision=fontRevision;this.features=options;this.label=label;subscription=activeSub;
         this.x=x;this.y=y;this.scale=scale;this.width=width;this.weight=weight;this.colors=colors;this.alphas=alphas;
+        layoutDirty=false;
         // Radio/configuration events only. Native view callbacks refresh their own row.
-        for(Map.Entry<Object,Row> entry:new ArrayList<>(rows.entrySet()))try{apply(entry.getKey(),entry.getValue());}
+        for(Row row:new ArrayList<>(glyphs.values()))try{apply(row);}
         catch(ReflectiveOperationException|RuntimeException failure){ModuleDiagnostics.error("single_label","Native network label refresh failed",failure);}
     }
     private Row row(Object binding)throws ReflectiveOperationException{
         if(binding==null||access==null||released)return null;Row row=rows.get(binding);if(row!=null)return row;
         TextView text=access.text(binding);if(text==null)return null;
-        row=new Row(text,access.image(binding),access.subscription(binding));rows.put(binding,row);return row;
+        View image=access.image(binding);int sub=access.subscription(binding);
+        row=glyphs.get(text);
+        if(row==null){row=new Row(text,image,sub);glyphs.put(text,row);row.placement.sharedLayout(sharedLayout);row.placement.observeSharedHost();}
+        else{row.image=new WeakReference<>(image);row.subscription=sub;row.model=null;row.modelKnown=false;}
+        row.binding=new WeakReference<>(binding);rows.put(binding,row);return row;
     }
     /** Restore native style before OEM code measures/rebuilds spans; nested init/bind is one transaction. */
     NativeScope beforeNative(Object binding,boolean modelEvent,Object model){
-        if(replaying||released)return new NativeScope(null,null);
-        try{Row row=row(binding);if(row==null)return new NativeScope(null,null);
+        if(replaying||released)return new NativeScope(null);
+        try{Row row=row(binding);if(row==null)return new NativeScope(null);
             nativeEvents++;
-            if(modelEvent){row.model=model;row.modelKnown=true;}
+            if(modelEvent&&row.binding.get()==binding){row.model=model;row.modelKnown=true;}
             if(row.depth++==0&&row.owned){TextView text=row.text.get();if(text!=null)restoreStyle(text,row);}
-            return new NativeScope(binding,row);
-        }catch(ReflectiveOperationException|RuntimeException failure){ModuleDiagnostics.error("single_label","Native network binding unavailable",failure);return new NativeScope(null,null);}
+            return new NativeScope(row);
+        }catch(ReflectiveOperationException|RuntimeException failure){ModuleDiagnostics.error("single_label","Native network binding unavailable",failure);return new NativeScope(null);}
     }
     final class NativeScope implements AutoCloseable {
-        private Object binding;private Row row;
-        NativeScope(Object binding,Row row){this.binding=binding;this.row=row;}
-        public void close(){Row current=row;Object owner=binding;row=null;binding=null;if(current==null)return;
+        private Row row;
+        NativeScope(Row row){this.row=row;}
+        public void close(){Row current=row;row=null;if(current==null)return;
             if(--current.depth!=0||released||access==null)return;TextView text=current.text.get();if(text==null)return;
             current.capture(text);
-            try{apply(owner,current);}catch(ReflectiveOperationException|RuntimeException failure){ModuleDiagnostics.error("single_label","Native network style application failed",failure);}
+            try{apply(current);}catch(ReflectiveOperationException|RuntimeException failure){ModuleDiagnostics.error("single_label","Native network style application failed",failure);}
         }
     }
-    private void apply(Object binding,Row row)throws ReflectiveOperationException{
+    private void apply(Row row)throws ReflectiveOperationException{
         TextView text=row.text.get();if(text==null||row.depth!=0||released||access==null)return;
         applications++;
+        row.placement.observeSharedHost();
+        row.placement.configure(layout.enabled&&!layout.wifiLabelShared?layout.order(StatusBarLayoutSettings.LABEL):0,
+                layout.enabled&&!layout.wifiLabelShared?layout.left(StatusBarLayoutSettings.LABEL):0f,
+                layout.enabled&&!layout.wifiLabelShared?layout.right(StatusBarLayoutSettings.LABEL):0f);
         if(!features.enabled("label")||ModuleLifecycle.removed()){
+            if(layout.enabled&&!layout.wifiLabelShared&&!features.safeMode()&&!ModuleLifecycle.removed()
+                    &&(layout.order(StatusBarLayoutSettings.LABEL)!=0||layout.left(StatusBarLayoutSettings.LABEL)!=0f
+                    ||layout.right(StatusBarLayoutSettings.LABEL)!=0f)) {
+                if(row.owned){row.owned=false;MANAGED.remove(text);restoreStyle(text,row);}
+                row.placement.apply(); return;
+            }
             if(!row.owned)return;row.owned=false;MANAGED.remove(text);restoreStyle(text,row);
             // Rebuild genuine native spans, content description, Tigo image and visibility.
-            if(row.modelKnown){replaying=true;try{access.bind(binding,row.model);}finally{replaying=false;}row.capture(text);}
+            Object binding=row.binding.get();
+            if(row.modelKnown&&binding!=null){replaying=true;try{access.bind(binding,row.model);}finally{replaying=false;}row.capture(text);}
             return;
         }
         row.owned=true;MANAGED.put(text,true);
@@ -143,21 +226,35 @@ final class SingleNetworkLabelControls {
         if(!show){row.placement.restore();if(text.getVisibility()!=View.GONE)text.setVisibility(View.GONE);return;}
         row.placement.apply();
         float density=text.getResources().getDisplayMetrics().density;
-        float tx=row.x+NumericPolicy.pixels(features.position("label")?x:0,density);
-        float ty=row.y+NumericPolicy.pixels(features.position("label")?y:0,density);
+        // Native badge translation/scale belongs only to restoration. Compose
+        // places the independent slot using the user's transform from zero.
+        float tx=NumericPolicy.pixels(features.position("label")?x:0,density);
+        float ty=NumericPolicy.pixels(features.position("label")?y:0,density);
         if(text.getTranslationX()!=tx)text.setTranslationX(tx);if(text.getTranslationY()!=ty)text.setTranslationY(ty);
-        float size=NumericPolicy.textPixels((double)row.size*(features.size("label")?scale:100)/100d);
+        float size=NumericPolicy.textPixels(13d*density);
         if(text.getTextSize()!=size)text.setTextSize(TypedValue.COMPLEX_UNIT_PX,size);
-        int min=features.size("label")?Math.max(row.minWidth,Math.round(NumericPolicy.layoutPixels(width,density))):row.minWidth;
+        float slot=NumericPolicy.layoutPixels(features.size("label")?width:22,density);
+        float factor=NumericPolicy.scale(features.size("label")?scale/100f:1f,Math.max(20f*density,slot));
+        if(text.getScaleX()!=factor)text.setScaleX(factor);if(text.getScaleY()!=factor)text.setScaleY(factor);
+        int min=Math.round(slot);
         if(text.getMinimumWidth()!=min)text.setMinimumWidth(min);
+        if(text.getIncludeFontPadding())text.setIncludeFontPadding(false);
+        if(text.getPaddingLeft()!=0||text.getPaddingTop()!=0||text.getPaddingRight()!=0||text.getPaddingBottom()!=0)text.setPadding(0,0,0,0);
+        if(text.getLetterSpacing()!=0f)text.setLetterSpacing(0f);
         int nativeWeight=row.face==null?400:Build.VERSION.SDK_INT>=28?row.face.getWeight():row.face.isBold()?700:400;
-        if(features.textStyle("label")||features.enabled("font")&&!FontRepository.systemMode())
-            FontRepository.apply(text,row.face,features.textStyle("label")?weight:nativeWeight,row.axes);
-        else FontWeight.restore(text,row.face,row.axes);
+        if(features.textStyle("label")||features.enabled("font")&&!FontRepository.systemMode(FontScopes.NETWORK_TYPE))
+            FontRepository.apply(text,row.face,features.textStyle("label")?weight:nativeWeight,null,FontScopes.NETWORK_TYPE);
+        else FontWeight.restore(text,row.face,null);
         int color=features.color("label")?IconAppearance.color("label",row.color,colors,alphas):row.color;
         if(text.getCurrentTextColor()!=color)text.setTextColor(color);
-        // Strip native prefix/suffix size spans only while this independent label owns output.
-        if(!(text.getText() instanceof String)||!Objects.equals(text.getText(),label))text.setText(label);
+        // Strip OEM prefix/suffix spans. A different font's ascent/descent or
+        // includeFontPadding must not turn the independent glyph into a badge.
+        if(row.glyph==null||!row.glyph.matches(label,density,text)){
+            row.glyph=new GlyphSpan(label,density,text);
+            SpannableString styled=new SpannableString(label);styled.setSpan(row.glyph,0,label.length(),Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            row.appliedText=styled;
+        }
+        if(text.getText()!=row.appliedText){text.setText(row.appliedText);row.appliedText=text.getText();}
         if(!Objects.equals(text.getContentDescription(),label))text.setContentDescription(label);
         if(text.getVisibility()!=View.VISIBLE)text.setVisibility(View.VISIBLE);
     }
@@ -166,14 +263,20 @@ final class SingleNetworkLabelControls {
         if(text.getTextSize()!=row.size)text.setTextSize(TypedValue.COMPLEX_UNIT_PX,row.size);
         FontWeight.restore(text,row.face,row.axes);
         if(text.getTranslationX()!=row.x)text.setTranslationX(row.x);if(text.getTranslationY()!=row.y)text.setTranslationY(row.y);
+        if(text.getScaleX()!=row.scaleX)text.setScaleX(row.scaleX);if(text.getScaleY()!=row.scaleY)text.setScaleY(row.scaleY);
         if(text.getMinimumWidth()!=row.minWidth)text.setMinimumWidth(row.minWidth);
+        if(text.getIncludeFontPadding()!=row.fontPadding)text.setIncludeFontPadding(row.fontPadding);
+        if(text.getPaddingLeft()!=row.padLeft||text.getPaddingTop()!=row.padTop||text.getPaddingRight()!=row.padRight||text.getPaddingBottom()!=row.padBottom)
+            text.setPadding(row.padLeft,row.padTop,row.padRight,row.padBottom);
         if(text.getLetterSpacing()!=row.spacing)text.setLetterSpacing(row.spacing);
         if(text.getCurrentTextColor()!=row.color)text.setTextColor(row.color);
+        if(text.getText()!=row.nativeText)text.setText(row.nativeText);
+        if(!Objects.equals(text.getContentDescription(),row.nativeDescription))text.setContentDescription(row.nativeDescription);
     }
-    void releaseRuntime(){update(FeatureOptions.from(Collections.emptyMap()),"",-1,0,0,100,22,400,Collections.emptyMap(),Collections.emptyMap());
-        for(Row row:rows.values()){TextView text=row.text.get();if(text!=null)MANAGED.remove(text);}rows.clear();access=null;released=true;}
+    void releaseRuntime(){configureLayout(null);update(FeatureOptions.from(Collections.emptyMap()),"",-1,0,0,100,22,400,Collections.emptyMap(),Collections.emptyMap());
+        for(Row row:glyphs.values()){row.placement.sharedLayout(null);TextView text=row.text.get();if(text!=null)MANAGED.remove(text);}rows.clear();glyphs.clear();sharedLayout=null;access=null;released=true;}
     String diagnosticSummary(){int live=0,owned=0,visible=0,active=0;
-        for(Row row:rows.values()){TextView text=row.text.get();if(text==null)continue;live++;if(row.owned)owned++;
+        for(Row row:glyphs.values()){TextView text=row.text.get();if(text==null)continue;live++;if(row.owned)owned++;
             if(text.getVisibility()==View.VISIBLE)visible++;if(row.subscription==subscription)active++;}
         return "Single network label rows "+live+", owned "+owned+", visible "+visible+", active "+active
                 +", factory events "+boundEvents+", native events "+nativeEvents+", applications "+applications;

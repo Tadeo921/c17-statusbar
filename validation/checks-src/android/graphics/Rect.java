@@ -1,7 +1,16 @@
 package android.graphics;
 public class Rect {
+    public boolean isEmpty(){return left>=right||top>=bottom;}
     public void set(int left,int top,int right,int bottom){this.left=left;this.top=top;this.right=right;this.bottom=bottom;}
+    public void set(Rect value){set(value.left,value.top,value.right,value.bottom);}
     public void setEmpty(){left=top=right=bottom=0;}
+    public void offset(int dx,int dy){left+=dx;right+=dx;top+=dy;bottom+=dy;}
+    public void union(Rect other){
+        if(other.isEmpty())return;
+        if(isEmpty()){set(other.left,other.top,other.right,other.bottom);return;}
+        left=Math.min(left,other.left);top=Math.min(top,other.top);
+        right=Math.max(right,other.right);bottom=Math.max(bottom,other.bottom);
+    }
     public Rect() { }
     public Rect(Rect other) {this(other.left,other.top,other.right,other.bottom);}
     public Rect(int left,int top,int right,int bottom) {this.left=left;this.top=top;this.right=right;this.bottom=bottom;}

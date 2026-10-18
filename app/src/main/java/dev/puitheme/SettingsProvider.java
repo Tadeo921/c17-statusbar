@@ -29,6 +29,14 @@ public final class SettingsProvider extends ContentProvider {
 
     @Override // android.content.ContentProvider
     public Bundle call(String str, String str2, Bundle bundle) {
+        if (PerformanceScheduler.METHOD.equals(str)) {
+            // A root-manager boot hook and SystemUI may suggest a time, never select a root action.
+            boolean rootBoot = Binder.getCallingUid() == 0;
+            if (!rootBoot) enforceAllowedReader();
+            long identity = Binder.clearCallingIdentity();
+            try { return PerformanceScheduler.hint(getContext(), str2, rootBoot); }
+            finally { Binder.restoreCallingIdentity(identity); }
+        }
         if (PanelMode.METHOD.equals(str)) {
             enforceAllowedReader(); return PanelMode.query(getContext());
         }
@@ -84,6 +92,14 @@ public final class SettingsProvider extends ContentProvider {
         if (!"r".equals(mode)) throw new FileNotFoundException("Read-only endpoint");
         File file;
         if ("/font/current".equals(uri.getPath())) file = new File(getContext().createDeviceProtectedStorageContext().getFilesDir(), "fonts/custom.font");
+        else if(uri.getPath()!=null&&uri.getPath().startsWith("/font/library/")) {
+            try { file=FontLibrary.providerFile(getContext(),uri); }
+            catch(java.io.IOException invalid){throw new FileNotFoundException(invalid.getMessage());}
+        }
+        else if(uri.getPath()!=null&&uri.getPath().startsWith("/icon-management-v3/")){
+            try{file=IconManagementRepository.providerFile(getContext(),uri);}
+            catch(java.io.IOException invalid){throw new FileNotFoundException(invalid.getMessage());}
+        }
         else if ("/notification-icon/current".equals(uri.getPath())) file = NotificationIconRepository.file(getContext());
         else if (uri.getPath() != null && uri.getPath().startsWith("/shade-wallpaper/")) {
             try { file = ShadeWallpaperRepository.providerFile(getContext(), uri); }

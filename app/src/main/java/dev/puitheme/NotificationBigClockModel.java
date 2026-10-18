@@ -10,14 +10,22 @@ final class NotificationBigClockModel {
     static final class Frame {
         final float progress, clockTop, clockHeight, dateTop, reservedBottom, textSizeRatio, collapseDistance;
         final float entryTranslation, entryAlpha;
+        final float componentTop;
+        final boolean componentsSwapped;
         final int weight;
         Frame(float progress, float top, float height, float dateTop, float reservedBottom,
                 float textRatio, float collapseDistance, float entryTranslation, float entryAlpha, int weight) {
+            this(progress,top,height,dateTop,reservedBottom,textRatio,collapseDistance,entryTranslation,entryAlpha,weight,Float.NaN,false);
+        }
+        Frame(float progress, float top, float height, float dateTop, float reservedBottom,
+                float textRatio, float collapseDistance, float entryTranslation, float entryAlpha, int weight,
+                float componentTop,boolean componentsSwapped) {
             this.progress = progress; this.clockTop = top; this.clockHeight = height;
             this.dateTop = dateTop; this.reservedBottom = reservedBottom;
             this.textSizeRatio = textRatio; this.entryTranslation = entryTranslation;
             this.collapseDistance = collapseDistance;
             this.entryAlpha = entryAlpha; this.weight = weight;
+            this.componentTop=componentTop;this.componentsSwapped=componentsSwapped;
         }
     }
 
@@ -76,6 +84,68 @@ final class NotificationBigClockModel {
         return new Frame(scroll.progress,scroll.clockTop,lerp(expanded,compact,progress),scroll.dateTop,
                 scroll.reservedBottom,scroll.textSizeRatio,scroll.collapseDistance,scroll.entryTranslation,
                 scroll.entryAlpha,scroll.weight);
+    }
+
+    /** A component row keeps at least one notification's vertical space available. */
+    static float componentHeight(float requested,float viewport,float reserved,float safeBottom,float density) {
+        float d=bounded(density,1f,.5f,8f);
+        float available=Math.max(0f,NumericPolicy.drawPixels(viewport)-NumericPolicy.drawPixels(reserved)
+                -Math.max(0f,NumericPolicy.drawPixels(safeBottom))-88f*d);
+        float height=Math.max(0f,Math.min(Math.max(0f,NumericPolicy.drawPixels(requested)),available));
+        return height>=BigClockWidgetsSettings.MIN_HEIGHT*d?height:0f;
+    }
+    static Frame withComponents(Frame source,float height,float density) {
+        if(!(height>0f)||!finite(height))return source;
+        float extra=height+8f*bounded(density,1f,.5f,8f);
+        return new Frame(source.progress,source.clockTop,source.clockHeight,source.dateTop,
+                NumericPolicy.drawPixels(source.reservedBottom+extra),source.textSizeRatio,
+                source.collapseDistance,source.entryTranslation,source.entryAlpha,source.weight);
+    }
+
+    /** Swap auxiliary rows around the unchanged main glyph anchor. A taller upper
+     * component row grows upwards, rather than displacing or covering the time. */
+    static Frame withAuxiliaryRows(Frame source,float height,float density,boolean swap,float dateHeight,float dateShift) {
+        return withAuxiliaryRows(source,height,density,swap,dateHeight,dateShift,Float.NaN,0f);
+    }
+    static Frame withAuxiliaryRows(Frame source,float height,float density,boolean swap,float dateHeight,float dateShift,
+            float safeTop,float inset) {
+        if(!(height>0f)||!finite(height))return source;
+        float d=bounded(density,1f,.5f,8f),gap=8f*d;
+        float date=Math.max(0f,NumericPolicy.drawPixels(dateHeight));
+        float shift=NumericPolicy.drawPixels(dateShift);
+        float clockBottom=source.clockTop+source.clockHeight;
+        float bottom=Math.max(clockBottom,source.dateTop+date);
+        float componentTop=bottom+gap,newDate=source.dateTop,extra=height+gap;
+        boolean exchanged=swap&&date>0f;
+        if(exchanged) {
+            if(source.dateTop+date<=source.clockTop) {
+                componentTop=source.dateTop+date-height;
+                // The date anchor moves upward as the main clock compacts. A
+                // taller component must keep its complete bounds below the
+                // status/cutout region, without moving the main glyph anchor.
+                if(finite(safeTop))componentTop=Math.max(componentTop,Math.max(0f,safeTop)+Math.max(0f,inset));
+                newDate=clockBottom+gap+shift;
+                extra=Math.max(0f,gap+date+shift);
+            } else {
+                // A deliberately lowered date keeps its offset, while the row
+                // takes the first usable lower anchor above that date.
+                componentTop=source.dateTop;
+                newDate=componentTop+height+gap;
+                extra=height+gap;
+            }
+        }
+        return new Frame(source.progress,source.clockTop,source.clockHeight,newDate,
+                NumericPolicy.drawPixels(source.reservedBottom+extra),source.textSizeRatio,
+                source.collapseDistance,source.entryTranslation,source.entryAlpha,source.weight,componentTop,exchanged);
+    }
+
+    /** Check either endpoint before choosing the row order. The caller checks
+     * expanded and compact geometry, never changes order halfway through a
+     * native collapse animation, and preserves saved explicit offsets. */
+    static boolean auxiliarySwapFits(float dateTop,float dateHeight,float clockTop,float clockHeight,float rowHeight,float inset,float safeTop) {
+        if(!(dateHeight>0f)||!(rowHeight>0f))return false;
+        if(dateTop>=clockTop+clockHeight)return true;
+        return dateTop+dateHeight<=clockTop&&clockTop-rowHeight-Math.max(0f,inset)>=Math.max(0f,safeTop);
     }
 
     /** Measured text is never stretched. All parts use the same absolute native scroll progress. */

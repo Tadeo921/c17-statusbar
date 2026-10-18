@@ -198,6 +198,37 @@ public final class NumericTrialCheck {
         equal(false,raw.disk.containsKey(NotificationBigClockSettings.MASTER));
         equal(false,raw.disk.containsKey(NotificationBigClockSettings.STACK_ENABLED));
     }
+    private static void signedMargins() throws Exception {
+        int margins=0;
+        for(String key:StatusBarLayoutSettings.NUMBERS.keySet())if(StatusBarLayoutSettings.marginKey(key)) {
+            margins++;
+            Storage storage=new Storage();Map<String,Object> original=new HashMap<>();
+            original.put(key,-7.125f);original.put("unrelated","retained");
+            DurablePreferences raw=new DurablePreferences(original),journal=new DurablePreferences(new HashMap<>());
+            storage.files.put(StatusBarSettings.PREFS,raw.proxy);storage.files.put("statusbar_numeric_trial",journal.proxy);
+            coldStart(storage,raw.proxy);
+            SharedPreferences guarded=new ActivationGuardPreferences(raw.proxy,()->true,()->{});
+            // Capture the confirmed state after the same mandatory-flag normalization as an app save.
+            equal(true,guarded.edit().commit());original=new HashMap<>(raw.disk);
+            SettingsCatalog.Item item=SettingsCatalog.item(key);
+            equal(true,SettingsCatalog.requiresNumericTrial(item,-1000000.125f));
+            equal(true,NumericTrial.begin(storage,raw.proxy,guarded,key,-1000000.125f));
+            equal(-1000000.125f,raw.disk.get(key));equal(-7.125f,journal.disk.get("value"));
+            equal(20000L,NumericTrial.deadline()-SystemClock.elapsedRealtime());
+            equal(true,NumericTrial.rollback());equal(original,raw.disk);equal(false,NumericTrial.active());
+            equal(true,NumericTrial.begin(storage,raw.proxy,guarded,key,-Float.MAX_VALUE));
+            SystemClock.uptime=NumericTrial.deadline();equal(false,NumericTrial.keep());
+            equal(original,raw.disk);equal(false,NumericTrial.active());
+            equal(true,NumericTrial.begin(storage,raw.proxy,guarded,key,-1e20f));
+            equal(true,NumericTrial.keep());equal(-1e20f,raw.disk.get(key));equal(false,journal.disk.containsKey("key"));
+            equal(true,NumericTrial.begin(storage,raw.proxy,guarded,key,-999f));
+            raw=raw.reopen();journal=journal.reopen();
+            storage.files.put(StatusBarSettings.PREFS,raw.proxy);storage.files.put("statusbar_numeric_trial",journal.proxy);
+            coldStart(storage,raw.proxy);equal(-1e20f,raw.disk.get(key));equal(false,NumericTrial.active());
+            equal("retained",raw.disk.get("unrelated"));
+        }
+        equal(18,margins);
+    }
     public static void main(String[] args) throws Exception {
         Storage storage=new Storage();
         SharedPreferences raw=storage.getSharedPreferences(StatusBarSettings.PREFS,0);
@@ -260,6 +291,7 @@ public final class NumericTrialCheck {
         equal(500f,SettingsCatalog.item(NetworkSpeedControls.INTERVAL_MILLIS).max);
         suggestedRangeSaveOrTrial(NetworkSpeedControls.INTERVAL_MILLIS);
         clockScaleJournal();
+        signedMargins();
         System.out.println("Numeric trial checks passed: "+checks);
     }
 }

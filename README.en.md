@@ -1,50 +1,69 @@
-# C17 Status Bar · 1.8.2
+# Status C17 · 1.8.3
 
-A SystemUI customization module for ColorOS 17, primarily developed against OnePlus 13. Uses LibXposed API 101; package: `dev.puitheme.iosstatusbar`.
+A SystemUI customization module for ColorOS 17, primarily adapted using OnePlus 13. Customize the status bar, notifications, Control Center, Fluid Cloud and lock screen, with a choice of COUI or Miuix for the settings app. Uses LibXposed API 101; package name: `dev.puitheme.iosstatusbar`.
 
-**1.8.2 / versionCode 75.** Get the APK from [GitHub Releases](https://github.com/SANWU5/c17-statusbar/releases). This release adds wallpaper-only lock-screen blur, Fluid Cloud accent colors, charging-icon hiding and speed-icon spacing. It fixes clock sizing and truncated formats, network positioning, device-card colors and tile interaction corners. See the [1.8.2 release notes](docs/RELEASE-1.8.2.zh-CN.md) for changes since 1.8.1 and the [validation record](VALIDATION.md) for verification scope.
+**Stable release 1.8.3.** The [complete release notes](docs/RELEASE-1.8.3.zh-CN.md) compare this release with 1.8.2 across 16 feature areas, including detailed additions, improvements and fixes.
 
-[中文](README.md) · [GitHub Releases](https://github.com/SANWU5/c17-statusbar/releases) · [Changelog](CHANGELOG.md)
+[Download APK](https://github.com/SANWU5/c17-statusbar/releases) · [中文](README.md) · [Changelog](CHANGELOG.md) · [Icon-pack specification and examples](https://github.com/SANWU5/c17-icon-packs)
 
 ## Features
 
-- **Status bar:** Independent controls for time, battery, Wi-Fi, cellular signal, network labels, notification icons and fonts. Swap Wi-Fi / 4G / 5G with cellular signal. Native network badges have their own font, position, size and weight controls, effective only when the custom network label is off.
-- **System hints:** Set X/Y, maximum count and spacing for Bluetooth, location, alarm and similar native hints. Drag the named entries to set priority. Only hints permitted by the system are selected; network and battery areas are excluded.
-- **Speed and activity arrows:** Preserve the native speed number and unit. Refresh intervals use milliseconds, with a recommended range of 1–500 ms. Cellular activity arrows are hidden by default but can be enabled independently, with position, size and light/dark color controls.
-- **Notification shade:** Portrait and landscape large clocks have independent settings. Landscape places the clock above notifications, offers notification-width controls and preserves native notification text and icon sizes. Landscape Clear All has separate position and color controls. Whole-list stacking uses native scrolling and scaling, with 1–5 complete cards recommended. Landscape requires an additional opt-in, off by default. Same-group stacking is hidden and forcibly disabled at runtime.
-- **Control center and materials:** Unified corners, 1×1 tile and recognized device-card icon sizing, tile fill and media-cover backgrounds. C17 highlight removal has separate notification/control-center scopes, light/dark acrylic colors and optional uniform notification colors, while retaining custom tile fills and media backgrounds. New artwork supplies a sampled solid color before prepared blurred artwork fades in; unchanged results reuse caches.
-- **Lock screen:** Customize year/month/day and weekday formatting; hide only the small lock's visual icon while retaining unlock and fingerprint interaction. Date updates also support dynamically loaded OEM clock components.
+| Area | Available settings |
+| --- | --- |
+| Status-bar order and spacing | Place the clock, notification icons, carrier, network speed, Wi-Fi, cellular, battery and individual system indicators on either side or follow the system. Drag, move between regions, undo and save a draft. Physical left/right spacing is independent; Wi-Fi and network labels can share a position. Ordering remains experimental. |
+| Clock and fonts | Single- or double-row clocks, format presets and preview, tabular digits, digit spacing and colon alignment. Apply system, PingFang, imported or downloadable fonts to seven independent text scopes while preserving each feature's size and weight. |
+| Network, signal and battery | Customize 16 network labels, native badges, primary-signal and stacked layouts, network-speed updates and appearance, and upload/download arrows. Retains system and existing PUI battery styles, following the system percentage mode. |
+| Icon management | Apply a suite or select individual targets/states across system indicators, network, battery, supported quick toggles, brightness/volume, footer and supported static media/device icons. Adjust size from 25% to 200%, background-dependent and per-state colors, opacity and named pack palettes. Preview and manage libraries; supported toggles can use pack animations. |
+| Notification clock | Separate portrait/landscape settings, native fonts, digit-spacing and time-animation controls, lock-screen-like materials, glass, background inside glyphs, masks, outlines and lighting. Portrait supports rebound blur and app-launch actions. |
+| Text components and weather | Two portrait side components with independent appearance, position, row swapping and actions. Weather, date, battery, signal and network presets support conditional templates. Weather reads the system's cached located city without relying on lock-screen widgets. |
+| Notification icons and stacks | Follow the launcher's current icon pack and system icon shape, with per-app replacements taking priority. Same-app mini stacks and whole-list stacking are independent; hide counts or covered rear cards while retaining native gestures and clearing. |
+| Control Center and media | Full-fill 2×1 tiles, header-button visibility, tile colors and gradient ranges, cover-derived or custom media backgrounds and transitions. Unified corners cover tiles, press layers, detail buttons and brightness/volume sliders. |
+| Expanded Fluid Cloud | Solid or native-gradient fills, opacity, media-color following and transitions, with 13 independently selectable business categories. |
+| Camera-area capsule | Backgrounds, blur, borders, animated border colors, inward glow, cover/corner settings, rebound and live music spectrum. Optional persistence retains manual dismissal and normal task cleanup. |
+| Lock screen and AOD | Separate fills, masks, brightening and media colors, supported white-glass notification backgrounds, bottom-capsule colors, top wallpaper blur and lock-icon hiding. |
+| Shade wallpaper | Separate portrait/landscape images for notification, control and classic panels, including cropping, blur, brightness and large-clock-region effects. Experimental and not fully adapted. |
+| Cache and optional optimization | Built-in font/icon resource caching. An optional Root companion performs on-demand optimization of SystemUI and recognized Control Center plugins, reuses valid results and provides manual/automatic rules, records and a web control panel. |
+| Settings app and thanks | COUI/Miuix, 10 color schemes, Material 3/Catppuccin, dark-background adjustment, text scaling, scroll fading and optional liquid-glass navigation on Android 13+. Includes a thanks wall and themed Easter eggs. |
+| Configuration and diagnostics | Import, export or share selected feature pages without changing unselected pages. Search and reset by page. A dedicated diagnostics page shows runtime status, findings and searchable/filterable logs, with report export and sharing. |
+| Display and animation fixes | Improvements to network visibility, initial measurement, shade clipping, capsule spacing, seconds updates, speed-text clipping, font caches and large-clock measurement while retaining native interaction and animations. |
 
-The [font catalog](docs/FONT-CATALOG.zh-CN.md) contains 10 variable-font designs with source and license details. The unified source list includes system, PingFang, downloadable and imported fonts; missing downloads are labeled. Imported fonts remain individually available and can be renamed or deleted. Some use system Chinese fallback. Source and license links appear below the controls.
+### Icons and fonts
 
-Custom system icons support per-target assignments, ZIP/RAR/GitHub import, and importing artwork from a user-supplied PUI theme. Libraries can be reordered, renamed, disabled or deleted. The unfinished custom shade wallpaper feature is forcibly disabled; saved images and settings remain intact.
+Open **Other → Icon management** to import **v3 ZIP or unencrypted, single-volume RAR4/RAR5**, or fetch a pack from GitHub. Static assets support transparent PNG and restricted VectorDrawable XML. External animations are limited to supported quick toggles. Preview the selected scope before applying; missing or unsupported states retain native artwork. [Pack specification](https://github.com/SANWU5/c17-icon-packs) · [Color palettes](docs/ICON-COLOR-PRESETS.zh-CN.md)
+
+The public build includes the original **C17 example library**, without a bundled PUI icon suite. You can import v3 packs you are entitled to use. PUI compatibility mappings and the existing PUI battery style remain available. Separate partial iOS27 test packs are not a built-in library or a complete iPhone interface.
+
+Font settings also live under **Other**. The seven scopes are status-bar clock, shade clock, network-type text, network speed, shade replacement text, lock-screen replacement text, and large notification clock with supporting text. They do not include the system lock-screen main clock or ordinary notification bodies. The [font catalog](docs/FONT-CATALOG.zh-CN.md) lists 10 downloadable variable-font designs and their licenses; local imports support TTF, OTF and TTC.
+
+## Installation and upgrade
+
+1. Download the APK from [GitHub Releases](https://github.com/SANWU5/c17-statusbar/releases). Export settings you want to retain before updating.
+2. Install over the existing app with the same signer, then enable the module and **SystemUI** scope in a compatible LSPosed manager.
+3. Restart SystemUI or the phone to load the new code. Ordinary setting changes notify SystemUI without requiring a restart each time.
+
+For older signing identities, see the [upgrade notes](docs/PARAMETER-UPGRADE-1.6.0.zh-CN.md). Adaptation is primarily based on ColorOS 17 devices; the app's minimum Android version does not imply support for every ROM.
+
+- Legacy v1/v2 icon packs, library-priority layers and theme-ZIP import are retired. Select sources again in the new icon manager; other module settings are retained.
+- Configuration files carry settings, not fonts, icons or wallpaper images. Import those resources separately on another device. Settings-app colors and text scale are separate from module configuration.
+- Updating the APK does not update an installed Root companion. Update it separately under **About → Companion optimization module**. It is optional for ordinary appearance customization.
+- Status-bar ordering and shade wallpaper remain experimental. Intermittent movement, disappearing icons, collapse transitions and native-material differences still require scenario-specific device verification.
 
 ## Settings and maintenance
 
-Home, Configuration and About use a regular bottom bar covering the system gesture area. Settings are organized into status bar, notification shade, control center, lock screen and other categories. Live previews are removed. **Hide launcher icon is at the bottom of Home**; a compatible LSPosed manager's module-settings entry can reopen the app and restore it.
+Settings are grouped into status bar, notifications, Control Center, lock screen and other features, with global search and page-specific reset. Sliders offer recommended ranges. Valid manual values within the range save directly; values outside the range enter a 20-second confirmation trial and revert on cancellation or timeout. Unified corners have a hard limit of 0–30dp.
 
-Feature masters default off; explicitly saved settings are retained. Sliders show recommendations. Valid manual values within those ranges save immediately; **only values outside the recommended range start a 20-second confirmation trial**, with cancellation or timeout restoring the prior value. Unified corners have a hard 0–30dp limit. Short sampling intervals, gradients and complex motion increase work; enable them as needed.
+Safety mode on the home page pauses modifications while retaining settings. **About → Configuration management** provides backup, sharing, import and confirmed deletion; **About → Diagnostics** provides logs and reports. Hide the launcher icon at the bottom of About, then reopen and restore it through a manager supporting the module-settings entry. The launcher name defaults to Status C17; the old name can be restored in appearance settings.
 
-Startup reads complete framework snapshots and the app's configuration provider. Incomplete or temporarily unavailable data and failed writes retain the last confirmed configuration and retry; unconfirmed trials are not boot settings. Granted Root permits saving without LSPosed activation. Safe mode pauses modifications without deleting settings.
+## Author and support
 
-About provides diagnostic export, log-history clearing and a confirmed reset of all settings. Reset also clears recovery copies and private imported resources, leaving user-exported files intact. With Root granted and a newer project release available, an explicit in-app update downloads and verifies the package, version, signer and file before installation, then removes temporary APKs on completion or failure. Normal uninstall removes app-private data; shared LSPosed logs belong to the framework.
+**aiingjie** · GitHub [sanwu5](https://github.com/sanwu5) · Coolapk **konwo** · Feedback, collaboration and donations: **QQ 2726344450**.
 
-## Installation
+The module and all features are free. Donations are voluntary and do not affect access. Please do not buy paid resales. Donation images appear in the app only after you choose to open them.
 
-Download published APKs from [GitHub Releases](https://github.com/SANWU5/c17-statusbar/releases). Export settings you wish to retain. Replace-install with the same signer, enable the module and SystemUI scope in LSPosed, then restart SystemUI or the phone to load new code. Ordinary parameter changes notify SystemUI without requiring a restart each time.
-
-See the historical [upgrade notes](docs/PARAMETER-UPGRADE-1.6.0.zh-CN.md) for old-signature migration. Android 26/27 old-signature replacement is not guaranteed. Build checks, device observations and support for other ROMs are recorded separately; desktop checks do not establish complete device acceptance.
-
-## Author and donations
-
-Author **aiingjie** · GitHub [sanwu5](https://github.com/sanwu5) · Coolapk **konwo** · Feedback, cooperation and donations: **QQ 2726344450**.
-
-The module and all features are permanently free. Donations are voluntary and unlock nothing; do not pay resellers. First use requires reading the free-use notice and manually entering confirmation. Donation QR codes appear in the app only after tapping their entries.
-
-[WeChat payment QR](docs/donation/wechat.png) · [Alipay payment QR](docs/donation/alipay.jpg)
+[WeChat](docs/donation/wechat.png) · [Alipay](docs/donation/alipay.jpg)
 
 ## Building and licensing
 
-Build with JDK 17, Gradle wrapper, Android SDK 37, AGP 9.4.1, Kotlin/Compose 2.4.20 and Miuix 0.9.4. Java hooks target Java 8 bytecode, Kotlin targets JVM 11, and minSdk/targetSdk are 26/35. See the [Windows Compose build guide](docs/COMPOSE-BUILD.zh-CN.md).
+Use JDK 17, the Gradle wrapper and Android SDK 37. Java targets Java 8 bytecode and Kotlin targets JVM 11; minSdk 26/targetSdk 35. See the [Windows build guide](docs/WINDOWS-BUILD.zh-CN.md) and [Compose build guide](docs/COMPOSE-BUILD.zh-CN.md). Build checks do not establish complete device-level visual, frame-rate or battery validation.
 
-Licensed under [GPL-3.0](LICENSE). Component and font attribution is in [third-party notices](THIRD_PARTY_NOTICES.md). Signing keys, personal settings and logs, phone captures and raw SystemUI files are excluded from the public repository.
+Software is licensed under [GPL-3.0-only](LICENSE); see [COPYRIGHT.md](COPYRIGHT.md). Fonts, existing PUI battery resources and third-party components retain their own rights and attribution, documented in [third-party notices](THIRD_PARTY_NOTICES.md) and [PingFang sources](FONT.md). Signing keys, personal settings, raw device materials and private development records are excluded from public source distributions.

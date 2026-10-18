@@ -32,7 +32,7 @@ public final class NotificationIconAreaCheck {
         }
         @Override public int getIdentifier(String name,String type,String pkg){return "notificationIcons".equals(name)?101:0;}
     }
-    private static final class PhoneContainer extends NotificationIconContainer {
+    private static class PhoneContainer extends NotificationIconContainer {
         final ScopedResources scoped=new ScopedResources();
         PhoneContainer(){super(null);scoped.getDisplayMetrics().density=1f;}
         @Override public int getId(){return 101;}
@@ -276,7 +276,168 @@ public final class NotificationIconAreaCheck {
         catch(IllegalStateException expected){checks++;}
         area.drawNativeGlyph(icon,outside,()->null);near(1f,outside.scaleY);
     }
+    /** The captured startup frame has real notification identities and drawable pixels,
+     * but its leaf has not received native measurement/layout yet. */
+    private static final class LayoutIcon extends StatusBarIconView {
+        int width,height;
+        LayoutIcon(){super(null);}
+        @Override public int getWidth(){return width;}
+        @Override public int getHeight(){return height;}
+        @Override protected void onMeasure(int width,int height){
+            setMeasuredDimension(View.MeasureSpec.getSize(width),View.MeasureSpec.getSize(height));
+        }
+        void nativeGeometry(int width,int height){
+            this.width=width;this.height=height;
+            measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY));
+            layout(0,0,width,height);
+        }
+    }
+    private static void unmeasuredNativeGlyph()throws Throwable{
+        NotificationIconArea area=new NotificationIconArea();area.resolve(NotificationIconAreaCheck.class.getClassLoader());
+        PhoneContainer owner=phone(0);LayoutIcon icon=new LayoutIcon();owner.addView(icon);
+        icon.mBundleEntry=new Object();icon.nativeScale=.5f;icon.setImageDrawable(new Glyph(64));icon.nativeGeometry(0,0);
+        Bundle options=countOptions(true,1);options.putBoolean(NotificationIconArea.SIZE_ENABLED,true);
+        options.putFloat(NotificationIconArea.SIZE,20f);options.putBoolean(NotificationIconArea.COLOR_ENABLED,true);
+        options.putInt("notification_icons_color_light",0xff00ff00);
+        area.changed(owner);area.configure(null,options);area.draw(owner,new Canvas(),()->null);
+        NotificationIconOverridesCheck.NativeCanvas canvas=new NotificationIconOverridesCheck.NativeCanvas();
+        NotificationIconOverridesCheck.nativeIcon(area,icon,canvas);
+        near(32f,canvas.glyphHeight);near(6f,canvas.dotSize);equal(0,canvas.layers);
+        equal(0,canvas.bitmapDraws);equal(true,canvas.text==null);equal(canvas.saves,canvas.restores);
+        icon.nativeGeometry(80,120);
+        canvas=new NotificationIconOverridesCheck.NativeCanvas();NotificationIconOverridesCheck.nativeIcon(area,icon,canvas);
+        near(20f,canvas.glyphHeight);near(6f,canvas.dotSize);equal(1,canvas.layers);
+        area.releaseRuntime();
+    }
+    private static final class LayoutOwner extends PhoneContainer {
+        int width=124,height=120;
+        @Override public int getWidth(){return width;}
+        @Override public int getHeight(){return height;}
+        @Override protected void onMeasure(int width,int height){
+            setMeasuredDimension(View.MeasureSpec.getSize(width),View.MeasureSpec.getSize(height));
+        }
+        void nativeGeometry(int width,int height){
+            this.width=width;this.height=height;
+            measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY));
+            layout(0,20,width,20+height);
+        }
+    }
+    private static void unmeasuredRows()throws Throwable{
+        for(String mode:new String[]{"native","heart","text","image"}){
+            NotificationIconArea area=new NotificationIconArea();area.resolve(NotificationIconAreaCheck.class.getClassLoader());
+            LayoutOwner owner=new LayoutOwner();new NativeHost(202).addView(owner);owner.nativeGeometry(124,120);
+            LayoutIcon icon=new LayoutIcon();icon.mBundleEntry=new Object();icon.setImageDrawable(new Glyph(64));
+            icon.nativeGeometry(80,120);owner.addView(icon);
+            Bundle options=countOptions(true,1);options.putString(NotificationIconArea.MODE,mode);
+            options.putString(NotificationIconArea.TEXT,"通知");options.putBoolean(NotificationIconArea.POSITION,true);
+            options.putFloat(NotificationIconArea.X,6f);options.putFloat(NotificationIconArea.Y,8f);
+            area.changed(owner);area.configure(null,options);
+            // A normalized image has already arrived from the repository/cache; only native
+            // view geometry changes below, through the same public draw entry point as SystemUI.
+            if("image".equals(mode)){
+                Field bitmap=NotificationIconArea.class.getDeclaredField("bitmap");bitmap.setAccessible(true);
+                bitmap.set(area,android.graphics.Bitmap.createBitmap(128,64,android.graphics.Bitmap.Config.ARGB_8888));
+            }
+            area.draw(owner,new Canvas(),()->null);
+            for(int phase=0;phase<5;phase++){
+                owner.nativeGeometry(phase==0?0:124,phase==1?0:120);
+                icon.nativeGeometry(phase==2?0:80,phase==3?0:120);
+                if(phase==4)icon.measure(View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.EXACTLY));
+                int nativeCount=owner.mMaxIcons;
+                Canvas canvas=new Canvas();int[] calls={0};
+                Object result=area.draw(owner,canvas,()->{calls[0]++;return "native-frame";});
+                equal("native-frame",result);equal(1,calls[0]);equal(true,canvas.text==null);equal(0,canvas.bitmapDraws);
+                near(0f,canvas.translateX);near(0f,canvas.translateY);near(1f,canvas.scaleX);equal(0,canvas.layers);
+                equal(nativeCount,owner.mMaxIcons);
+                owner.nativeGeometry(124,120);icon.nativeGeometry(80,120);
+                canvas=new Canvas();calls[0]=0;
+                area.draw(owner,canvas,()->{calls[0]++;return null;});
+                near(6f,canvas.translateX);near(8f,canvas.translateY);
+                equal("native".equals(mode)?1:0,calls[0]);
+                if("heart".equals(mode))equal("♥",canvas.text);
+                if("text".equals(mode))equal("通知",canvas.text);
+                if("image".equals(mode)){
+                    equal(1,canvas.bitmapDraws);
+                    near(60f,(canvas.bitmapLog.get(0).dest.top+canvas.bitmapLog.get(0).dest.bottom)/2f);
+                }
+                equal(canvas.saves,canvas.restores);
+            }
+            area.releaseRuntime();
+        }
+    }
+    private static void unmeasuredGlyphSource(String source)throws Throwable{
+        NotificationIconArea area=new NotificationIconArea();area.resolve(NotificationIconAreaCheck.class.getClassLoader());
+        LayoutOwner owner=new LayoutOwner();new NativeHost(202).addView(owner);owner.nativeGeometry(124,120);
+        LayoutIcon icon=new LayoutIcon();owner.addView(icon);
+        StatusBarNotification notification=new StatusBarNotification(1);notification.packageName="com.source";
+        icon.setNotification(notification);icon.setImageDrawable(new Glyph(64));icon.nativeScale=.5f;icon.nativeGeometry(0,0);
+        ArrayDeque<Runnable> work=new ArrayDeque<>(),done=new ArrayDeque<>();
+        android.graphics.Bitmap artwork=android.graphics.Bitmap.createBitmap(128,64,android.graphics.Bitmap.Config.ARGB_8888);
+        boolean launcher="launcher".equals(source);
+        NotificationAppIconRuntime cache=new NotificationAppIconRuntime(work::add,done::add,(context,pkg)->artwork,
+                LauncherNotificationIconsCheck.changed(area),launcher);
+        LauncherNotificationIconsCheck.install(area,launcher?"launcherIcons":"applicationIcons",cache);
+        Bundle options=countOptions(launcher||"native".equals(source),1);
+        options.putBoolean(NotificationIconArea.SIZE_ENABLED,"native".equals(source));
+        options.putFloat(NotificationIconArea.SIZE,20f);
+        options.putBoolean(NotificationIconArea.COLOR_ENABLED,true);
+        options.putInt("notification_icons_color_light",0xff00ff00);
+        if(launcher)options.putBoolean(NotificationIconArea.FOLLOW_LAUNCHER,true);
+        else if(!"native".equals(source)){
+            options.putBoolean(NotificationIconOverrides.MASTER,true);
+            options.putString(NotificationIconOverrides.RULES,"text".equals(source)
+                    ?NotificationIconOverrides.put("[]","com.source","X",true)
+                    :NotificationIconOverrides.putAppIcon("[]","com.source","com.artwork",true));
+        }
+        area.changed(owner);area.configure(new android.content.Context(),options);
+        area.draw(owner,new Canvas(),()->null);android.os.Handler.drainForCheck();
+        LauncherNotificationIconsCheck.drain(work);LauncherNotificationIconsCheck.drain(done);
+        area.draw(owner,new Canvas(),()->null);
+        for(int phase=0;phase<5;phase++){
+            icon.nativeGeometry(phase==1?80:0,phase==2?120:0);
+            if(phase>=3){
+                icon.nativeGeometry(80,120);
+                icon.measure(View.MeasureSpec.makeMeasureSpec(phase==3?0:80,View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(phase==4?0:120,View.MeasureSpec.EXACTLY));
+            }
+            NotificationIconOverridesCheck.NativeCanvas canvas=new NotificationIconOverridesCheck.NativeCanvas();
+            NotificationIconOverridesCheck.nativeIcon(area,icon,canvas);
+            equal(0,canvas.bitmapDraws);equal(true,canvas.text==null);equal(0,canvas.layers);
+            near(32f,canvas.glyphHeight);near(6f,canvas.dotSize);equal(canvas.saves,canvas.restores);
+            icon.nativeGeometry(80,120);
+            canvas=new NotificationIconOverridesCheck.NativeCanvas();NotificationIconOverridesCheck.nativeIcon(area,icon,canvas);
+            if("text".equals(source)){equal("X",canvas.text);near(0f,canvas.glyphHeight);}
+            else if("native".equals(source)){near(20f,canvas.glyphHeight);equal(1,canvas.layers);}
+            else{equal(1,canvas.bitmapDraws);equal(artwork,canvas.drawnBitmapsForCheck.get(0));near(0f,canvas.glyphHeight);}
+            near(6f,canvas.dotSize);equal(canvas.saves,canvas.restores);
+        }
+        owner.nativeGeometry(0,120);
+        NotificationIconOverridesCheck.NativeCanvas collapsed=new NotificationIconOverridesCheck.NativeCanvas();
+        NotificationIconOverridesCheck.nativeIcon(area,icon,collapsed);
+        equal(0,collapsed.bitmapDraws);equal(true,collapsed.text==null);equal(0,collapsed.layers);
+        near(32f,collapsed.glyphHeight);near(6f,collapsed.dotSize);
+        owner.nativeGeometry(124,120);
+        // Native onDraw can itself invalidate geometry before reaching ImageView.onDraw.
+        // The last glyph seam must also decline customization, preserving the following dot.
+        NotificationIconOverridesCheck.NativeCanvas interrupted=new NotificationIconOverridesCheck.NativeCanvas();
+        area.drawNativeIcon(icon,interrupted,()->{
+            int saved=interrupted.save();interrupted.scale(icon.nativeScale,icon.nativeScale);
+            icon.nativeGeometry(0,0);
+            area.drawNativeGlyph(icon,interrupted,()->{interrupted.glyphHeight=64f*interrupted.scaleY;return null;});
+            interrupted.restoreToCount(saved);interrupted.dotSize=6f*interrupted.scaleY;return null;
+        });
+        equal(0,interrupted.bitmapDraws);equal(true,interrupted.text==null);equal(0,interrupted.layers);
+        near(32f,interrupted.glyphHeight);near(6f,interrupted.dotSize);equal(interrupted.saves,interrupted.restores);
+        area.releaseRuntime();
+    }
     public static void main(String[] args)throws Throwable{
+        if(args.length>0){unmeasuredGlyphSource(args[0]);System.out.println(checks+" zero-layout "+args[0]+" checks passed");return;}
+        unmeasuredRows();
+        unmeasuredNativeGlyph();
+        for(String source:new String[]{"launcher","text","app","native"})unmeasuredGlyphSource(source);
         NotificationIconSpacingCheck.run();
         nativeContracts();
         firstEnableDrawing();

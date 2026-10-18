@@ -33,12 +33,21 @@ public final class IconPackDrawingCheck {
     private static final class Assets implements IconPackDrawing.Assets {
         final Bitmap image=Bitmap.createBitmap(116,52,Bitmap.Config.ARGB_8888);
         boolean available=true;int wifiCalls,cellCalls,batteryCalls,hintCalls,level;boolean connected,charging,on;
-        String slot;final List<View> observed=new ArrayList<>();
+        String slot,lastRole;final List<View> observed=new ArrayList<>();
+        public Bitmap image(String role){
+            lastRole=role;
+            if(role.startsWith("hint.")){int end=role.lastIndexOf('.');return hint(role.substring(5,end),!role.endsWith(".off"));}
+            if(role.startsWith("wifi."))return wifi(role.endsWith("none")?0:Integer.parseInt(role.substring(5)),!role.endsWith("none"));
+            if(role.startsWith("cellular."))return cellular(role.endsWith("none")?0:Integer.parseInt(role.substring(role.lastIndexOf('.')+1)),!role.endsWith("none"));
+            return battery(Integer.parseInt(role.substring(role.lastIndexOf('.')+1)),role.startsWith("battery.charging."));
+        }
         public Bitmap hint(String slot,boolean on){hintCalls++;this.slot=slot;this.on=on;return available?image:null;}
         public Bitmap wifi(int level,boolean connected){wifiCalls++;this.level=level;this.connected=connected;return available?image:null;}
         public Bitmap cellular(int level,boolean connected){cellCalls++;this.level=level;this.connected=connected;return available?image:null;}
         public Bitmap battery(int level,boolean charging){batteryCalls++;this.level=level;this.charging=charging;return available?image:null;}
         public void observe(View view){observed.add(view);}
+        public boolean nativeAppearance(String role){return false;}
+        public boolean drawNative(String role,Drawable graphic,Canvas canvas,int tint){return false;}
     }
     public static final class Graphic extends Drawable {
         int draws,alpha=255;ColorFilter filter;boolean shown=true;
@@ -86,6 +95,7 @@ public final class IconPackDrawingCheck {
         }
         for(int level=0;level<=4;level++)for(String family:new String[]{"stat_signal_lte_signal_","stat_signal_soft_signal_","stat_signal_lte_signal_stacked_primary_","stat_signal_soft_signal_stacked_secondary_","stat_signal_signal_lte_single_","stat_sys_signal_"}){
             yes(drawing.drawSignal(family+level,original,canvas,0xffffffff,255,null,false));eq(level,assets.level);yes(assets.connected);
+            eq("cellular."+(family.contains("_stacked_primary_")?"stacked_primary.":family.contains("_stacked_secondary_")?"stacked_secondary.":"")+level,assets.lastRole);
         }
         for(String name:new String[]{"stat_signal_lte_signal_stacked_primary_noservice","stat_signal_soft_signal_noservice_os17","stat_signal_noservice_lte","stat_signal_soft_noservice_os17","stat_signal_signal_null_lte","stat_sys_signal_null","stat_sys_signal_noservice"}){
             yes(drawing.drawSignal(name,original,canvas,0xffffffff,255,null,false));no(assets.connected);
@@ -94,6 +104,9 @@ public final class IconPackDrawingCheck {
         yes(drawing.drawSignal("stat_signal_single_novoice_0_os17",original,canvas,0xffffffff,255,null,false));eq(0,assets.level);yes(assets.connected);
         int cellCalls=assets.cellCalls;
         no(drawing.drawSignal("stat_signal_lte_signal_stacked_secondary_4",original,canvas,0xffffffff,255,null,true));eq(cellCalls,assets.cellCalls);
+        yes(drawing.drawSignal("stat_signal_lte_signal_stacked_primary_4",original,canvas,0xffffffff,255,null,false,true));eq("cellular.4",assets.lastRole);
+        yes(drawing.drawSignal("stat_signal_lte_signal_stacked_primary_4",original,canvas,0xffffffff,255,null,false,false));eq("cellular.stacked_primary.4",assets.lastRole);
+        cellCalls=assets.cellCalls;no(drawing.drawSignal("stat_signal_lte_signal_stacked_secondary_4",original,canvas,0xffffffff,255,null,false,true));eq(cellCalls,assets.cellCalls);
         int wifiCalls=assets.wifiCalls;
         for(String unknown:new String[]{"ic_wifi","app_icon","c17_signal_single_4","stat_signal_wifi_signal_5","stat_signal_wifi_6","stat_signal_signal_novoice_0",
                 "stat_signal_activity_wifi_none","stat_signal_activity_wifi_none_os17","stat_signal_wifi_none","stat_signal_wifi_signal_none"}){
@@ -146,24 +159,25 @@ public final class IconPackDrawingCheck {
     private static void batteries(){
         Assets assets=new Assets();IconPackDrawing drawing=new IconPackDrawing(assets);drawing.bindBatteryClass(HorizontalBatteryContentDrawable.class);
         Graphic[] shapes=new Graphic[5];HorizontalBatteryContentDrawable b=battery(shapes);Drawable[] original=originalFields(b);
+        StatBatteryMeterView owner=new StatBatteryMeterView();owner.style=b;drawing.syncBattery(owner,null);
         Callback callback=new Callback();for(Graphic shape:shapes)shape.setCallback(callback);
         Typeface face=b.percentInPaint.getTypeface();RecordingCanvas canvas=new RecordingCanvas();
         try(IconPackDrawing.BatteryScope scope=drawing.beginBattery(b)){yes(scope!=null);b.draw(canvas);}
         eq(1,canvas.bitmapDraws);eq(0,shapes[0].draws);eq(0,shapes[1].draws);eq(0,shapes[2].draws);eq(1,b.textDraws);
         eq("84",canvas.text);near(18,canvas.textSize);same(face,b.percentInPaint.getTypeface());near(700,canvas.textEffectiveWeight);near(36,canvas.textX);near(14,canvas.textY);restored(b,original);
         for(Graphic shape:shapes)same(callback,shape.getCallback());
-        eq(84,assets.level);no(assets.charging);near(4,canvas.bitmapBounds.left);near(3,canvas.bitmapBounds.top);near(62,canvas.bitmapBounds.right);near(29,canvas.bitmapBounds.bottom);
+        eq(80,assets.level);no(assets.charging);near(4,canvas.bitmapBounds.left);near(3,canvas.bitmapBounds.top);near(62,canvas.bitmapBounds.right);near(29,canvas.bitmapBounds.bottom);
         int creations=Bitmap.creations;
         for(int i=0;i<1000;i++){
             b.batteryLevel=i%101;b.chargeIconId=i%2;
             try(IconPackDrawing.BatteryScope scope=drawing.beginBattery(b)){b.draw(canvas);}
-            eq(Integer.toString(b.batteryLevel),canvas.text);eq(b.batteryLevel,assets.level);eq(b.chargeIconId>0,assets.charging);restored(b,original);
+            eq(Integer.toString(b.batteryLevel),canvas.text);eq(b.batteryLevel/10*10,assets.level);eq(b.chargeIconId>0,assets.charging);restored(b,original);
         }
         eq(creations,Bitmap.creations);eq(1001,b.textDraws);eq(500,b.chargeDraws);same(face,b.percentInPaint.getTypeface());near(18,b.percentInPaint.getTextSize());
         b.batteryLevel=61;b.chargeIconId=1;b.isShowPercentIn=false;int oldText=b.textDraws;
         try(IconPackDrawing.BatteryScope scope=drawing.beginBattery(b)){b.draw(canvas);}
         eq(oldText,b.textDraws);eq(501,b.chargeDraws);near(2,canvas.bitmapBounds.left);near(7,canvas.bitmapBounds.top);restored(b,original);
-        b.isShowPercentIn=true;b.chargeIconId=0;StatBatteryMeterView owner=new StatBatteryMeterView();owner.style=b;owner.charge=new Charge(true,4);
+        b.isShowPercentIn=true;b.chargeIconId=0;owner.charge=new Charge(true,4);
         drawing.syncBattery(owner,null);try(IconPackDrawing.BatteryScope scope=drawing.beginBattery(b)){b.draw(canvas);}yes(assets.charging);same(owner,assets.observed.get(0));
         drawing.syncBattery(owner,new Charge(false,0));try(IconPackDrawing.BatteryScope scope=drawing.beginBattery(b)){b.draw(canvas);}no(assets.charging);
         int masks=canvas.bitmapDraws;
@@ -184,9 +198,27 @@ public final class IconPackDrawingCheck {
         catch(IllegalStateException expected){eq("Native content failed",expected.getMessage());}restored(b,original);b.failContent=false;
         Graphic replacement=new Graphic();try(IconPackDrawing.BatteryScope scope=drawing.beginBattery(b)){b.bgDrawable=replacement;}
         same(replacement,b.bgDrawable);b.bgDrawable=original[3];
+        for(int percent:new int[]{0,1,2,0}) {
+            android.provider.Settings.System.values.put("display_power_percent",percent);drawing.syncBattery(owner,null);
+            int before=assets.batteryCalls;IconPackDrawing.BatteryScope selected=drawing.beginBattery(b);
+            if(percent==0){same(null,selected);eq(before,assets.batteryCalls);restored(b,original);}
+            else {yes(selected!=null);selected.close();restored(b,original);}
+        }
+        android.provider.Settings.System.values.put("display_power_percent",1);drawing.syncBattery(owner,null);
         IconPackDrawing.BatteryScope scope=drawing.beginBattery(b);drawing.releaseRuntime();restored(b,original);scope.close();restored(b,original);
         same(null,drawing.beginBattery(b));
         same(null,drawing.beginBattery(new Graphic()));
     }
-    public static void main(String[] args){signals();hints();batteries();System.out.println("IconPackDrawingCheck: "+checks+" checks passed");}
+    private static void ownedInlineBattery(){
+        Assets assets=new Assets();IconPackDrawing drawing=new IconPackDrawing(assets);drawing.bindBatteryClass(HorizontalBatteryContentDrawable.class);
+        Graphic[] shapes=new Graphic[5];HorizontalBatteryContentDrawable privateGlyph=battery(shapes);Drawable[] original=originalFields(privateGlyph);
+        Typeface face=privateGlyph.percentInPaint.getTypeface();RecordingCanvas canvas=new RecordingCanvas();
+        drawing.syncInlineBattery(privateGlyph,true,true);
+        try(IconPackDrawing.BatteryScope scope=drawing.beginBattery(privateGlyph)){yes(scope!=null);privateGlyph.draw(canvas);}
+        yes(assets.charging);eq(80,assets.level);eq(1,canvas.bitmapDraws);same(face,privateGlyph.percentInPaint.getTypeface());eq("84",canvas.text);
+        restored(privateGlyph,original);eq(0,assets.observed.size());
+        drawing.syncInlineBattery(privateGlyph,false,false);same(null,drawing.beginBattery(privateGlyph));restored(privateGlyph,original);
+        drawing.releaseRuntime();same(null,drawing.beginBattery(privateGlyph));
+    }
+    public static void main(String[] args){android.provider.Settings.System.values.put("display_power_percent",1);signals();hints();batteries();ownedInlineBattery();System.out.println("IconPackDrawingCheck: "+checks+" checks passed");}
 }

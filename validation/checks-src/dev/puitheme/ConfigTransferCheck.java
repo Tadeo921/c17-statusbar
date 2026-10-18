@@ -36,11 +36,8 @@ public final class ConfigTransferCheck {
     private static void invalidSetting(String setting) throws Exception { invalid(document(setting)); }
     private static String panel(String group, String suffix) { return CarrierPanels.key(group, suffix); }
     private static void nestedArrays() throws Exception {
-        String id=String.format(java.util.Locale.ROOT,"%064x",1);
-        String[] keys={NotificationIconOverrides.RULES,IconPackAssignments.ASSIGNMENTS,IconPackRepository.LAYERS};
-        String[] valid={NotificationIconOverrides.putAppIcon("[]","com.target","com.source",true),
-                IconPackAssignments.put("[]","hint.bluetooth",id,"hint.location"),
-                IconPackRepository.layersJson(Collections.singletonList(new IconPackRepository.Layer(id,true,false)))};
+        String[] keys={NotificationIconOverrides.RULES};
+        String[] valid={NotificationIconOverrides.putAppIcon("[]","com.target","com.source",true)};
         for(int i=0;i<keys.length;i++){
             String key=keys[i],array=valid[i];
             equal(array,values("\""+key+"\":"+org.json.JSONObject.quote(array)).get(key));
@@ -55,11 +52,10 @@ public final class ConfigTransferCheck {
                     array.replaceFirst("\\[", "[/*comment*/"),duplicate,"{}","null",deeplyNested})
                 invalidSetting("\""+key+"\":"+org.json.JSONObject.quote(invalid));
         }
-        String legacy="[{\"id\":\""+id+"\",\"enabled\":true}]";
-        equal(legacy,values("\""+IconPackRepository.LAYERS+"\":"+org.json.JSONObject.quote(legacy)).get(IconPackRepository.LAYERS));
-        for(String invalidType:new String[]{"1","\"false\"","null"}) {
-            String invalid="[{\"id\":\""+id+"\",\"enabled\":true,\"autoMatch\":"+invalidType+"}]";
-            invalidSetting("\""+IconPackRepository.LAYERS+"\":"+org.json.JSONObject.quote(invalid));
+        // Historical codecs still have their own checks; an old backup never restores their retired runtime domain.
+        for(String key:IconManagementSettings.LEGACY_KEYS)for(String legacyValue:new String[]{"true","null","17","\"broken retired rule\"","{}"}){
+            ConfigTransfer.PreparedImport skipped=ConfigTransfer.prepare(document("\""+key+"\":"+legacyValue),true);
+            equal(1,skipped.skippedLegacyIcons);equal(false,skipped.values().containsKey(key));equal(0,skipped.count);
         }
     }
 
@@ -198,8 +194,8 @@ public final class ConfigTransferCheck {
             equal(choice, values("\"font_mode\":\"" + choice + "\"").get("font_mode"));
         for (String choice : new String[]{"system", "single"})
             equal(choice, values("\"signal_layout\":\"" + choice + "\"").get("signal_layout"));
-        for (String choice : new String[]{"native", "pui"})
-            equal(choice, values("\"battery_style\":\"" + choice + "\"").get("battery_style"));
+        for (String choice : new String[]{"native", "pui", "ios27", "ios27_number", "ios27_plain"})
+            equal(Ios27BatteryStyle.known(choice)?"pui":choice, values("\"battery_style\":\"" + choice + "\"").get("battery_style"));
         for (String group : CarrierPanels.GROUPS)
             for (String choice : new String[]{"original", "text", "time"})
                 equal(choice, values("\"" + panel(group, "mode") + "\":\"" + choice + "\"").get(panel(group, "mode")));
@@ -237,26 +233,37 @@ public final class ConfigTransferCheck {
         stored.put("clock_weight", 5000f);
         stored.put("clock_pattern", "{未知}");
         stored.put("battery_style", "invalid");
+        stored.put(NotificationMiniStack.HIDE_BADGE, true);
         full = ConfigTransfer.prepare(ConfigTransfer.exportJson(stored), true);
+        equal(true, full.values().get(NotificationMiniStack.HIDE_BADGE));
         equal(-5f, full.values().get("wifi_icon_scale"));
         equal(5000f, full.values().get("clock_weight"));
         equal(TimeFormat.CLOCK_DEFAULT, full.values().get("clock_pattern"));
         equal("pui", full.values().get("battery_style"));
 
+        stored.put(FluidCloudStyle.FOLLOW_FOREGROUND,true);
         FakePreferences preferences = new FakePreferences(stored);
         equal(0, preferences.editCount);
         invalidSetting("\"wifi_offset_x\":3,\"battery_scale\":\"invalid\"");
         equal(0, preferences.editCount);
         ConfigTransfer.PreparedImport prepared = ConfigTransfer.prepare(document("\"wifi_offset_x\":3.25,\"data_enabled\":false,\"carrier_text\":\"导入\",\"wifi_color_light\":-1"), true);
         equal(0, preferences.editCount);
+        equal(true, preferences.values.get(NotificationMiniStack.HIDE_BADGE));
+        equal(false, prepared.values().containsKey(NotificationMiniStack.HIDE_BADGE));
         equal(true, ConfigTransfer.commit(preferences, prepared));
         equal(1, preferences.editCount);
         equal(1, preferences.commitCount);
-        equal(6, preferences.lastWriteCount);
+        // Four imported keys, arrow consistency and the three still-retired switches; no badge write.
+        equal(8, preferences.lastWriteCount);
+        equal(true, preferences.values.get(NotificationMiniStack.HIDE_BADGE));
         equal(false,preferences.values.get(NotificationGroupStack.MASTER));
+        equal(false,preferences.values.get(FluidCloudStyle.FOLLOW_FOREGROUND));
+        equal(false,preferences.values.get(FluidCloudStyle.SCOPE_SHADE));
         equal(true, preferences.values.get(StatusBarSettings.DATA_ACTIVITY_HIDDEN));
         equal(false,values("\"notification_group_stack_enabled\":true").get(NotificationGroupStack.MASTER));
         invalidSetting("\"notification_group_stack_enabled\":\"true\"");
+        equal(false,values("\""+FluidCloudStyle.FOLLOW_FOREGROUND+"\":true").get(FluidCloudStyle.FOLLOW_FOREGROUND));
+        invalidSetting("\""+FluidCloudStyle.FOLLOW_FOREGROUND+"\":\"true\"");
         equal(true,values("\"notification_big_clock_stack_landscape_enabled\":true").get(FeatureOptions.STACK_LANDSCAPE_ENABLED));
         Map<String,Object> arrowImport=values("\"native_data_activity_enabled\":true,\"data_activity_hidden\":true");
         equal(true,arrowImport.get(NativeDataActivity.MASTER));equal(false,arrowImport.get(StatusBarSettings.DATA_ACTIVITY_HIDDEN));
@@ -280,6 +287,15 @@ public final class ConfigTransferCheck {
         equal(ConfigTransfer.types().size(), clean.lastWriteCount);
         equal(ConfigTransfer.types().size(), clean.values.size());
         equal(ConfigTransfer.exportJson(clean), ConfigTransfer.exportJson(clean.getAll()));
+        equal(true, clean.values.get(NotificationMiniStack.HIDE_BADGE));
+        FakePreferences badgePreferences = new FakePreferences(stored);
+        ConfigTransfer.PreparedImport showBadge = ConfigTransfer.prepare(document("\"" + NotificationMiniStack.HIDE_BADGE + "\":false"), true);
+        equal(true, ConfigTransfer.commit(badgePreferences, showBadge));
+        equal(false, badgePreferences.values.get(NotificationMiniStack.HIDE_BADGE));
+        ConfigTransfer.PreparedImport hideBadge = ConfigTransfer.prepare(ConfigTransfer.exportJson(stored), true);
+        equal(true, hideBadge.values().get(NotificationMiniStack.HIDE_BADGE));
+        equal(true, ConfigTransfer.commit(badgePreferences, hideBadge));
+        equal(true, badgePreferences.values.get(NotificationMiniStack.HIDE_BADGE));
 
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         ConfigTransfer.write(bytes, stored);
@@ -330,12 +346,35 @@ public final class ConfigTransferCheck {
         invalidSetting("\"qs_style_wifi_light_opacity\":50");
         invalidSetting("\"notification_icons_max_count\":2.0000000000000000001");
         invalidSetting("\"notification_icons_max_count\":-0.00000001");
+        equal(29.875f,values("\"qs_tile_corner_radius\":29.875").get(QsTileCorners.RADIUS));
+        equal(30f,values("\"qs_tile_corner_radius\":30").get(QsTileCorners.RADIUS));
         invalidSetting("\"qs_tile_corner_radius\":30.000000000000000001");
         independentShadeClockConfig();
         classicWallpaperAndAssignments();
         independentNativeBadges();
         managedIconLibraries();
+        legacySharedPositionImport();
         System.out.println(checks + " checks passed (portable snapshots, strict bounded import, legacy migration, numeric rules, font fallback, one bulk commit)");
+    }
+
+    private static void legacySharedPositionImport() throws Exception {
+        Map<String,Object> local = new HashMap<>();
+        local.put(NetworkSlotGeometry.POSITION,false);local.put(NetworkSlotGeometry.OFFSET_X,0f);
+        local.put(NetworkSlotGeometry.OFFSET_Y,6f);
+        FakePreferences preferences = new FakePreferences(local);
+        ConfigTransfer.PreparedImport old = ConfigTransfer.prepare(document("\"label_enabled\":true,\"label_position_enabled\":true,\"label_offset_x\":7"),true);
+        equal(true,old.values().get(NetworkSlotGeometry.POSITION));
+        equal(7f,old.values().get(NetworkSlotGeometry.OFFSET_X));
+        equal(false,old.values().containsKey(NetworkSlotGeometry.OFFSET_Y));
+        equal(true,ConfigScope.keys(java.util.Arrays.asList("label",ConfigScope.OTHER_ID)).containsAll(old.keys()));
+        equal(true,ConfigTransfer.commit(preferences,old));
+        equal(true,preferences.values.get(NetworkSlotGeometry.POSITION));
+        equal(7f,preferences.values.get(NetworkSlotGeometry.OFFSET_X));
+        equal(6f,preferences.values.get(NetworkSlotGeometry.OFFSET_Y));
+        ConfigTransfer.PreparedImport explicit = ConfigTransfer.prepare(document("\"label_enabled\":true,\"label_offset_x\":7,\"network_position_enabled\":false,\"network_offset_x\":2"),true);
+        equal(false,explicit.values().get(NetworkSlotGeometry.POSITION));equal(2f,explicit.values().get(NetworkSlotGeometry.OFFSET_X));
+        equal(false,ConfigTransfer.prepare(document("\"battery_enabled\":true"),true).values().containsKey(NetworkSlotGeometry.POSITION));
+        equal(false,ConfigTransfer.prepare(document("\"label_offset_x\":7"),true).values().containsKey(NetworkSlotGeometry.POSITION));
     }
 
     private static void managedIconLibraries() throws Exception {
@@ -345,17 +384,17 @@ public final class ConfigTransferCheck {
         String encoded=NotificationIconOverrides.encode(rules);
         equal(true,encoded.length()>120);
         String id=String.join("",Collections.nCopies(64,"a"));
-        String layers=IconPackRepository.layersJson(java.util.Arrays.asList(new IconPackRepository.Layer(id,true)));
-        settings.put(NotificationIconOverrides.RULES,encoded);settings.put(IconPackRepository.LAYERS,layers);
-        settings.put(NotificationIconOverrides.MASTER,true);settings.put(IconPackRepository.MASTER,true);
+        String records=IconManagementSettings.applyPack(IconManagementSettings.DEFAULT,id,java.util.Arrays.asList("hint"),false);
+        settings.put(NotificationIconOverrides.RULES,encoded);settings.put(IconManagementSettings.KEY,records);
+        settings.put(NotificationIconOverrides.MASTER,true);
         settings.put(SpeedPosition.POSITION,SpeedPosition.CLOCK_RIGHT);settings.put(C17HighlightRemoval.HEADS_UP_ENABLED,false);
         ConfigTransfer.PreparedImport imported=ConfigTransfer.prepare(ConfigTransfer.exportJson(settings),true);
         for(Map.Entry<String,Object> entry:settings.entrySet())equal(entry.getValue(),imported.values().get(entry.getKey()));
         equal(true,imported.warning.contains("图标库文件不会随配置传输"));
         equal(true,SettingsCatalog.validationError(SettingsCatalog.item(NotificationIconOverrides.RULES),encoded)==null);
-        equal(true,SettingsCatalog.validationError(SettingsCatalog.item(IconPackRepository.LAYERS),layers)==null);
+        equal(true,SettingsCatalog.validationError(SettingsCatalog.item(IconManagementSettings.KEY),records)==null);
         equal(true,SettingsCatalog.validationError(SettingsCatalog.item(NotificationIconOverrides.RULES),"bad")!=null);
-        equal(true,SettingsCatalog.validationError(SettingsCatalog.item(IconPackRepository.LAYERS),"bad")!=null);
+        equal(true,SettingsCatalog.validationError(SettingsCatalog.item(IconManagementSettings.KEY),"bad")!=null);
     }
 
     private static void independentShadeClockConfig() throws Exception {
@@ -388,8 +427,8 @@ public final class ConfigTransferCheck {
         source.put(ClassicTextSettings.CARRIER+"_mode","text");
         source.put(ClassicTextSettings.CARRIER+"_text","经典独立");
         String packId=String.join("",Collections.nCopies(64,"a"));
-        String assignments=IconPackAssignments.put("[]","hint.bluetooth",packId,"hint.location");
-        source.put(IconPackAssignments.ASSIGNMENTS,assignments);
+        String records=IconManagementSettings.applyPack(IconManagementSettings.DEFAULT,packId,java.util.Arrays.asList("hint"),false);
+        source.put(IconManagementSettings.KEY,records);
         source.put(NotificationIconOverrides.RULES,NotificationIconOverrides.putAppIcon("[]","com.target.app","com.source.app",true));
         source.put(ShadeWallpaperSettings.MASTER,true);
         for(String scene:ShadeWallpaperSettings.SCENES) {
@@ -400,12 +439,12 @@ public final class ConfigTransferCheck {
         ConfigTransfer.PreparedImport restored=ConfigTransfer.prepare(ConfigTransfer.exportJson(source),true);
         for(Map.Entry<String,Object> item:source.entrySet())equal(item.getValue(),restored.values().get(item.getKey()));
         truth(restored.warning.contains("图标库文件不会随配置传输"));
-        truth(restored.warning.contains("当前强制停用"));
+        truth(restored.warning.contains("下拉面板壁纸的图片文件不会随配置传输"));
         equal(false,restored.values().get("carrier_enabled"));
         for(String scene:ShadeWallpaperSettings.SCENES)
             for(String revision:new String[]{"../image","https://example.com/a.png","../../private","A"+packId.substring(1)})
                 invalidSetting("\""+ShadeWallpaperSettings.revisionKey(scene)+"\":\""+revision+"\"");
-        invalidSetting("\""+IconPackAssignments.ASSIGNMENTS+"\":\"{}\"");
+        invalidSetting("\""+IconManagementSettings.KEY+"\":\"{}\"");
         invalidSetting("\""+ClassicTextSettings.CARRIER+"_mode\":\"invalid\"");
         invalidSetting("\""+ClassicTextSettings.CLOCK+"_pattern\":\"{未知}\"");
     }

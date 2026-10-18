@@ -25,13 +25,14 @@ public final class FontDownloadTransportCheck {
     private static byte[] body;
     private static boolean timeout;
     private static Connection active;
+    private static final java.util.List<String> HOSTS=new java.util.ArrayList<>();
     private static final FontCatalog.Entry ENTRY=FontCatalog.find("manrope");
     private static void equal(Object expected,Object actual) {
         checks++;if(!java.util.Objects.equals(expected,actual))throw new AssertionError("Font download check "+checks+": "+actual);
     }
     private static final class Connection extends HttpsURLConnection {
         boolean disconnected;
-        Connection(URL url) { super(url); }
+        Connection(URL url) { super(url);HOSTS.add(url.getHost()); }
         @Override public void connect() { }
         @Override public void disconnect() { disconnected=true; }
         @Override public boolean usingProxy() { return false; }
@@ -55,7 +56,7 @@ public final class FontDownloadTransportCheck {
             };
         }
     }
-    private static void reset() { status=200;inputCalls=0;declared=ENTRY.bytes;body=new byte[(int)ENTRY.bytes];timeout=false;active=null; }
+    private static void reset() { status=200;inputCalls=0;declared=ENTRY.bytes;body=new byte[(int)ENTRY.bytes];timeout=false;active=null;HOSTS.clear(); }
     private static void retained(Path directory,File target) throws IOException {
         equal("original-cache",Files.readString(target.toPath()));
         equal("current-font",Files.readString(directory.resolve("custom.font")));
@@ -87,6 +88,8 @@ public final class FontDownloadTransportCheck {
         try {
             Files.writeString(target.toPath(),"original-cache");Files.writeString(directory.resolve("custom.font"),"current-font");
             reset();timeout=true;rejected(download,target,null,null);retained(directory,target);equal(0,inputCalls);
+            // An unreachable official host falls back to the same commit on jsDelivr; both are checked the same way.
+            equal(java.util.Arrays.asList("raw.githubusercontent.com","cdn.jsdelivr.net"),new java.util.ArrayList<>(HOSTS));
             reset();status=503;rejected(download,target,null,null);retained(directory,target);equal(0,inputCalls);
             reset();status=302;rejected(download,target,null,null);retained(directory,target);equal(0,inputCalls);
             reset();declared=FontCatalog.MAX_DOWNLOAD_BYTES+1;rejected(download,target,null,null);retained(directory,target);equal(0,inputCalls);
@@ -96,6 +99,7 @@ public final class FontDownloadTransportCheck {
             reset();declared=-1;body=Arrays.copyOf(body,body.length+1);rejected(download,target,null,null);retained(directory,target);
             reset();FontDownloadRepository.Cancellation before=new FontDownloadRepository.Cancellation();before.cancel();
             rejected(download,target,null,before);retained(directory,target);equal(0,inputCalls);
+            equal(1,HOSTS.size()); // A cancellation never tries the mirror.
             reset();FontDownloadRepository.Cancellation during=new FontDownloadRepository.Cancellation();
             rejected(download,target,(received,total)->during.cancel(),during);retained(directory,target);equal(true,during.getAsBoolean());
             Field connection=FontDownloadRepository.Cancellation.class.getDeclaredField("connection");connection.setAccessible(true);

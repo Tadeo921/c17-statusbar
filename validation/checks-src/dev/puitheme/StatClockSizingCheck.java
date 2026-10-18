@@ -147,8 +147,28 @@ public final class StatClockSizingCheck {
     private static void check(boolean value) { checks++; if (!value) throw new AssertionError("Check " + checks); }
     private static void near(float expected, float value) { checks++; if (Math.abs(expected-value)>.005f) throw new AssertionError("Expected " + expected + ", was " + value); }
     private static int naturalWidth(TextView view) {
-        return (int)Math.ceil(view.getPaint().measureText(view.getText(),0,view.getText().length())
+        // Fixed digit cells replace the digits' own advances; plain text keeps the exact measureText value.
+        return (int)Math.ceil(ClockDigits.width(view.getText(),view.getPaint())
                 + view.getCompoundPaddingLeft() + view.getCompoundPaddingRight());
+    }
+
+    /** The status bar is a 120 px strip: a very large clock never has its bottom cut off, it shrinks to the largest size whose
+     * line fits, and returns to the requested size as soon as the strip allows it. */
+    private static void stripFit() {
+        ClockContext context=new ClockContext(); TextControls controls=controls(); StatClock clock=new StatClock(context);
+        clock.setText("10:48"); clock.setTextSize(TypedValue.COMPLEX_UNIT_PX,13f); clock.stripHeight=120;
+        configure(controls, settings(100f, 2)); controls.attach(clock);
+        near(46f, clock.getTextSize());                     // fits: untouched
+        configure(controls, settings(250f, 2));
+        float fit=120f/1.15f;                               // the stub font's line is 1.15 x the size
+        near(fit, clock.getTextSize()); near(fit, clock.getPaint().getTextSize());
+        check(clock.getPaint().getTextSize()*1.15f<=120.01f);
+        clock.stripHeight=100000; configure(controls, settings(251f, 2));
+        check(clock.getTextSize()>fit+1f);                  // a taller strip gives the requested size back
+        clock.stripHeight=120; configure(controls, settings(380f, 2));
+        near(fit, clock.getTextSize());
+        clock.stripHeight=0; configure(controls, settings(380f, 2));   // unknown strip: no clamp
+        check(clock.getTextSize()>fit+1f);
     }
 
     private static void nestedAllocation() {
@@ -235,7 +255,9 @@ public final class StatClockSizingCheck {
         int[] incoming={View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.AT_MOST),
                 View.MeasureSpec.makeMeasureSpec(1,View.MeasureSpec.AT_MOST),
                 View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.EXACTLY)};
+        int steadyRequests=-1,steadyFaceWrites=-1;
         for(int cycle=0;cycle<100;cycle++) for(int original:incoming) {
+            if(cycle==1&&original==incoming[0]){steadyRequests=clock.layoutRequests;steadyFaceWrites=clock.typefaceWrites;}
             // Audited native DEX ignores incoming, computes actualWidth, then calls TextView EXACTLY.
             TextControls.NativeStyleScope scope=controls.beginClockMeasure(clock);
             clock.nativeMeasure();int nativeWidth=clock.getMeasuredWidth(), nativeActual=clock.actualWidth;
@@ -254,6 +276,9 @@ public final class StatClockSizingCheck {
             check(!summary.contains("12:37")); // Measurement diagnostics must contain no clock text.
             Canvas canvas=new Canvas();controls.beforeDraw(clock,canvas);check(canvas.clips==0);
         }
+        // The native/user style swap inside the measure hook writes Paint: it must not schedule another traversal.
+        check(steadyRequests>=0&&clock.layoutRequests==steadyRequests);
+        check(clock.typefaceWrites==steadyFaceWrites);
         // Even an exhausted or unrecognized parent is diagnostic only, not a font/format restriction.
         remaining.width=588;check(NativeClockMeasurement.availableWidth(clock)==0);
         int hardZero=incoming[0];check(View.MeasureSpec.getSize(controls.prepareClockMeasure(clock,hardZero))==naturalWidth(clock));
@@ -372,6 +397,7 @@ public final class StatClockSizingCheck {
         nativeZeroChildSpec();
         completeFormatsAndSpacing();
         stalePlatformLayout();
+        stripFit();
         System.out.println(checks+" OEM StatClock native-pixel, legacy-basis, complete-format and natural-measure checks passed");
     }
 

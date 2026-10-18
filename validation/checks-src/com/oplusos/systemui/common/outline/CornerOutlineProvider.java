@@ -7,4 +7,6 @@ public class CornerOutlineProvider {
     public float getCornerRadius(Drawable drawable){return radius;}
     public Float getCornerWeight(Drawable drawable){return weight;}
     public void update(float radius,Float weight){this.radius=radius;this.weight=weight;}
+    public int pathUpdates;
+    public void updatePath(Drawable drawable,android.graphics.Path path,Object oplusPath,Object extra){pathUpdates++;}
 }

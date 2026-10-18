@@ -52,6 +52,9 @@ public final class QsMediaAppearance {
     public static final String MASTER = "qs_media_cover_enabled";
     public static final String BACKGROUND = "qs_media_background_enabled";
     public static final String GLOW = "qs_media_glow_enabled";
+    /** How long the new cover takes to fade in (ms; 0: no fade), and how long the cover has to stay unchanged before its blurred background is prepared. */
+    public static final String TRANSITION = "qs_media_transition_ms", SETTLE = "qs_media_settle_ms";
+    public static final float DEFAULT_TRANSITION_MS = 250f, DEFAULT_SETTLE_MS = 1000f, MAX_TRANSITION_MS = 2000f, MAX_SETTLE_MS = 3000f;
     public static final Map<String, Boolean> BOOLEANS;
     public static final Map<String, Float> NUMBERS;
     public static final Map<String, Integer> COLORS;
@@ -62,6 +65,8 @@ public final class QsMediaAppearance {
         flags.put(MASTER, false);
         flags.put(BACKGROUND, true);
         flags.put(GLOW, true);
+        numbers.put(TRANSITION, DEFAULT_TRANSITION_MS);
+        numbers.put(SETTLE, DEFAULT_SETTLE_MS);
         for (String scene : new String[] { "light", "dark" }) {
             String key = prefix(scene);
             numbers.put(key + "_background_opacity", 70f);
@@ -71,12 +76,27 @@ public final class QsMediaAppearance {
             numbers.put(key + "_glow_spread", 2f);
             flags.put(key + "_glow_inverse_enabled", true);
             colors.put(key + "_glow_color", 0xff80bfff);
+            // Where the background comes from, and a colour laid over it: the cover picture (default), the cover's main colour
+            // as one flat fill, or a colour of the user's own.
+            flags.put(key + "_background_solid_enabled", false);
+            flags.put(key + "_background_custom_enabled", false);
+            colors.put(key + "_background_color", defaultFill(scene));
+            colors.put(key + "_background_tint_color", "light".equals(scene) ? 0xffffffff : 0xff000000);
+            numbers.put(key + "_background_tint_opacity", 0f);
         }
         BOOLEANS = Collections.unmodifiableMap(flags);
         NUMBERS = Collections.unmodifiableMap(numbers);
         COLORS = Collections.unmodifiableMap(colors);
     }
 
+    private static int defaultFill(String scene) { return "light".equals(scene) ? 0xffe3e8f0 : 0xff2b3038; }
+    /** Schema 27: the keys of the background source and tint; the upgrade supplies their defaults to a copy saved before. */
+    static List<String> backgroundOptionKeys(String scene) {
+        String key = prefix(scene);
+        return Collections.unmodifiableList(Arrays.asList(key + "_background_solid_enabled", key + "_background_custom_enabled",
+                key + "_background_color", key + "_background_tint_color", key + "_background_tint_opacity"));
+    }
+    private static final int FILL_COVER = 0, FILL_SOLID = 1, FILL_CUSTOM = 2;
     private static final String MEDIA = "com.oplus.systemui.qs.media.OplusQsBaseMediaPanelView";
     private static final String AUTO_BLUR = "com.oplusos.systemui.common.blurability.drawable.AutoBlurDrawable";
     private static final String MASK_BLUR = "com.oplusos.systemui.common.blurability.drawable.MaskBlurDrawable";
@@ -135,9 +155,12 @@ public final class QsMediaAppearance {
     private final Executor worker;
     private final Scheduler scheduler;
     private volatile boolean enabled, backgroundEnabled = true, glowEnabled = true;
+    /** The media appearance is on; the child draw hook exists only then. */
+    public boolean active() { return enabled; }
     private volatile Style light = Style.defaults(), dark = Style.defaults();
     private volatile boolean loggedError;
     private volatile boolean removed;
+    private volatile long transitionMs = (long) DEFAULT_TRANSITION_MS, settleMs = (long) DEFAULT_SETTLE_MS;
 
     public QsMediaAppearance() { this(WORKER,new MainScheduler()); }
     QsMediaAppearance(Executor worker) { this(worker,new MainScheduler()); }
@@ -145,14 +168,18 @@ public final class QsMediaAppearance {
 
     public static String prefix(String scene) { return "qs_media_" + scene; }
     public static boolean isMediaView(View view) { return QsTileAppearance.type(view, MEDIA); }
+    public static boolean isMediaType(Class<?> type) { return QsTileAppearance.typeOf(type, MEDIA); }
 
     public void configure(Bundle values) {
         if (removed) return;
         Style nextLight = readStyle(values, "light"), nextDark = readStyle(values, "dark");
         boolean nextBackground = values.getBoolean(BACKGROUND, true), nextGlow = values.getBoolean(GLOW, true);
         boolean nextEnabled = values.getBoolean(MASTER, false) && !SafetyMode.enabled(values);
+        long nextTransition = Math.round(value(values, TRANSITION, DEFAULT_TRANSITION_MS, MAX_TRANSITION_MS));
+        long nextSettle = Math.round(value(values, SETTLE, DEFAULT_SETTLE_MS, MAX_SETTLE_MS));
         if (light.same(nextLight) && dark.same(nextDark) && backgroundEnabled == nextBackground
-                && glowEnabled == nextGlow && enabled == nextEnabled) return;
+                && glowEnabled == nextGlow && enabled == nextEnabled && transitionMs == nextTransition && settleMs == nextSettle) return;
+        transitionMs = nextTransition; settleMs = nextSettle;
         if (!light.same(nextLight)) light = nextLight;
         if (!dark.same(nextDark)) dark = nextDark;
         backgroundEnabled = nextBackground;
@@ -560,7 +587,17 @@ public final class QsMediaAppearance {
                 value(values, key + "_glow_radius", 12f, 96f),
                 value(values, key + "_glow_spread", 2f, 64f),
                 values.getBoolean(key + "_glow_inverse_enabled", true),
-                QsTileAppearance.color(values.get(key + "_glow_color"), 0xff80bfff));
+                QsTileAppearance.color(values.get(key + "_glow_color"), 0xff80bfff),
+                values.getBoolean(key + "_background_solid_enabled", false), values.getBoolean(key + "_background_custom_enabled", false),
+                fillColor(values, key + "_background_color", defaultFill(scene)),
+                QsTileAppearance.color(values.get(key + "_background_tint_color"), "light".equals(scene) ? 0xffffffff : 0xff000000) | 0xff000000,
+                value(values, key + "_background_tint_opacity", 0f, 100f));
+    }
+
+    /** A colour the user picked keeps its own transparency only when its transparency switch is on; otherwise it is opaque. */
+    private static int fillColor(Bundle values, String key, int fallback) {
+        int color = QsTileAppearance.color(values.get(key), fallback);
+        return values.getBoolean(StatusBarSettings.alphaKey(key), false) ? color : color | 0xff000000;
     }
 
     private static float value(Bundle values, String key, float fallback, float max) {
@@ -588,12 +625,12 @@ public final class QsMediaAppearance {
         state.hasQueuedFade = false;
         state.preparing = true;
         state.debouncing = true;
-        state.deadline = scheduler.now() + DEBOUNCE_MS;
+        state.deadline = scheduler.now() + settleMs;
         synchronized (state) { state.generation++; state.pending = null; }
         // Null/default-cover stages retain the last material; real new artwork immediately owns
         // its solid fill. Only expensive snapshot/blur work waits for the quiet interval.
         if (newArtwork && key.background) showNewArtworkColor(state,key,style);
-        scheduler.after(state.debounce,DEBOUNCE_MS);
+        scheduler.after(state.debounce,settleMs);
     }
 
     private void showNewArtworkColor(State state,Key key,Style style) {
@@ -601,12 +638,11 @@ public final class QsMediaAppearance {
         Bitmap artwork = key.artwork.get();
         if (owner == null || artwork == null || artwork.isRecycled()) return;
         try {
-            int color = QsMediaColor.sample(artwork);
+            int color = key.fill == FILL_CUSTOM ? key.fillColor : over(QsMediaColor.sample(artwork), key.tint);
             // A native callback may replace the bitmap during an OEM rebind. Never display a
             // sampled color for an obsolete revision, even before the expensive worker starts.
             if (artwork.getGenerationId() != key.generation || state.desiredKey != key) return;
-            Bitmap fill = Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888);
-            fill.eraseColor(color);
+            Bitmap fill = solidFill(color);
             scheduler.cancel(state.fade);
             state.prepared = new Prepared(key,style,fill,null,0,0,0,true);
             state.previous = null;
@@ -691,7 +727,7 @@ public final class QsMediaAppearance {
     private void commitPrepared(State state,Prepared next) {
         View owner = state.owner.get();
         if (removed || !enabled || owner == null || states.get(owner) != state) return;
-        boolean animate = scheduler.animationsEnabled();
+        boolean animate = scheduler.animationsEnabled() && transitionMs > 0L;
         if (state.fading && animate && scheduler.now()-state.fadeStarted < state.fadeDuration) {
             // Keep the current visible blend continuous; an exceptional overlapping completion
             // coalesces to one next target instead of allocating a screenshot of the blended frame.
@@ -708,7 +744,8 @@ public final class QsMediaAppearance {
         state.fading = changed && animate;
         state.fromSolid = state.fading && previous != null && previous.solid && next != null
                 && sameArtwork(previous.key,next.key);
-        state.fadeDuration = state.fromSolid ? FADE_MS : QsMediaTransition.DIRECT_MS;
+        // At the default the two fades keep the lengths they always had (a fade from the flat colour is 10 ms shorter).
+        state.fadeDuration = transitionMs == (long) DEFAULT_TRANSITION_MS ? (state.fromSolid ? FADE_MS : QsMediaTransition.DIRECT_MS) : transitionMs;
         state.fadeMix = state.fading ? 0f : 1f;
         state.previousMix = state.fading ? 1f : 0f;
         state.fadeStarted = scheduler.now();
@@ -740,8 +777,8 @@ public final class QsMediaAppearance {
         if (!owner.isAttachedToWindow()) { clearOwner(owner); return; }
         long elapsed = Math.max(0L,scheduler.now()-state.fadeStarted);
         boolean finished = !scheduler.animationsEnabled() || elapsed >= state.fadeDuration;
-        state.fadeMix = finished ? 1f : QsMediaTransition.next(elapsed,state.fromSolid);
-        state.previousMix = finished ? 0f : QsMediaTransition.previous(elapsed,state.fromSolid);
+        state.fadeMix = finished ? 1f : QsMediaTransition.next(elapsed,state.fadeDuration);
+        state.previousMix = finished ? 0f : QsMediaTransition.previous(elapsed,state.fadeDuration);
         if (finished) {
             state.fading = false;
             state.previous = null;
@@ -937,19 +974,31 @@ public final class QsMediaAppearance {
     }
 
     private static final class Style {
-        final float backgroundOpacity, backgroundBlur, glowOpacity, glowRadius, glowSpread;
-        final boolean inverse;
-        final int glowColor;
-        Style(float opacity, float blur, float glowOpacity, float radius, float spread, boolean inverse, int glowColor) {
+        final float backgroundOpacity, backgroundBlur, glowOpacity, glowRadius, glowSpread, tintOpacity;
+        final boolean inverse, coverSolid, customFill;
+        final int glowColor, fillColor, tintColor;
+        Style(float opacity, float blur, float glowOpacity, float radius, float spread, boolean inverse, int glowColor,
+                boolean coverSolid, boolean customFill, int fillColor, int tintColor, float tintOpacity) {
             backgroundOpacity = opacity; backgroundBlur = blur; this.glowOpacity = glowOpacity;
             glowRadius = radius; glowSpread = spread;
             this.inverse = inverse; this.glowColor = glowColor;
+            this.coverSolid = coverSolid; this.customFill = customFill;
+            this.fillColor = fillColor; this.tintColor = tintColor; this.tintOpacity = tintOpacity;
         }
-        static Style defaults() { return new Style(70f, 18f, 60f, 12f, 2f, true, 0xff80bfff); }
+        static Style defaults() { return new Style(70f, 18f, 60f, 12f, 2f, true, 0xff80bfff, false, false, 0xff2b3038, 0xff000000, 0f); }
+        /** A colour of the user's own wins over the cover's main colour, which wins over the picture. */
+        int fillMode() { return customFill ? FILL_CUSTOM : coverSolid ? FILL_SOLID : FILL_COVER; }
+        /** The tint as one ARGB colour whose alpha is its strength; 0 when there is none. */
+        int tint() {
+            int alpha = Math.round(clamp(tintOpacity, 0f, 100f) * 2.55f);
+            return alpha == 0 ? 0 : alpha << 24 | (tintColor & 0x00ffffff);
+        }
         boolean same(Style other) {
             return backgroundOpacity == other.backgroundOpacity && backgroundBlur == other.backgroundBlur
                     && glowOpacity == other.glowOpacity && glowRadius == other.glowRadius
-                    && glowSpread == other.glowSpread && inverse == other.inverse && glowColor == other.glowColor;
+                    && glowSpread == other.glowSpread && inverse == other.inverse && glowColor == other.glowColor
+                    && coverSolid == other.coverSolid && customFill == other.customFill && fillColor == other.fillColor
+                    && tintColor == other.tintColor && tintOpacity == other.tintOpacity;
         }
     }
 
@@ -967,7 +1016,7 @@ public final class QsMediaAppearance {
         final long revision;
         final float density, corner, blur, radius, spread;
         final boolean background, glow, inverse;
-        final int glowColor;
+        final int glowColor, fill, fillColor, tint;
         Key(Drawable drawable, int width, int height, int coverWidth, int coverHeight,
                 float density, float corner, Style style, boolean background, boolean glow, long revision) {
             source = new WeakReference<>(drawable); current = new WeakReference<>(drawable.getCurrent());
@@ -975,6 +1024,9 @@ public final class QsMediaAppearance {
             this.density = density; this.corner = corner; blur = style.backgroundBlur;
             radius = style.glowRadius; spread = style.glowSpread; this.background = background; this.glow = glow;
             inverse = style.inverse; glowColor = inverse ? 0 : style.glowColor;
+            fill = style.fillMode(); fillColor = fill == FILL_CUSTOM ? style.fillColor : 0;
+            // A colour of the user's own is shown as chosen; the tint is for the cover's picture and main colour.
+            tint = fill == FILL_CUSTOM ? 0 : style.tint();
             this.revision = revision;
             Bitmap bitmap = drawable instanceof BitmapDrawable ? ((BitmapDrawable) drawable).getBitmap() : null;
             artwork = new WeakReference<>(bitmap);
@@ -988,7 +1040,8 @@ public final class QsMediaAppearance {
                     && state == other.state && density == other.density && corner == other.corner
                     && blur == other.blur && radius == other.radius && spread == other.spread
                     && background == other.background && glow == other.glow && inverse == other.inverse
-                    && glowColor == other.glowColor && revision == other.revision;
+                    && glowColor == other.glowColor && fill == other.fill && fillColor == other.fillColor && tint == other.tint
+                    && revision == other.revision;
         }
     }
 
@@ -1022,11 +1075,16 @@ public final class QsMediaAppearance {
         checkpoint(cancelled);
         Bitmap background = null, glow = null;
         int innerWidth = 0, innerHeight = 0, padding = 0;
-        if (key.background) {
+        if (key.background && key.fill == FILL_CUSTOM) {
+            background = solidFill(key.fillColor);
+        } else if (key.background && key.fill == FILL_SOLID) {
+            background = solidFill(over(QsMediaColor.sample(artwork), key.tint));
+        } else if (key.background) {
             int[] size = fit(key.width, key.height, CACHE_EDGE);
             background = crop(artwork, size[0], size[1]);
             int radius = radius(style.backgroundBlur * key.density * size[0] / key.width);
             if (radius > 0) background = blur(background, radius, true, cancelled);
+            if (key.tint >>> 24 != 0) tint(background, key.tint, cancelled);
         }
         if (key.glow) {
             checkpoint(cancelled);
@@ -1057,6 +1115,38 @@ public final class QsMediaAppearance {
             if (radius > 0) glow = blur(glow, radius, false, cancelled);
         }
         return new Prepared(key, style, background, glow, innerWidth, innerHeight, padding);
+    }
+
+    /** One flat pixel: the shader stretches it over the whole card. */
+    private static Bitmap solidFill(int color) {
+        Bitmap fill = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
+        fill.eraseColor(color);
+        return fill;
+    }
+
+    /** {@code tint} (alpha is its strength) laid over {@code base}, both straight ARGB. */
+    static int over(int base, int tint) {
+        int tintAlpha = tint >>> 24;
+        if (tintAlpha == 0) return base;
+        int baseAlpha = base >>> 24;
+        int alpha = tintAlpha + (baseAlpha * (255 - tintAlpha) + 127) / 255;
+        if (alpha == 0) return 0;
+        int result = alpha << 24;
+        for (int shift = 16; shift >= 0; shift -= 8) {
+            int top = (tint >>> shift) & 255, under = (base >>> shift) & 255;
+            int channel = (top * tintAlpha * 255 + under * baseAlpha * (255 - tintAlpha) + alpha * 255 / 2) / (alpha * 255);
+            result |= Math.min(255, channel) << shift;
+        }
+        return result;
+    }
+
+    private static void tint(Bitmap bitmap, int tint, BooleanSupplier cancelled) {
+        checkpoint(cancelled);
+        int width = bitmap.getWidth(), height = bitmap.getHeight();
+        int[] pixels = new int[width * height];
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+        for (int i = 0; i < pixels.length; i++) pixels[i] = over(pixels[i], tint);
+        bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
     }
 
     private static int radius(float sigma) { return Math.max(0, Math.min(MAX_BLUR_RADIUS, Math.round(sigma / 1.732f))); }

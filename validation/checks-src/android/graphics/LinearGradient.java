@@ -8,6 +8,9 @@ public class LinearGradient extends Shader {
         left=x0;right=x1;top=y0;bottom=y1;tileMode=mode;this.colors=colors.clone();this.positions=positions.clone();
         for(int i=1;i<positions.length;i++)if(positions[i]<positions[i-1])throw new IllegalArgumentException("unordered gradient");
     }
+    public LinearGradient(float x0,float y0,float x1,float y1,int color0,int color1,TileMode mode) {
+        this(x0,y0,x1,y1,new int[]{color0,color1},new float[]{0f,1f},mode);
+    }
     @Override public float alpha(float x,float y) {
         float dx=right-left,dy=bottom-top;
         float t=((x-left)*dx+(y-top)*dy)/(dx*dx+dy*dy);

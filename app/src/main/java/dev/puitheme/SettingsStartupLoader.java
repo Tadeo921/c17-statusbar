@@ -26,6 +26,7 @@ final class SettingsStartupLoader {
     private final Apply apply;
     private final BooleanSupplier removed;
     private final BooleanSupplier beforeRead;
+    private final BooleanSupplier readiness;
     private volatile boolean requested, stopped;
     // Mutable state below belongs exclusively to the main scheduler.
     private boolean reading, force;
@@ -34,6 +35,9 @@ final class SettingsStartupLoader {
     private Runnable timer;
 
     SettingsStartupLoader(Handler main,Source source,Apply apply,BooleanSupplier removed,BooleanSupplier beforeRead) {
+        this(main,source,apply,removed,beforeRead,()->true);
+    }
+    SettingsStartupLoader(Handler main,Source source,Apply apply,BooleanSupplier removed,BooleanSupplier beforeRead,BooleanSupplier readiness) {
         this(new Scheduler() {
             final ExecutorService worker=Executors.newSingleThreadExecutor(task->{
                 Thread thread=new Thread(task,"C17-settings-startup");thread.setDaemon(true);return thread;
@@ -43,10 +47,14 @@ final class SettingsStartupLoader {
             public void after(Runnable task,long delay){main.postDelayed(task,delay);}
             public void cancel(Runnable task){main.removeCallbacks(task);}
             public void close(){worker.shutdownNow();}
-        },source,apply,removed,beforeRead);
+        },source,apply,removed,beforeRead,readiness);
     }
     SettingsStartupLoader(Scheduler scheduler,Source source,Apply apply,BooleanSupplier removed,BooleanSupplier beforeRead) {
+        this(scheduler,source,apply,removed,beforeRead,()->true);
+    }
+    SettingsStartupLoader(Scheduler scheduler,Source source,Apply apply,BooleanSupplier removed,BooleanSupplier beforeRead,BooleanSupplier readiness) {
         this.scheduler=scheduler;this.source=source;this.apply=apply;this.removed=removed;this.beforeRead=beforeRead;
+        this.readiness=readiness;
     }
     /** Repeated view/context bindings must never restart an exhausted polling window. */
     synchronized void start() {
@@ -90,9 +98,14 @@ final class SettingsStartupLoader {
         if(inactive())return;
         // A setting changed while IPC was pending: never apply that older result.
         if(token!=generation){launch();return;}
-        boolean ready=false;
-        if(snapshot!=null)try {ready=apply.accept(snapshot,force);}
+        boolean accepted=false;
+        if(snapshot!=null)try {accepted=apply.accept(snapshot,force);}
         catch(Exception rejected){/* A failed apply must retry, retaining its prior snapshot. */}
+        // Rebinding is complete once consumers accepted it. Freshness/resource
+        // recovery may continue without repeatedly resetting the same live layout.
+        if(accepted)force=false;
+        boolean ready=false;
+        if(accepted)try{ready=readiness.getAsBoolean();}catch(RuntimeException unavailable){/* Keep the bounded retry window. */}
         // A snapshot read while observation was unavailable may have raced a
         // missed write. Require one successful read after registration too.
         if(ready&&observedBeforeRead){force=false;cancelTimer();return;}

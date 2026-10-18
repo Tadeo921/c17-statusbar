@@ -5,6 +5,8 @@ package dev.puitheme;
 
 /** Resource names carry the actual system level; never infer a level from connectivity. */
 public final class SignalResources {
+    /** Saved post-1.8.2 configuration key only; it does not change public resource selection. */
+    public static final String ROAMING_HIDDEN = "data_roaming_hidden";
     private SignalResources() { }
     public static String moduleName(String resource, boolean single) {
         if (resource == null) return null;

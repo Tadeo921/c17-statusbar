@@ -26,6 +26,11 @@ import java.util.WeakHashMap;
 /** Temporary edge effects for actual horizontal QS paging, preserving native tile drawing. */
 public final class TilePageEffects {
     public interface DrawAction { void draw(Canvas canvas) throws Throwable; }
+    public static final String STYLE = "tiles_page_style";
+    /** iOS: both pages fade and shrink a little; cube: 3D turn around the page seam; zoom; fade; classic edge mask. */
+    public static final String IOS = "ios", CUBE = "cube", ZOOM = "zoom", FADE = "fade", EDGE = "edge";
+    public static final String[] STYLES = {IOS, CUBE, ZOOM, FADE, EDGE};
+    private String style = EDGE;
     private static final int MAX_NODE_SIZE = 8192;
     private static final long MAX_NODE_PIXELS = 16777216L;
     private static final float MAX_BLUR_PIXELS = 128f;
@@ -44,7 +49,7 @@ public final class TilePageEffects {
         boolean nativeSynced;
         Class<?> viewType,managerType;
         Method viewManager,viewState,managerPages,managerHorizontal,managerOffset;
-        Object renderer;
+        Object renderer, pages;
         Shader mask;
         MaskProfile profile;
         Shader fence;
@@ -170,6 +175,9 @@ public final class TilePageEffects {
         portraitEnabled=settings.getBoolean("tiles_portrait_enabled",true);
         landscapeEnabled=settings.getBoolean("tiles_landscape_enabled",true);
         fadeEnabled=settings.getBoolean("tiles_fade_enabled",true);
+        // A bundle without the key predates the page styles and keeps the classic edge mask.
+        String requested=settings.getString(STYLE,EDGE);style=EDGE;
+        for(String known:STYLES)if(known.equals(requested))style=known;
         blurEnabled=settings.getBoolean("tiles_blur_enabled",false);
         float legacyRange=NumericPolicy.setting("tiles_fade_range",settings.get("tiles_fade_range"),24f);
         leftRangeDp=NumericPolicy.setting("tiles_left_range",settings.get("tiles_left_range"),legacyRange);
@@ -187,7 +195,8 @@ public final class TilePageEffects {
                 entry.loggedBlur=false;entry.loggedFade=false;entry.loggedOverflow=false;
                 entry.loggedError=false;entry.loggedNativeError=false;entry.loggedClip=false;
             }
-            if(!enabled||!directionEnabled(item.getKey())||!blurEnabled||strength==0f)releaseRenderer(entry);
+            if(!enabled||!directionEnabled(item.getKey())||!EDGE.equals(style)||!blurEnabled||strength==0f)releaseRenderer(entry);
+            if(!enabled||EDGE.equals(style))releasePages(entry);
             item.getKey().invalidate();
         }
     }
@@ -257,6 +266,12 @@ public final class TilePageEffects {
         Entry entry=entry(view);
         if(!enabled||!directionEnabled(view)){releaseRenderer(entry);nativeDraw.draw(canvas);return;}
         syncNative(view,entry);
+        if(!EDGE.equals(style)) {
+            float fraction=fraction(entry.offset);
+            if(entry.scrollState==0||fraction<=0f||fraction>=1f||strength<=0f||!view.isAttachedToWindow()||!view.isShown()
+                    ||nativeOverflow(view)||Build.VERSION.SDK_INT<29||!canvas.isHardwareAccelerated()){nativeDraw.draw(canvas);return;}
+            drawPages(view,canvas,entry,fraction,nativeDraw);return;
+        }
         float transition=transitionAmount(entry.offset);
         float amount=transition*strength;
         if(!enabled||(!fadeEnabled&&!blurEnabled)||(leftRangeDp<=0f&&rightRangeDp<=0f)||amount<=0f||entry.scrollState==0
@@ -342,10 +357,10 @@ public final class TilePageEffects {
         try {
             boolean handlesOverflow=false;
             for(String name:new String[]{"tag_should_handle_ignore_parent_bounds","tag_should_handle_ignore_parent_bounds_scroll"}) {
-                int id=view.getResources().getIdentifier(name,"id","com.android.systemui");
+                int id=ResourceIds.get(view.getResources(), name,"id","com.android.systemui");
                 if(id!=0&&Boolean.TRUE.equals(view.getTag(id)))handlesOverflow=true;
             }
-            int childTag=view.getResources().getIdentifier("tag_view_ignore_parent_bounds","id","com.android.systemui");
+            int childTag=ResourceIds.get(view.getResources(), "tag_view_ignore_parent_bounds","id","com.android.systemui");
             if(handlesOverflow&&childTag!=0&&view instanceof ViewGroup) {
                 ViewGroup group=(ViewGroup)view;
                 for(int i=0;i<group.getChildCount();i++) {
@@ -390,8 +405,8 @@ public final class TilePageEffects {
         }
         static NativeClipGuard begin(View view) {
             if(!view.getClass().getName().equals("com.oplus.systemui.qs.base.widget.recyclerview.ParallelCOUIRecyclerView"))return null;
-            int splitId=view.getResources().getIdentifier("tag_should_clip_split_parent_bounds","id","com.android.systemui");
-            int scrollId=view.getResources().getIdentifier("tag_should_handle_ignore_parent_bounds_scroll","id","com.android.systemui");
+            int splitId=ResourceIds.get(view.getResources(), "tag_should_clip_split_parent_bounds","id","com.android.systemui");
+            int scrollId=ResourceIds.get(view.getResources(), "tag_should_handle_ignore_parent_bounds_scroll","id","com.android.systemui");
             if(splitId==0||scrollId==0)return null;
             NativeClipGuard guard=new NativeClipGuard(view,splitId,scrollId);
             try {
@@ -461,7 +476,43 @@ public final class TilePageEffects {
         canvas.drawRect(geometry.minX(),geometry.minY(),geometry.maxX(),geometry.maxY(),entry.fencePaint);
     }
 
-    public void detach(View view) {Entry entry=entries.remove(view);if(entry!=null)releaseRenderer(entry);}
+    public void detach(View view) {Entry entry=entries.remove(view);if(entry!=null){releaseRenderer(entry);releasePages(entry);}}
+    private static void releasePages(Entry entry) {
+        if(entry.pages!=null&&Build.VERSION.SDK_INT>=29) {
+            try {((Api29.Pages)entry.pages).close();}catch(Throwable ignored) { }
+        }
+        entry.pages=null;
+    }
+
+    /**
+     * The pager is recorded once and its two visible page parts are drawn again, each with its own
+     * transform around the page seam. Native layout, scroll and tiles are never changed; when anything
+     * fails the native drawing is used for this frame.
+     */
+    private void drawPages(View view,Canvas canvas,Entry entry,float fraction,DrawAction nativeDraw) throws Throwable {
+        int width=view.getWidth(),height=view.getHeight();
+        if(width<=0||height<=0||width>MAX_NODE_SIZE||height>MAX_NODE_SIZE){nativeDraw.draw(canvas);return;}
+        Api29.Pages pages;
+        try {
+            if(entry.pages==null)entry.pages=new Api29.Pages();
+            pages=(Api29.Pages)entry.pages;
+        } catch(Throwable unavailable){recordError(entry,"QS tile page renderer unavailable",unavailable);nativeDraw.draw(canvas);return;}
+        if(!pages.record(view,entry,width,height,canvas,nativeDraw))return;
+        float seam=(1f-fraction)*view.getMeasuredWidth();
+        if(view.getLayoutDirection()==View.LAYOUT_DIRECTION_RTL)seam=view.getMeasuredWidth()-seam;
+        seam=Math.max(0f,Math.min(width,seam));
+        float density=view.getResources().getDisplayMetrics().density;
+        // The left part leaves as the offset grows; the right part arrives. Each moves by its own share.
+        try {
+            pages.draw(canvas,view,0f,seam,height,ease(fraction),true,style,strength,density);
+            pages.draw(canvas,view,seam,width,height,ease(1f-fraction),false,style,strength,density);
+            if(!entry.loggedFade){entry.loggedFade=true;ModuleDiagnostics.info("tiles","QS tile page style active: "+style);}
+        } catch(Throwable unavailable) {
+            recordError(entry,"QS tile page composition unavailable",unavailable);
+            pages.drawSource(canvas,view);
+        }
+    }
+    private static float ease(float x) {float p=Math.max(0f,Math.min(1f,x));return p*p*(3f-2f*p);}
     private static void releaseRenderer(Entry entry) {
         if(entry.renderer!=null&&Build.VERSION.SDK_INT>=31) {
             try {((Api31.Renderer)entry.renderer).close();}catch(Throwable ignored) { }
@@ -491,6 +542,61 @@ public final class TilePageEffects {
         float f=Math.min(Math.max(.001f,feather),(bottom-top)/2f);
         float vertical=smooth(Math.min(y-top,bottom-y)/f);
         return (l+r-l*r)*vertical;
+    }
+
+    /** API 29 RenderNode page renderer, loaded only when a page style draws. */
+    private static final class Api29 {
+        private static final class Pages {
+            final RenderNode source=new RenderNode("C17TilePages");
+            final android.graphics.Camera camera=new android.graphics.Camera();
+            final android.graphics.Matrix matrix=new android.graphics.Matrix();
+            Pages() {source.setClipToBounds(false);}
+            boolean record(View view,Entry entry,int width,int height,Canvas target,DrawAction nativeDraw) throws Throwable {
+                source.setPosition(0,0,width,height);
+                RecordingCanvas recording;
+                try {recording=source.beginRecording(width,height);}
+                catch(Throwable unavailable){recordError(entry,"QS tile page recording unavailable",unavailable);nativeDraw.draw(target);return false;}
+                try {recording.translate(-view.getScrollX(),-view.getScrollY());recordUnsplitSource(view,entry,recording,nativeDraw);}
+                finally {source.endRecording();}
+                return true;
+            }
+            void drawSource(Canvas target,View view) {
+                int save=target.save();
+                try {target.translate(view.getScrollX(),view.getScrollY());target.drawRenderNode(source);}
+                finally {target.restoreToCount(save);}
+            }
+            /** One page part [left,right]; amount 0 = resting, 1 = fully turned away. */
+            void draw(Canvas target,View view,float left,float right,int height,float amount,boolean leaving,
+                    String style,float strength,float density) {
+                if(right-left<.5f)return;
+                float a=Math.max(0f,Math.min(1f,amount*strength));
+                float alpha=1f,scale=1f,angle=0f;
+                if(IOS.equals(style)){alpha=1f-.55f*a;scale=1f-.07f*a;}
+                else if(ZOOM.equals(style)){scale=1f-.16f*a;}
+                else if(FADE.equals(style)){alpha=1f-.85f*a;}
+                else if(CUBE.equals(style)){angle=(leaving?-1f:1f)*42f*a;alpha=1f-.25f*a;}
+                int save=target.save();
+                try {
+                    target.translate(view.getScrollX(),view.getScrollY());
+                    if(angle!=0f) {
+                        // Turn around the seam, as two faces of one cube; a deep camera keeps it gentle.
+                        float pivotX=leaving?right:left,pivotY=height/2f;
+                        camera.save();
+                        camera.setLocation(0f,0f,-Math.max(8f,view.getWidth()/(72f*Math.max(.5f,density/2f))));
+                        camera.rotateY(angle);camera.getMatrix(matrix);camera.restore();
+                        matrix.preTranslate(-pivotX,-pivotY);matrix.postTranslate(pivotX,pivotY);
+                        target.concat(matrix);
+                    }
+                    if(scale!=1f)target.scale(scale,scale,(left+right)/2f,height/2f);
+                    target.clipRect(left,0f,right,height);
+                    if(alpha<.999f) {
+                        int layer=target.saveLayerAlpha(left,0f,right,height,Math.round(Math.max(0f,alpha)*255f));
+                        try {target.drawRenderNode(source);}finally {target.restoreToCount(layer);}
+                    } else target.drawRenderNode(source);
+                } finally {target.restoreToCount(save);}
+            }
+            void close() {source.discardDisplayList();}
+        }
     }
 
     /** Kept in an API-gated nested class so Android 26-30 can load the fade controller. */

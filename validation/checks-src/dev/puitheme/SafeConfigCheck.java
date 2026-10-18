@@ -26,6 +26,7 @@ public final class SafeConfigCheck {
         stored.put(StatusBarSettings.CLOCK_SCALE,137.25f);
         stored.put(StatusBarSettings.SAFE_MODE,true);
         stored.put(QsTileAppearance.MASTER,true);
+        stored.put(QsTileFullFill.ENABLED,true);
         stored.put(QsMediaAppearance.MASTER,true);
         stored.put(NotificationClearAppearance.MASTER,true);
         stored.put(NotificationBigClockSettings.MASTER,true);
@@ -37,7 +38,7 @@ public final class SafeConfigCheck {
         equal(true,FeatureOptions.from(safe).safeMode());
         for(String group:FeatureOptions.GROUPS) equal(false,FeatureOptions.from(safe).enabled(group));
         equal(false,FeatureOptions.from(safe).effective("data",StatusBarSettings.DATA_ACTIVITY_HIDDEN));
-        for(String master:new String[]{QsTileAppearance.MASTER,QsMediaAppearance.MASTER,
+        for(String master:new String[]{QsTileAppearance.MASTER,QsTileFullFill.ENABLED,QsMediaAppearance.MASTER,
                 NotificationClearAppearance.MASTER,NotificationBigClockSettings.MASTER}) {
             equal(false,safe.get(master));
             equal(true,saved.get(master));
@@ -49,6 +50,7 @@ public final class SafeConfigCheck {
         saved.putBoolean(StatusBarSettings.SAFE_MODE,false);
         Bundle resumed=SafetyMode.runtimeSettings(saved);
         equal(true,resumed.get(QsTileAppearance.MASTER));
+        equal(true,resumed.get(QsTileFullFill.ENABLED));
         equal(true,resumed.get(QsMediaAppearance.MASTER));
         equal(true,resumed.get(NotificationBigClockSettings.MASTER));
         equal(true,resumed.get(NetworkIconOrder.SWAP));

@@ -115,31 +115,36 @@ public final class QsTileAppearanceCheck {
         DeviceCardFixture[] cards={new RectangleDeviceCardView(),new SquareDeviceCardView(),new NoDeviceEntranceCardView(),new RectangleEntranceCardView(),new SquareEntranceCardView()};
         for(DeviceCardFixture card:cards) {
             android.graphics.drawable.GradientDrawable fill=new android.graphics.drawable.GradientDrawable();fill.setColor(0x80999999);fill.mStrokePaint.setShader(texture);card.body.setBackground(fill);
-            // The first native draw has not initialized background bounds yet.
-            appearance.drawDeviceCard(card,canvas,card::drawNative);equal(null,fill.seenShader);equal(128,fill.seenAlpha);equal(0x80999999,fill.mFillPaint.getColor());equal(null,fill.mFillPaint.getShader());equal(texture,fill.seenStroke);
+            // Body dimensions support the first draw without mutating native bounds.
+            deviceDraw(appearance,card,canvas);colors(fill.seenShader,0x80999999,0x80999999);equal(128,fill.seenAlpha);equal(0x80999999,fill.mFillPaint.getColor());equal(null,fill.mFillPaint.getShader());equal(texture,fill.seenStroke);
             equal(null,card.outer.seenShader);equal(null,card.foreground.seenShader);equal(null,card.icon.seenShader);equal(true,QsTileAppearance.isDeviceCard(card));
-            card.resources.getConfiguration().uiMode=Configuration.UI_MODE_NIGHT_YES;appearance.drawDeviceCard(card,canvas,card::drawNative);equal(null,fill.seenShader);equal(128,fill.seenAlpha);card.resources.getConfiguration().uiMode=Configuration.UI_MODE_NIGHT_NO;
+            Shader cached=fill.seenShader;for(int i=0;i<1000;i++){deviceDraw(appearance,card,canvas);equal(cached,fill.seenShader);}
+            card.resources.getConfiguration().uiMode=Configuration.UI_MODE_NIGHT_YES;deviceDraw(appearance,card,canvas);colors(fill.seenShader,0x80999999,0x80999999);equal(128,fill.seenAlpha);card.resources.getConfiguration().uiMode=Configuration.UI_MODE_NIGHT_NO;
             int invalidations=card.invalidations;appearance.configure(config);equal(true,card.invalidations>invalidations);
         }
         DeviceCardFixture card=cards[0];android.graphics.drawable.GradientDrawable fill=(android.graphics.drawable.GradientDrawable)card.body.getBackground();
-        card.resources.bodyName="oplus_qs_tile_icon_bg";appearance.drawDeviceCard(card,canvas,card::drawNative);equal(null,fill.seenShader);card.resources.bodyName="rectangleCoLayout";
-        card.resources.bodyPackage="other.package";appearance.drawDeviceCard(card,canvas,card::drawNative);equal(null,fill.seenShader);card.resources.bodyPackage="com.android.systemui";
-        card.bodyPresent=false;appearance.drawDeviceCard(card,canvas,card::drawNative);equal(null,fill.seenShader);card.bodyPresent=true;
+        card.resources.bodyName="oplus_qs_tile_icon_bg";deviceDraw(appearance,card,canvas);equal(null,fill.seenShader);card.resources.bodyName="rectangleCoLayout";
+        card.resources.bodyPackage="other.package";deviceDraw(appearance,card,canvas);equal(null,fill.seenShader);card.resources.bodyPackage="com.android.systemui";
+        card.bodyPresent=false;deviceDraw(appearance,card,canvas);equal(null,fill.seenShader);card.bodyPresent=true;
         DeviceCardFixture unknown=new DeviceCardFixture("rectangleCoLayout");unknown.body.setBackground(fill);appearance.drawDeviceCard(unknown,canvas,unknown::drawNative);equal(null,fill.seenShader);equal(false,QsTileAppearance.isDeviceCard(unknown));card.body.setBackground(fill);
-        fill.mGradientState.mColors=new int[]{-1,0xff0099ff};appearance.drawDeviceCard(card,canvas,card::drawNative);equal(null,fill.seenShader);fill.mGradientState.mColors=null;
-        fill.mFillPaint.setShader(texture);appearance.drawDeviceCard(card,canvas,card::drawNative);equal(texture,fill.seenShader);equal(texture,fill.mFillPaint.getShader());fill.mFillPaint.setShader(null);
-        try {appearance.drawDeviceCard(card,canvas,target->{equal(null,fill.mFillPaint.getShader());throw new IllegalStateException("device");});throw new AssertionError();}catch(IllegalStateException expected){equal("device",expected.getMessage());}equal(null,fill.mFillPaint.getShader());
-        android.graphics.drawable.ShapeDrawable shape=new android.graphics.drawable.ShapeDrawable();shape.getPaint().setColor(0x401875f5);shape.setBounds(0,0,110,50);card.body.setBackground(shape);appearance.drawDeviceCard(card,canvas,card::drawNative);equal(null,shape.seenShader);equal(64,shape.seenAlpha);equal(null,shape.getPaint().getShader());
+        fill.mGradientState.mColors=new int[]{-1,0xff0099ff};deviceDraw(appearance,card,canvas);equal(null,fill.seenShader);fill.mGradientState.mColors=null;
+        fill.mFillPaint.setShader(texture);deviceDraw(appearance,card,canvas);equal(texture,fill.seenShader);equal(texture,fill.mFillPaint.getShader());fill.mFillPaint.setShader(null);
+        appearance.refreshDeviceCard(card);
+        try {appearance.drawDeviceBackground(fill,canvas,target->{colors(fill.mFillPaint.getShader(),0x80999999,0x80999999);throw new IllegalStateException("device");});throw new AssertionError();}catch(IllegalStateException expected){equal("device",expected.getMessage());}equal(null,fill.mFillPaint.getShader());
+        appearance.drawDeviceBackground(fill,canvas,target->fill.mFillPaint.setShader(texture));equal(texture,fill.mFillPaint.getShader());fill.mFillPaint.setShader(null);
+        // C17 has already changed the native solid RGB when this inner hook runs.
+        fill.mFillPaint.setColor(0x80335577);deviceDraw(appearance,card,canvas);colors(fill.seenShader,0x80335577,0x80335577);equal(0x80335577,fill.mFillPaint.getColor());
+        android.graphics.drawable.ShapeDrawable shape=new android.graphics.drawable.ShapeDrawable();shape.getPaint().setColor(0x401875f5);shape.setBounds(0,0,110,50);card.body.setBackground(shape);appearance.drawDeviceCard(card,canvas,card::drawNative);colors(shape.seenShader,0x801875f5,0x801875f5);equal(64,shape.seenAlpha);equal(null,shape.getPaint().getShader());
         config.putBoolean(QsTileAppearance.MASTER,false);appearance.configure(config);appearance.drawDeviceCard(card,canvas,card::drawNative);equal(null,shape.seenShader);config.putBoolean(QsTileAppearance.MASTER,true);appearance.configure(config);
         AutoBlurDrawable blur=new AutoBlurDrawable();blur.setBounds(0,0,100,50);card.body.setBackground(blur);BlendDrawable engine=blur.viewBlurProxy.actual.blurDrawable;engine.setBounds(0,0,100,50);RuntimeShader original=engine.drawableShader.shader;
-        appearance.drawDeviceCard(card,canvas,target->appearance.drawBlur(blur,target,blur::draw));appearance.drawGlassContent(engine,canvas,engine::onDrawContent);equal(original,engine.recorded);equal(original,engine.drawableShader.shader);
+        appearance.drawDeviceCard(card,canvas,target->appearance.drawBlur(blur,target,blur::draw));appearance.drawGlassContent(engine,canvas,engine::onDrawContent);equal(true,original!=engine.recorded);equal(0,engine.recorded.ints.get("c17QsKeepNativeRgb"));equal(original,engine.drawableShader.shader);
         for(int[] pair:new int[][]{{0x19404040,0x4d737373},{0x80404040,0xb2737373},{0x40404040,0x667b7b7b},{0x5a404040,0xb27b7b7b}}) {
-            engine.drawableShader.multiBlendParam.get(2).color=pair[0];engine.drawableShader.multiBlendParam.get(3).color=pair[1];appearance.drawGlassContent(engine,canvas,engine::onDrawContent);equal(original,engine.recorded);equal(pair[0],engine.drawableShader.multiBlendParam.get(2).color);equal(pair[1],engine.drawableShader.multiBlendParam.get(3).color);equal(original,engine.drawableShader.shader);
+            engine.drawableShader.multiBlendParam.get(2).color=pair[0];engine.drawableShader.multiBlendParam.get(3).color=pair[1];appearance.drawGlassContent(engine,canvas,engine::onDrawContent);equal(true,engine.recorded!=original);equal(1,engine.recorded.ints.get("c17QsKeepNativeRgb"));colors(engine.recorded.inputs.get("c17QsFill"),0x80123456,0x80abcdef);equal(pair[0],engine.drawableShader.multiBlendParam.get(2).color);equal(pair[1],engine.drawableShader.multiBlendParam.get(3).color);equal(original,engine.drawableShader.shader);
             // The same native gray material stays native on a regular inactive tile or slider.
             QsNativeGlassFill nativeFill=new QsNativeGlassFill();equal(null,nativeFill.prepare(engine,new QsTileAppearance.Style(-1,-1,100f,0f,false)));
         }
-        // An inactive SDK body and regular inactive 1x1 both keep the same live
-        // native material, even with active fill customization switched on.
+        // Device RGB remains the same as inactive tiles. Only its verified base
+        // alpha follows transparency; inactive regular tiles remain independent.
         for(DeviceCardFixture device:cards)for(int mode:new int[]{Configuration.UI_MODE_NIGHT_NO,Configuration.UI_MODE_NIGHT_YES}) {
             device.resources.getConfiguration().uiMode=mode;
             for(int[] pair:new int[][]{{0x19404040,0x4d737373},{0x80404040,0xb2737373}}) {
@@ -154,7 +159,7 @@ public final class QsTileAppearanceCheck {
                 appearance.drawDeviceCard(device,canvas,target->appearance.drawBlur(deviceBlur,target,deviceBlur::draw));
                 appearance.drawTile(inactive,canvas,target->appearance.drawBlur(tileBlur,target,tileBlur::draw));
                 appearance.drawGlassContent(deviceEngine,canvas,deviceEngine::onDrawContent);appearance.drawGlassContent(tileEngine,canvas,tileEngine::onDrawContent);
-                equal(deviceEngine.drawableShader.shader,deviceEngine.recorded);equal(tileEngine.drawableShader.shader,tileEngine.recorded);
+                equal(true,deviceEngine.drawableShader.shader!=deviceEngine.recorded);equal(1,deviceEngine.recorded.ints.get("c17QsKeepNativeRgb"));equal(tileEngine.drawableShader.shader,tileEngine.recorded);
                 for(int i=0;i<4;i++){equal(tileEngine.drawableShader.multiBlendParam.get(i).color,deviceEngine.drawableShader.multiBlendParam.get(i).color);equal(tileEngine.drawableShader.multiBlendParam.get(i).mode,deviceEngine.drawableShader.multiBlendParam.get(i).mode);}
                 appearance.detach(inactiveTile);
             }
@@ -162,6 +167,49 @@ public final class QsTileAppearanceCheck {
         engine.drawableShader.multiBlendParam.get(3).mode=2;appearance.drawGlassContent(engine,canvas,engine::onDrawContent);equal(original,engine.recorded);engine.drawableShader.multiBlendParam.get(3).mode=3;
         ArrayList<ShaderBlendParam> copies=new ArrayList<>();for(ShaderBlendParam p:engine.drawableShader.multiBlendParam)copies.add(new ShaderBlendParam(p.mode,p.color));equal(null,QsNativeGlassFill.inactiveDeviceSlots(engine.drawableShader.multiBlendParam,copies));
         appearance.detach(card);appearance.drawGlassContent(engine,canvas,engine::onDrawContent);equal(original,engine.recorded);
+    }
+    private static void deviceDraw(QsTileAppearance appearance,DeviceCardFixture card,Canvas canvas) throws Throwable {
+        appearance.drawDeviceCard(card,canvas,target->{card.outer.draw(target);Drawable background=card.body.getBackground();
+            if(background instanceof android.graphics.drawable.GradientDrawable)appearance.drawDeviceBackground(background,target,background::draw);else if(background!=null)background.draw(target);
+            card.foreground.draw(target);card.icon.draw(target);});
+    }
+    private static void connectedDeviceCards(QsTileAppearance appearance,Canvas canvas) throws Throwable {
+        Bundle config=settings();appearance.configure(config);
+        RectangleDeviceCardView rectangle=new RectangleDeviceCardView();SquareDeviceCardView square=new SquareDeviceCardView();
+        com.oplus.deviceplugin.sdk.entity.PanelDevice rectangularModel=new com.oplus.deviceplugin.sdk.entity.PanelDevice(1);
+        com.oplus.deviceplugin.sdk.entity.PanelDevice squareModel=new com.oplus.deviceplugin.sdk.entity.PanelDevice(1);
+        rectangle.v=rectangularModel;square.q=squareModel;
+        for(DeviceCardFixture card:new DeviceCardFixture[]{rectangle,square}) {
+            android.graphics.drawable.GradientDrawable solid=new android.graphics.drawable.GradientDrawable();solid.setColor(0x80999999);card.body.setBackground(solid);
+            deviceDraw(appearance,card,canvas);colors(solid.seenShader,0xff123456,0xff123456);equal(128,solid.seenAlpha);
+            equal(0x80999999,solid.mFillPaint.getColor());equal(null,solid.mFillPaint.getShader());
+            equal(null,card.icon.seenShader);equal(null,card.foreground.seenShader);equal(null,card.outer.seenShader);
+            card.resources.getConfiguration().uiMode=Configuration.UI_MODE_NIGHT_YES;deviceDraw(appearance,card,canvas);colors(solid.seenShader,0xff654321,0xff654321);
+            card.resources.getConfiguration().uiMode=Configuration.UI_MODE_NIGHT_NO;
+            config.putFloat("qs_global_light_opacity",50);config.putInt("qs_global_light_color",0x80123456);
+            config.putBoolean("qs_global_light_gradient_enabled",true);config.putInt("qs_global_light_gradient_color",0x40abcdef);appearance.configure(config);
+            deviceDraw(appearance,card,canvas);colors(solid.seenShader,0x40123456,0x20abcdef);equal(128,solid.seenAlpha);
+            Shader cached=solid.seenShader;int reads=rectangularModel.stateReads+squareModel.stateReads;
+            for(int i=0;i<1000;i++)deviceDraw(appearance,card,canvas);
+            equal(cached,solid.seenShader);equal(reads,rectangularModel.stateReads+squareModel.stateReads);
+            android.graphics.drawable.ShapeDrawable shape=new android.graphics.drawable.ShapeDrawable();shape.getPaint().setColor(0x40999999);shape.setBounds(0,0,100,50);card.body.setBackground(shape);
+            appearance.drawDeviceCard(card,canvas,card::drawNative);colors(shape.seenShader,0x40123456,0x20abcdef);equal(64,shape.seenAlpha);equal(0x40999999,shape.getPaint().getColor());
+            config.putFloat("qs_global_light_opacity",100);config.putInt("qs_global_light_color",0xff123456);config.putBoolean("qs_global_light_gradient_enabled",false);appearance.configure(config);
+            AutoBlurDrawable blur=new AutoBlurDrawable();blur.setBounds(0,0,100,50);card.body.setBackground(blur);
+            BlendDrawable engine=blur.viewBlurProxy.actual.blurDrawable;engine.setBounds(0,0,100,50);RuntimeShader nativeShader=engine.drawableShader.shader;
+            appearance.drawDeviceCard(card,canvas,target->appearance.drawBlur(blur,target,blur::draw));
+            appearance.drawGlassContent(engine,canvas,engine::onDrawContent);equal(true,engine.recorded!=nativeShader);equal(0,engine.recorded.ints.get("c17QsKeepNativeRgb"));
+            colors(engine.recorded.inputs.get("c17QsFill"),0xff123456,0xff123456);near(0,engine.recorded.floats.get("c17QsDeviceTint")[3]);equal(nativeShader,engine.drawableShader.shader);
+            // A real connected -> disconnected native refresh changes admission on
+            // the same body/background, not just at construction or View.draw.
+            (card==rectangle?rectangularModel:squareModel).state=2;appearance.refreshDeviceCard(card);
+            engine.drawableShader.multiBlendParam.get(2).color=0x19404040;engine.drawableShader.multiBlendParam.get(3).color=0x4d737373;
+            appearance.drawGlassContent(engine,canvas,engine::onDrawContent);equal(nativeShader,engine.recorded);
+            config.putFloat("qs_global_light_opacity",50);appearance.configure(config);
+            appearance.drawGlassContent(engine,canvas,engine::onDrawContent);equal(1,engine.recorded.ints.get("c17QsKeepNativeRgb"));
+            config.putBoolean(QsTileAppearance.MASTER,false);appearance.configure(config);appearance.drawGlassContent(engine,canvas,engine::onDrawContent);equal(nativeShader,engine.recorded);
+            config=settings();appearance.configure(config);appearance.detach(card);
+        }
     }
     private static void pressFrames(QsTileAppearance appearance,Canvas canvas) throws Throwable {
         appearance.configure(settings());OplusQSResizeableTileView tile=new OplusQSResizeableTileView();MixColorTileDrawable fill=attach(appearance,tile,"rotation",2);fill.animator.running=true;fill.alpha=200;
@@ -186,10 +234,47 @@ public final class QsTileAppearanceCheck {
         engine.drawableShader.multiBlendParam.get(2).color=0x46acacac;engine.drawableShader.multiBlendParam.get(3).color=0x47a7a7a7;engine.drawableShader.multiBlendParam.get(3).mode=2;appearance.drawGlassContent(engine,canvas,engine::onDrawContent);equal(original,engine.recorded);
         appearance.detach(tile);
     }
+    /** The highlight tiles that open a secondary page take the same fill; only their active state is styled. */
+    private static void highlightTile() throws Throwable {
+        QsTileAppearance a=new QsTileAppearance();a.configure(settings());
+        com.oplus.systemui.qs.base.tile.OplusQSHighlightTileView tile=new com.oplus.systemui.qs.base.tile.OplusQSHighlightTileView();
+        MixColorTileDrawable bg=new MixColorTileDrawable();bg.setBounds(0,0,120,120);tile.mBgDrawable=bg;tile.mState=2;Canvas c=new Canvas();
+        equal(true,QsTileAppearance.isHighlightTile(tile));equal(false,QsTileAppearance.isHighlightTile(new OplusQSResizeableTileView()));
+        a.drawTile(bg,c,bg::draw);equal(null,bg.seenShader);
+        a.refreshHighlightTile(tile);a.drawTile(bg,c,bg::draw);colors(bg.seenShader,0xff123456,0xff123456);equal(null,bg.paint.getShader());
+        tile.mState=1;a.refreshHighlightTile(tile);a.drawTile(bg,c,bg::draw);equal(null,bg.seenShader);
+        tile.mState=2;a.refreshHighlightTile(tile);a.configure(new Bundle());a.drawTile(bg,c,bg::draw);equal(null,bg.seenShader);
+        a.configure(settings());a.drawTile(bg,c,bg::draw);colors(bg.seenShader,0xff123456,0xff123456);
+        a.detach(tile);a.drawTile(bg,c,bg::draw);equal(null,bg.seenShader);
+    }
+    /** The brightness / volume secondary page: its round buttons and its slider take the same fill as the panel. */
+    private static void detailPage() throws Throwable {
+        QsTileAppearance a=new QsTileAppearance();a.configure(settings());
+        com.oplus.systemui.qs.slider.detail.widget.QsDetailTileBaseView tile=new com.oplus.systemui.qs.slider.detail.widget.QsDetailTileBaseView();
+        MixColorTileDrawable bg=new MixColorTileDrawable();bg.setBounds(0,0,120,120);tile.bgDrawable=bg;tile.tileState.state=2;Canvas c=new Canvas();
+        equal(true,QsTileAppearance.isDetailTile(tile));equal(false,QsTileAppearance.isDetailTile(new OplusQSResizeableTileView()));
+        a.drawTile(bg,c,bg::draw);equal(null,bg.seenShader);
+        a.refreshDetailTile(tile);a.drawTile(bg,c,bg::draw);colors(bg.seenShader,0xff123456,0xff123456);equal(null,bg.paint.getShader());
+        tile.tileState.state=1;a.refreshDetailTile(tile);a.drawTile(bg,c,bg::draw);equal(null,bg.seenShader);
+        tile.tileState.state=2;a.refreshDetailTile(tile);a.configure(new Bundle());a.drawTile(bg,c,bg::draw);equal(null,bg.seenShader);
+        a.configure(settings());a.drawTile(bg,c,bg::draw);colors(bg.seenShader,0xff123456,0xff123456);
+        a.detach(tile);a.drawTile(bg,c,bg::draw);equal(null,bg.seenShader);
+        // Off: a page built while the feature is off registers nothing.
+        QsTileAppearance off=new QsTileAppearance();off.refreshDetailTile(tile);off.drawTile(bg,c,bg::draw);equal(null,bg.seenShader);
+        // The slider inside the secondary page's own layout is a panel slider whatever its view id is.
+        OplusQsVerticalSeekBar slider=new OplusQsVerticalSeekBar();slider.parent=new com.oplus.systemui.qs.slider.OplusQsDetailToggleSliderLayout();
+        Shader[] seen={null};
+        a.drawSlider(slider,c,target->{slider.mProgressPaint.setColor(0x70ffffff);seen[0]=slider.mProgressPaint.getShader();});
+        equal(true,seen[0]!=null);equal(null,slider.mProgressPaint.getShader());
+        slider.parent=new ResourceView("volume_dialog_rows");seen[0]=null;
+        a.drawSlider(slider,c,target->{slider.mProgressPaint.setColor(0x70ffffff);seen[0]=slider.mProgressPaint.getShader();});
+        equal(null,seen[0]);
+    }
     public static void main(String[] args) throws Throwable {
+        detailPage();highlightTile();
         nativeMembers();steadyDrawing();
         QsTileAppearance a=new QsTileAppearance();OplusQSResizeableTileView tile=new OplusQSResizeableTileView();Canvas c=new Canvas();MixColorTileDrawable bg=attach(a,tile,"wifi",2);
-        a.configure(new Bundle());a.drawTile(bg,c,bg::draw);equal(null,bg.seenShader);equal(3,QsTileAppearance.BOOLEANS.size());equal(4,QsTileAppearance.NUMBERS.size());equal(4,QsTileAppearance.COLORS.size());equal(false,QsTileAppearance.BOOLEANS.get(QsTileAppearance.MASTER));
+        a.configure(new Bundle());a.drawTile(bg,c,bg::draw);equal(null,bg.seenShader);equal(3,QsTileAppearance.BOOLEANS.size());equal(6,QsTileAppearance.NUMBERS.size());equal(4,QsTileAppearance.COLORS.size());equal(false,QsTileAppearance.BOOLEANS.get(QsTileAppearance.MASTER));
         for(String key:QsTileAppearance.BOOLEANS.keySet())equal(false,key.startsWith("qs_style_"));
         Bundle s=settings();a.configure(s);bg.maskColor=0x80ffffff;bg.alpha=128;Shader texture=new LinearGradient(0,0,1,1,new int[]{-1,-1},new float[]{0,1},Shader.TileMode.CLAMP);bg.highlightPaint.setShader(texture);
         a.drawTile(bg,c,bg::draw);colors(bg.seenShader,0xff123456,0xff123456);equal(64,bg.seenAlpha);equal(128,bg.alpha);equal(0x80ffffff,bg.maskColor);equal(null,bg.paint.getShader());equal(texture,bg.seenHighlight);equal(texture,bg.highlightPaint.getShader());
@@ -224,6 +309,7 @@ public final class QsTileAppearanceCheck {
         a.drawTile(card,c,target->a.drawBlur(wholeCardGlass,target,wholeCardGlass::draw));a.drawGlassContent(bigEngine,c,bigEngine::onDrawContent);equal(bigNative,bigEngine.recorded);
         List<ShaderBlendParam> copied=new ArrayList<>();for(ShaderBlendParam p:engine.drawableShader.multiBlendParam)copied.add(new ShaderBlendParam(p.mode,p.color));equal(null,QsNativeGlassFill.activeSlots(engine.drawableShader.multiBlendParam,copied));
         deviceCards(a,c,texture);
+        connectedDeviceCards(a,c);
         pressFrames(a,c);
         equal(0xff112233,QsTileAppearance.color("#112233",0));equal(0x80112233,QsTileAppearance.color("#80112233",0));equal(0,QsTileAppearance.color("#00000000",1));equal(123,QsTileAppearance.color("invalid",123));near(42f,QsTileAppearance.number(Float.NaN,42f));near(42f,QsTileAppearance.number("Infinity",42f));near(1.23f,QsTileAppearance.number("1.23",42f));near(359f,QsTileAppearance.angle(-1f));near(0f,QsTileAppearance.angle(720f));
         for(int color:new int[]{0xffffffff,0x80123456,0x00123456,0xff000000})for(float opacity:new float[]{0,25,50,100,200,-10})for(int alpha:new int[]{0,128,255}){int value=QsTileAppearance.withOpacity(color,opacity,alpha);equal(color&0xffffff,value&0xffffff);equal(true,(value>>>24)>=0&&(value>>>24)<=255);}

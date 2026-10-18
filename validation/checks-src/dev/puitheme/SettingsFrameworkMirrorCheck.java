@@ -59,15 +59,35 @@ public final class SettingsFrameworkMirrorCheck {
     }
     private static Map<String,Object> legacyWire(Bundle snapshot,long revision){
         Map<String,Object> values=wire(snapshot,revision);
-        values.put(SettingsFrameworkMirror.SCHEMA,1);
+        values.remove(FluidCloudStyle.BACKGROUND_COLOR_CUSTOMIZED);
+        values.remove(FluidCloudStyle.FOLLOW_MEDIA);values.put(SettingsFrameworkMirror.SCHEMA,1);
+        for(String key:Upgrade103.DEFAULTS.keySet())values.remove(key);for(String key:Upgrade105.DEFAULTS.keySet())values.remove(key);for(String key:Upgrade106.DEFAULTS.keySet())values.remove(key);for(String key:Upgrade107.DEFAULTS.keySet())values.remove(key);for(String key:Upgrade108.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade117.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade118.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade135.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade136.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade144.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade146.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade154.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade157.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade160.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade168.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade169.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade171.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade172.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade173.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade174.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade175.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade177.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade184.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade185.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade186.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade187.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade188.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade166.DEFAULTS.keySet())values.remove(key);
         for(String key:Upgrade65.DEFAULTS.keySet())values.remove(key);
         for(String key:Upgrade66.DEFAULTS.keySet())values.remove(key);
         for(String key:Upgrade67.DEFAULTS.keySet())values.remove(key);
         for(String key:Upgrade70.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade76.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade77.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade78.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade79.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade80.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade82.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade90.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade91.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade96.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade98.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade99.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade100.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade101.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade103.DEFAULTS.keySet())values.remove(key);for(String key:Upgrade105.DEFAULTS.keySet())values.remove(key);for(String key:Upgrade106.DEFAULTS.keySet())values.remove(key);for(String key:Upgrade107.DEFAULTS.keySet())values.remove(key);for(String key:Upgrade108.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade117.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade118.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade135.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade136.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade144.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade146.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade154.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade157.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade160.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade168.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade169.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade171.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade172.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade173.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade174.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade175.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade177.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade184.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade185.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade186.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade187.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade188.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade166.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade93.DEFAULTS.keySet())values.remove(key);
+        for(String key:Upgrade117.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade118.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade135.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade136.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade144.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade146.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade154.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade157.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade160.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade168.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade169.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade171.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade172.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade173.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade174.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade175.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade177.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade184.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade185.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade186.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade187.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade188.DEFAULTS.keySet())values.remove(key); for(String key:Upgrade166.DEFAULTS.keySet())values.remove(key);
         return values;
     }
     private static Object legacyExpected(Bundle current,String key){
         // A historical wire copy retains the old clock basis; clean installs use basis 2.
+        // These schema1 fixtures predate dual rows, so their absent lower size uses the frozen schema13 default.
+        if(ClockLayoutSettings.DUAL_LOWER_SCALE.equals(key))return Upgrade90.DEFAULTS.get(key);
         return NativeClockMeasurement.SCALE_BASIS_VERSION.equals(key)?1f:current.get(key);
     }
     private static void settle() throws Exception {
@@ -81,7 +101,8 @@ public final class SettingsFrameworkMirrorCheck {
         pending.set(null,active?java.util.Collections.singletonMap("key",StatusBarSettings.DATA_OFFSET_X):null);
     }
     private static boolean added58(String key) {
-        return !added60(key)&&(key.startsWith(NotificationBigClockSettings.LANDSCAPE_PREFIX)
+        return !added60(key)&&!Upgrade117.DEFAULTS.containsKey(key)&&!Upgrade135.DEFAULTS.containsKey(key)&&!Upgrade160.DEFAULTS.containsKey(key)
+                &&!Upgrade166.DEFAULTS.containsKey(key)&&!Upgrade168.DEFAULTS.containsKey(key)&&!Upgrade169.DEFAULTS.containsKey(key)&&!Upgrade171.DEFAULTS.containsKey(key)&&!Upgrade172.DEFAULTS.containsKey(key)&&!Upgrade173.DEFAULTS.containsKey(key)&&!Upgrade174.DEFAULTS.containsKey(key)&&!Upgrade175.DEFAULTS.containsKey(key)&&!Upgrade177.DEFAULTS.containsKey(key)&&(key.startsWith(NotificationBigClockSettings.LANDSCAPE_PREFIX)
                 ||key.startsWith("status_hint_icons_")
                 ||NotificationGroupStack.MASTER.equals(key)||C17HighlightRemoval.BACKGROUND_ENABLED.equals(key)
                 ||C17HighlightRemoval.LIGHT_BACKGROUND.equals(key)||C17HighlightRemoval.DARK_BACKGROUND.equals(key)
@@ -98,8 +119,11 @@ public final class SettingsFrameworkMirrorCheck {
         legacy.keySet().removeIf(SettingsFrameworkMirrorCheck::added61);
         legacy.keySet().removeIf(SettingsFrameworkMirrorCheck::added62);
         legacy.keySet().removeIf(SettingsFrameworkMirrorCheck::added63);
-        equal(383,legacy.size()-2);Map<String,Object> untouched=new LinkedHashMap<>(legacy);
-        Bundle upgraded=SettingsFrameworkMirror.decode(legacy);equal(true,SettingsSnapshot.complete(upgraded));
+        legacy.keySet().removeIf(Upgrade160.DEFAULTS::containsKey);
+        legacy.keySet().removeIf(Upgrade166.DEFAULTS::containsKey); legacy.keySet().removeIf(Upgrade168.DEFAULTS::containsKey); legacy.keySet().removeIf(Upgrade169.DEFAULTS::containsKey); legacy.keySet().removeIf(Upgrade171.DEFAULTS::containsKey); legacy.keySet().removeIf(Upgrade172.DEFAULTS::containsKey); legacy.keySet().removeIf(Upgrade173.DEFAULTS::containsKey); legacy.keySet().removeIf(Upgrade174.DEFAULTS::containsKey); legacy.keySet().removeIf(Upgrade184.DEFAULTS::containsKey); legacy.keySet().removeIf(Upgrade185.DEFAULTS::containsKey);
+        equal(384,legacy.size()-2);Map<String,Object> untouched=new LinkedHashMap<>(legacy);
+        Bundle upgraded=SettingsFrameworkMirror.decode(legacy);
+        equal(true,SettingsSnapshot.complete(upgraded));
         equal(untouched,legacy);equal(138.25f,upgraded.get(StatusBarSettings.DATA_OFFSET_X));
         equal("yyyy年M月d日{周}",upgraded.get(NotificationBigClockSettings.DATE_PATTERN));
         equal(false,upgraded.get(NotificationBigClockSettings.LANDSCAPE_MASTER));equal(false,upgraded.get(NotificationGroupStack.MASTER));
@@ -113,7 +137,8 @@ public final class SettingsFrameworkMirrorCheck {
             Map<String,Object> missing=new LinkedHashMap<>(legacy);missing.remove(key);equal(null,SettingsFrameworkMirror.decode(missing));
         }
         Map<String,Object> wrong=new LinkedHashMap<>(legacy);wrong.put(StatusBarSettings.DATA_OFFSET_X,138);equal(null,SettingsFrameworkMirror.decode(wrong));
-        wrong=new LinkedHashMap<>(legacy);wrong.put(SettingsFrameworkMirror.SCHEMA,3);equal(null,SettingsFrameworkMirror.decode(wrong));
+        wrong=new LinkedHashMap<>(legacy);wrong.put(SettingsFrameworkMirror.SCHEMA,3);
+        for(String key:Upgrade103.DEFAULTS.keySet())wrong.remove(key);for(String key:Upgrade105.DEFAULTS.keySet())wrong.remove(key);for(String key:Upgrade106.DEFAULTS.keySet())wrong.remove(key);for(String key:Upgrade107.DEFAULTS.keySet())wrong.remove(key);for(String key:Upgrade108.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade117.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade118.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade135.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade136.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade144.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade146.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade154.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade157.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade160.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade168.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade169.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade171.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade172.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade173.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade174.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade175.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade177.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade184.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade185.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade186.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade187.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade188.DEFAULTS.keySet())wrong.remove(key); for(String key:Upgrade166.DEFAULTS.keySet())wrong.remove(key);equal(null,SettingsFrameworkMirror.decode(wrong));
         for(String key:defaults.keySet())if(added58(key)) {
             Map<String,Object> partial=new LinkedHashMap<>(legacy);partial.put(key,defaults.get(key));equal(null,SettingsFrameworkMirror.decode(partial));
             Map<String,Object> missing=new LinkedHashMap<>(wire(current,5800L));missing.remove(key);equal(null,SettingsFrameworkMirror.decode(missing));
@@ -251,7 +276,9 @@ public final class SettingsFrameworkMirrorCheck {
             equal(0x40112233+i*0x10202020,upgraded.get(newColors[i]));
             equal((i&1)==0,upgraded.get(StatusBarSettings.alphaKey(newColors[i])));
         }
-        String[] keys=NotificationClearAppearance.LANDSCAPE_LEGACY.keySet().toArray(new String[0]);equal(12,keys.length);
+        // The code62 batch; the landscape transition range came with schema 19 and is checked with that batch.
+        String[] keys=NotificationClearAppearance.LANDSCAPE_LEGACY.keySet().stream()
+                .filter(key->!Upgrade100.DEFAULTS.containsKey(key)).toArray(String[]::new);equal(12,keys.length);
         int subsets=0;
         for(int mask=1;mask<(1<<keys.length)-1;mask++){
             Map<String,Object> partial=new LinkedHashMap<>(legacy);
@@ -410,14 +437,43 @@ public final class SettingsFrameworkMirrorCheck {
         modern=wire(current,6500L);modern.keySet().removeIf(SettingsFrameworkMirrorCheck::added63);
         equal(null,SettingsFrameworkMirror.decode(modern));
         Store persisted=new Store();equal(true,SettingsFrameworkMirror.write(persisted.preferences,current,6500L));
-        equal(5,persisted.disk.get(SettingsFrameworkMirror.SCHEMA));
+        equal(SettingsFrameworkMirror.VERSION,persisted.disk.get(SettingsFrameworkMirror.SCHEMA));
         equal("clock_right",persisted.disk.get("speed_position"));
         Store daemon=new Store();daemon.replace(old);int[] providerReads={0};
         SettingsFrameworkReader reader=new SettingsFrameworkReader(()->daemon.preferences,()->{},()->false);
         equal("native",reader.read(false,()->{providerReads[0]++;return null;}).get("speed_position"));
         equal(0,providerReads[0]);reader.stop();
     }
+    private static void nativeColorMarker() throws Exception {
+        String marker=FluidCloudStyle.BACKGROUND_COLOR_CUSTOMIZED;
+        ActivationGuardPreferencesCheck.MemoryPreferences raw=new ActivationGuardPreferencesCheck.MemoryPreferences();
+        equal(false,StatusBarSettings.bool(raw.values,marker));
+        SharedPreferences.Editor editor=raw.edit().putInt(FluidCloudStyle.BACKGROUND_COLOR,0xff303438);
+        StatusBarSettings.markColorCustomized(editor,FluidCloudStyle.BACKGROUND_COLOR);editor.apply();
+        equal(true,raw.values.get(marker)); // Saving the unchanged default color still expresses intent.
+        Map<String,Object> portable=ConfigTransfer.prepare(ConfigTransfer.exportJson(raw.values),true).values();
+        equal(true,portable.get(marker));equal(0xff303438,portable.get(FluidCloudStyle.BACKGROUND_COLOR));
+        Bundle snapshot=SettingsSnapshot.fromPreferences(raw.values);
+        Map<String,Object> published=wire(snapshot,8800L),untouched=new LinkedHashMap<>(published);
+        equal(true,SettingsFrameworkMirror.decode(published).get(marker));equal(untouched,published);
+        published.remove(marker);untouched=new LinkedHashMap<>(published);
+        equal(false,SettingsFrameworkMirror.decode(published).get(marker));equal(untouched,published);
+        for(Object bad:new Object[]{null,0,1f,"true"}) {
+            Map<String,Object> malformed=new LinkedHashMap<>(published);malformed.put(marker,bad);
+            equal(null,SettingsFrameworkMirror.decode(malformed));
+            equal(null,SettingsSnapshot.fromPreferences(malformed));
+        }
+        published.remove(StatusBarSettings.CLOCK_SCALE);
+        equal(null,SettingsFrameworkMirror.decode(published)); // The editing marker is the sole new optional field.
+        editor=raw.edit().remove(FluidCloudStyle.BACKGROUND_COLOR).remove(StatusBarSettings.alphaKey(FluidCloudStyle.BACKGROUND_COLOR));
+        StatusBarSettings.clearColorCustomization(editor,FluidCloudStyle.BACKGROUND_COLOR);editor.apply();
+        equal(false,raw.values.containsKey(marker));equal(false,StatusBarSettings.bool(raw.values,marker));
+        editor=raw.edit().putInt("clock_color_light",0xff303438);
+        StatusBarSettings.markColorCustomized(editor,"clock_color_light");editor.apply();
+        equal(false,raw.values.containsKey(marker));equal(0xff303438,raw.values.get("clock_color_light"));
+    }
     public static void main(String[] args) throws Exception {
+        nativeColorMarker();
         upgrade57();
         upgrade58();
         upgrade59();
@@ -435,7 +491,7 @@ public final class SettingsFrameworkMirrorCheck {
         map.remove(StatusBarSettings.DATA_OFFSET_X);equal(null,SettingsFrameworkMirror.decode(map));
         map=wire(first,1L);map.put(StatusBarSettings.DATA_OFFSET_X,9);equal(null,SettingsFrameworkMirror.decode(map));
         map=wire(first,1L);map.put(StatusBarSettings.DATA_OFFSET_X,Float.NaN);equal(null,SettingsFrameworkMirror.decode(map));
-        map=wire(first,1L);map.put(SettingsFrameworkMirror.SCHEMA,6);equal(null,SettingsFrameworkMirror.decode(map));
+        map=wire(first,1L);map.put(SettingsFrameworkMirror.SCHEMA,SettingsFrameworkMirror.VERSION+1);equal(null,SettingsFrameworkMirror.decode(map));
         map=wire(first,0L);equal(null,SettingsFrameworkMirror.decode(map));
         map=wire(first,1L);map.put(SettingsFrameworkMirror.REVISION,1);equal(null,SettingsFrameworkMirror.decode(map));
 

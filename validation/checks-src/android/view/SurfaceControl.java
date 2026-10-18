@@ -12,11 +12,12 @@ public class SurfaceControl {
     public static boolean failNextBuildForCheck;
     public static int buildCallsForCheck,failBuildAtForCheck;
     public static int borrowedMutationAttemptsForCheck;
+    public static boolean rejectBlurRegionsForCheck;
     private static int nextTransaction;
 
     public final String name;
     public final boolean owned;
-    public final SurfaceControl parent;
+    public SurfaceControl parent;
     public final int kind; // native=-1, owned container=0, effect=1, color=2, buffer=3
     public boolean valid=true,hidden=true;
     public int releaseCalls,removeCalls,blurRadius,layer,relativeLayer;
@@ -24,23 +25,28 @@ public class SurfaceControl {
     public Rect crop;
     public float x,y,alpha=1f;
     public float[] color;
+    public float[][] blurRegions;
+    public android.graphics.Matrix matrix;
     public int bufferWidth,bufferHeight;
     public int bufferFormat=-1;
     public boolean opaque=true;
 
     public SurfaceControl(String name,SurfaceControl parent) { this(name,parent,false,-1,true); }
+    public static SurfaceControl ownedHostForCheck(String name){return new SurfaceControl(name,null,true,0,true);}
     private SurfaceControl(String name,SurfaceControl parent,boolean owned,int kind,boolean hidden) {
         this.name=name; this.parent=parent; this.owned=owned; this.kind=kind; this.hidden=hidden;
         createdForCheck.add(this);
     }
     public boolean isValid() { return valid; }
+    public SurfaceControl sameLayerForCheck;
+    public boolean isSameSurface(SurfaceControl other) {return other!=null&&(other==this||sameLayerForCheck==other||other.sameLayerForCheck==this||sameLayerForCheck!=null&&sameLayerForCheck==other.sameLayerForCheck);}
     public void release() {
         requireOwned(this); releaseCalls++; valid=false;
         operationsForCheck.add(new Operation(-1,"release",this,null,null));
     }
     public static void resetForCheck() {
         createdForCheck.clear();operationsForCheck.clear();transactionsForCheck.clear();
-        failNextBuildForCheck=false;buildCallsForCheck=failBuildAtForCheck=borrowedMutationAttemptsForCheck=0;nextTransaction=0;
+        failNextBuildForCheck=rejectBlurRegionsForCheck=false;buildCallsForCheck=failBuildAtForCheck=borrowedMutationAttemptsForCheck=0;nextTransaction=0;
     }
     private static void requireOwned(SurfaceControl target) {
         if(target==null||!target.owned) {
@@ -96,9 +102,15 @@ public class SurfaceControl {
         }
         public Transaction setRelativeLayer(SurfaceControl target,SurfaceControl reference,int value) {return add("relative",target,reference,value);}
         public Transaction setLayer(SurfaceControl target,int value) {return add("layer",target,null,value);}
+        public Transaction reparent(SurfaceControl target,SurfaceControl parent) {return add("reparent",target,parent,null);}
+        public Transaction setMatrix(SurfaceControl target,android.graphics.Matrix matrix,float[] scratch) {android.graphics.Matrix copy=new android.graphics.Matrix();copy.set(matrix);return add("matrix",target,null,copy);}
         public Transaction setCrop(SurfaceControl target,Rect value) {return add("crop",target,null,new Rect(value));}
         public Transaction setPosition(SurfaceControl target,float x,float y) {return add("position",target,null,new float[]{x,y});}
         public Transaction setBackgroundBlurRadius(SurfaceControl target,int value) {return add("blur",target,null,value);}
+        public Transaction setBlurRegions(SurfaceControl target,float[][] value) {
+            if(rejectBlurRegionsForCheck&&value.length>0)throw new IllegalStateException("compositor blur unavailable");
+            return add("regions",target,null,value);
+        }
         public Transaction setColor(SurfaceControl target,float[] value) {return add("color",target,null,value.clone());}
         public Transaction setAlpha(SurfaceControl target,float value) {return add("alpha",target,null,value);}
         public Transaction show(SurfaceControl target) {return add("show",target,null,null);}
@@ -112,9 +124,12 @@ public class SurfaceControl {
                 switch(op.name) {
                     case "relative": target.relativeTo=op.reference;target.relativeLayer=(Integer)op.value;break;
                     case "layer": target.layer=(Integer)op.value;break;
+                    case "reparent": target.parent=op.reference;break;
+                    case "matrix": target.matrix=(android.graphics.Matrix)op.value;break;
                     case "crop": target.crop=new Rect((Rect)op.value);break;
                     case "position": target.x=((float[])op.value)[0];target.y=((float[])op.value)[1];break;
                     case "blur": target.blurRadius=(Integer)op.value;break;
+                    case "regions": target.blurRegions=(float[][])op.value;break;
                     case "color": target.color=((float[])op.value).clone();break;
                     case "alpha": target.alpha=(Float)op.value;break;
                     case "show": target.hidden=false;break;

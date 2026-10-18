@@ -15,5 +15,8 @@ public class StatusIconContainer extends ViewGroup {
     @Override public View getChildAt(int index) { childReads++;int mapped=ordering == null ? index : ordering.childIndex(this,index);return super.getChildAt(hints==null?mapped:hints.childIndex(this,mapped)); }
     public static final class StatusIconState extends com.android.systemui.statusbar.notification.stack.ViewState {
         public int visibleState;
+        public float distanceToViewEnd=-1f;
+        public boolean justAdded, qsExpansionTransitioning;
+        public void applyToView(View view){startXTranslationAnimation(view,NO_NEW_ANIMATIONS);qsExpansionTransitioning=false;justAdded=false;}
     }
 }

@@ -48,12 +48,22 @@ public final class FontLibraryCheck {
             // Library keeps all imported fonts when the provider switches or the network cache disappears.
             Path cache=directory.resolve("fonts/catalog");Files.createDirectories(cache);Files.writeString(cache.resolve("temporary"),"cache");Files.delete(cache.resolve("temporary"));Files.delete(cache);
             equal(2,FontLibrary.entries(context).size());
+            equal(true,FontLibrary.contains(context,ar));equal(true,FontLibrary.contains(context,br));equal(false,FontLibrary.contains(context,"../outside"));
+            equal(directory.resolve("fonts/library/"+ar+".font").toFile(),FontLibrary.providerFile(context,FontRepository.libraryUri(ar)));
+            equal(false,FontLibrary.matchesFile(directory.resolve("fonts/library/"+ar+".font").toFile(),br));
+            equal(true,FontLibrary.matchesFile(directory.resolve("fonts/library/"+ar+".font").toFile(),ar));
+            rejected(()->FontLibrary.providerFile(context,android.net.Uri.parse("content://"+StatusBarSettings.AUTHORITY+"/font/library/../custom.font")));
             Map<String,Object> options=new HashMap<>();options.put(StatusBarSettings.FONT_MODE,"custom");options.put(StatusBarSettings.FONT_REVISION,ar);
             options.put(StatusBarSettings.FONT_NAME,"custom");options.put(NotificationBigClockSettings.FONT,"custom");options.put("unrelated","retain");
+            String assignments=FontScopes.merge("{}",java.util.Arrays.asList(FontScopes.STATUSBAR_CLOCK),FontScopes.source("custom",ar));
+            assignments=FontScopes.merge(assignments,java.util.Arrays.asList(FontScopes.NETWORK_TYPE),FontScopes.source("custom",br));options.put(FontScopes.KEY,assignments);
             Map<String,String> fallback=FontLibrary.deletionFallback(options,ar);
             equal("system",fallback.get(StatusBarSettings.FONT_MODE));equal("system",fallback.get(NotificationBigClockSettings.FONT));
             equal("",fallback.get(StatusBarSettings.FONT_REVISION));equal("",fallback.get(StatusBarSettings.FONT_NAME));equal(false,fallback.containsKey("unrelated"));
-            equal(0,FontLibrary.deletionFallback(options,null).size());equal(0,FontLibrary.deletionFallback(options,br).size());
+            equal("system",FontScopes.parse(fallback.get(FontScopes.KEY)).get(FontScopes.STATUSBAR_CLOCK));
+            equal("custom:"+br,FontScopes.parse(fallback.get(FontScopes.KEY)).get(FontScopes.NETWORK_TYPE));
+            equal(0,FontLibrary.deletionFallback(options,null).size());equal(1,FontLibrary.deletionFallback(options,br).size());
+            equal("custom:"+ar,FontScopes.parse(FontLibrary.deletionFallback(options,br).get(FontScopes.KEY)).get(FontScopes.STATUSBAR_CLOCK));
             options.put(StatusBarSettings.FONT_MODE,"pingfang");equal(false,FontLibrary.deletionFallback(options,ar).containsKey(StatusBarSettings.FONT_MODE));options.put(StatusBarSettings.FONT_MODE,"custom");
             Map<String,Object> original=new HashMap<>(options);
             Runnable restore=()->{for(String key:fallback.keySet())options.put(key,original.get(key));};
@@ -82,6 +92,8 @@ public final class FontLibraryCheck {
             equal("system",options.get(StatusBarSettings.FONT_MODE));equal("retain",options.get("unrelated"));rejected(()->FontLibrary.prepare(context,ar));
             // Integrity failure cannot replace current data or silently create a newly selected source.
             Files.writeString(directory.resolve("fonts/library/"+br+".font"),"corrupt");rejected(()->FontLibrary.prepare(context,br));
+            equal(false,FontLibrary.contains(context,br));
+            rejected(()->FontLibrary.providerFile(context,FontRepository.libraryUri(br)));
             try(FontRepository.PreparedFont repaired=staged(directory,"second-font")){FontLibrary.remember(context,repaired,"已修复.ttf");}
             try(FontRepository.PreparedFont repaired=FontLibrary.prepare(context,br)){equal(br,repaired.revision);}
             equal(1,FontLibrary.entries(context).size());

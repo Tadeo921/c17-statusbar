@@ -22,7 +22,10 @@ public final class TimeSignalCheck {
         NotificationBigClock owner=new NotificationBigClock();
         Class<?> clockClass=Class.forName("dev.puitheme.NotificationBigClock$ClockView");
         Object display=allocate.invoke(unsafe,clockClass);
-        Object digits=allocate.invoke(unsafe,Class.forName("dev.puitheme.NotificationBigClock$ClockText"));
+        java.lang.reflect.Constructor<?> textConstructor=Class.forName("dev.puitheme.NotificationBigClock$ClockText")
+                .getDeclaredConstructor(NotificationBigClock.class,android.content.Context.class);
+        textConstructor.setAccessible(true);
+        Object digits=textConstructor.newInstance(owner,new android.content.Context());
         android.widget.TextView date=new android.widget.TextView(new android.content.Context());
         android.widget.TextView footer=new android.widget.TextView(new android.content.Context());
         field(display,"this$0",owner);field(display,"clock",digits);field(display,"dateLabel",date);field(display,"footerLabel",footer);

@@ -14,5 +14,6 @@ public class Handler {
         }
     }
     public boolean postDelayed(Runnable task,long millis) { delayed=task;delay=millis;scheduled++;return true; }
+    public boolean hasCallbacks(Runnable task) { return delayed==task; }
     public void removeCallbacks(Runnable task) { if(delayed==task)delayed=null; }
 }

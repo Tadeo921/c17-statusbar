@@ -111,12 +111,44 @@ public final class C17DeviceAcrylicCheck {
                 try { helper.drawContent(engine, new Canvas(), canvas -> { engine.onDrawContent(canvas); return null; }); }
                 finally { custom.restore(); }
                 same(customShader, engine.recorded); equal(true, engine.recorded.source.contains("c17QsFill")); equal(false, engine.recorded.source.contains("c17AcrylicTint"));
+                equal(1,customShader.ints.get("c17QsKeepNativeRgb"));
+                near(0x11/255f,customShader.floats.get("c17QsDeviceTint")[0]);near(0x40/255f,customShader.floats.get("c17QsDeviceTint")[3]);
             }
             card.attached = false; helper.detach(card); draw(helper, engine); same(original, engine.recorded); helper.release();
             tile.getResources().getConfiguration().uiMode=Configuration.UI_MODE_NIGHT_NO;
         }
         gradientBases();
+        connectedFillPriority();
         return checks;
+    }
+    private static void connectedFillPriority() throws Throwable {
+        RectangleDeviceCardView card=new RectangleDeviceCardView();card.v=new com.oplus.deviceplugin.sdk.entity.PanelDevice(1);
+        C17HighlightRemoval highlight=new C17HighlightRemoval();QsTileAppearance appearance=new QsTileAppearance();
+        Bundle config=settings(true,true);config.putBoolean(QsTileAppearance.MASTER,true);
+        config.putInt("qs_global_light_color",0x8022aa55);config.putFloat("qs_global_light_opacity",50);
+        highlight.configure(config);appearance.configure(config);
+        GradientDrawable solid=new GradientDrawable();solid.setColor(0x80223344);solid.setCornerRadius(19);solid.mStrokePaint.setColor(0xbbaabbcc);card.body.setBackground(solid);
+        highlight.refreshDeviceCard(card);appearance.refreshDeviceCard(card);
+        highlight.drawDeviceBackground(solid,new Canvas(),canvas->{appearance.drawDeviceBackground(solid,canvas,target->{
+            android.graphics.LinearGradient shader=(android.graphics.LinearGradient)solid.mFillPaint.getShader();
+            equal(0x4022aa55,shader.colors[0]);equal(0x4022aa55,shader.colors[1]);equal(128,solid.mFillPaint.getAlpha());
+            equal(0,solid.mStrokePaint.getAlpha());solid.draw(target);
+        });return null;});
+        equal(0x80223344,solid.mFillPaint.getColor());equal(null,solid.mFillPaint.getShader());equal(0xbb,solid.mStrokePaint.getAlpha());near(19,solid.getCornerRadius());
+        AutoBlurDrawable blur=new AutoBlurDrawable();blur.setBounds(0,0,100,80);blur.viewBlurProxy.view=card.body;card.body.setBackground(blur);
+        BlendDrawable engine=blur.viewBlurProxy.actual.blurDrawable;engine.setBounds(0,0,100,80);
+        C17AcrylicMaterialCheck.NativeMaterial material=new C17AcrylicMaterialCheck.NativeMaterial();QsTileAppearance.setField(engine,"drawableShader",material);
+        material.multiBlendParam.get(2).color=0x73e6e6e6;material.multiBlendParam.get(3).color=0x40cccccc;
+        RuntimeShader original=material.shader;highlight.refreshDeviceCard(card);highlight.onNativeBlurResult(blur.viewBlurProxy,blur.viewBlurProxy.actual);
+        appearance.drawDeviceCard(card,new Canvas(),canvas->appearance.drawBlur(blur,canvas,blur::draw));
+        try(C17HighlightRemoval.RecordScope record=highlight.beginRecord(engine)) {
+            appearance.drawGlassContent(engine,new Canvas(),canvas->{highlight.drawContent(engine,canvas,target->{engine.onDrawContent(target);return null;});});
+        }
+        equal(0,engine.recorded.ints.get("c17QsKeepNativeRgb"));near(0,engine.recorded.floats.get("c17QsDeviceTint")[3]);
+        equal(false,engine.recorded.source.contains("c17AcrylicTint"));equal(false,engine.recorded.source.contains("GradientStrokeEffect"));
+        equal(0x4022aa55,((android.graphics.LinearGradient)engine.recorded.inputs.get("c17QsFill")).colors[0]);same(original,material.shader);
+        config.putBoolean(QsTileAppearance.MASTER,false);config.putBoolean(C17HighlightRemoval.ENABLED,false);highlight.configure(config);appearance.configure(config);draw(highlight,engine);same(original,engine.recorded);
+        highlight.release();appearance.detach(card);
     }
     private static void gradientBases() throws Throwable {
         C17HighlightRemoval helper = new C17HighlightRemoval(); SquareDeviceCardView card = new SquareDeviceCardView();
@@ -137,6 +169,16 @@ public final class C17DeviceAcrylicCheck {
         equal(0x10223344, base.mFillPaint.getColor()); same(shader, base.mFillPaint.getShader()); equal(0xbb, base.mStrokePaint.getAlpha());
         Bundle qs = settings(true, true); qs.putBoolean(QsTileAppearance.MASTER, true); helper.configure(qs);
         helper.drawDeviceBackground(base, new Canvas(), canvas -> { equal(C17DeviceAcrylic.mixNativeTint(0x10223344,0x80aabbcc), base.mFillPaint.getColor()); return null; });
+        // The actual hook order is C17's RGB policy, then QS base transparency,
+        // then the untouched framework draw. Both controllers restore ownership.
+        QsTileAppearance appearance=new QsTileAppearance();qs.putFloat("qs_global_light_opacity",50f);appearance.configure(qs);appearance.refreshDeviceCard(card);
+        helper.drawDeviceBackground(base,new Canvas(),canvas->{appearance.drawDeviceBackground(base,canvas,target->{
+            equal(C17DeviceAcrylic.mixNativeTint(0x10223344,0x80aabbcc),base.mFillPaint.getColor());
+            android.graphics.LinearGradient transparent=(android.graphics.LinearGradient)base.mFillPaint.getShader();
+            equal((C17DeviceAcrylic.mixNativeTint(0x10223344,0x80aabbcc)&0xffffff)|0x80000000,transparent.colors[0]);
+            equal(0x10,base.mFillPaint.getAlpha());base.draw(target);
+        });return null;});
+        equal(0x10223344,base.mFillPaint.getColor());same(shader,base.mFillPaint.getShader());equal(0xbb,base.mStrokePaint.getAlpha());
         Bundle separated = settings(true, true); separated.putBoolean(C17HighlightRemoval.CONTROL_ENABLED, false); helper.configure(separated);
         helper.drawDeviceBackground(base, new Canvas(), canvas -> { equal(0x10223344, base.mFillPaint.getColor()); return null; });
         helper.configure(settings(false, true)); helper.drawDeviceBackground(base, new Canvas(), canvas -> { equal(0x10223344, base.mFillPaint.getColor()); return null; });

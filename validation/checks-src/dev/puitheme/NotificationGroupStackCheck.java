@@ -19,7 +19,9 @@ public final class NotificationGroupStackCheck {
         public int clicks;
         Summary(Context c){super(c,100,0,0);mExpandClickListener=v->{clicks++;mChildrenContainer.mChildrenExpanded=!mChildrenContainer.mChildrenExpanded;};}
     }
-    public interface ReceiptAdapter {android.service.notification.StatusBarNotification getSbn();}
+    public interface ReceiptAdapter extends com.android.systemui.statusbar.notification.collection.EntryAdapter {
+        android.service.notification.StatusBarNotification getSbn();
+    }
     public interface NativeAdapter extends ReceiptAdapter {}
     public static final class Adapter implements NativeAdapter {
         final android.service.notification.StatusBarNotification sbn;

@@ -11,6 +11,8 @@ public final class NetworkSpeedView extends FrameLayout implements com.android.s
     public boolean mBlocked;
     public String mSlot="network_speed";
     public int mVisibleState=-1,tint,stateUpdates;
+    /** Independent native CoordAnimIcon movement, separate from ViewState X. */
+    public float transXForCoord;
     public final java.util.Map<Integer,Object> tags=new java.util.HashMap<>();
     public String getSlot(){return mSlot;}
     public void setSlot(String value){mSlot=value;}
@@ -27,9 +29,18 @@ public final class NetworkSpeedView extends FrameLayout implements com.android.s
     public final NativeTextView mSpeedNumber=new NativeTextView(),mSpeedUnit=new NativeTextView();
     public boolean rtl;
     public int nativeHeight=24;
-    public int nativePaddingStart,nativePaddingEnd;
+    public int nativePaddingStart,nativePaddingEnd,nativePaddingTop,nativePaddingBottom;
     @Override public int getPaddingStart(){return nativePaddingStart;}
     @Override public int getPaddingEnd(){return nativePaddingEnd;}
+    @Override public int getPaddingLeft(){return rtl?nativePaddingEnd:nativePaddingStart;}
+    @Override public int getPaddingRight(){return rtl?nativePaddingStart:nativePaddingEnd;}
+    @Override public int getPaddingTop(){return nativePaddingTop;}
+    @Override public int getPaddingBottom(){return nativePaddingBottom;}
+    @Override public void setPaddingRelative(int start,int top,int end,int bottom){
+        if(nativePaddingStart!=start||nativePaddingEnd!=end||nativePaddingTop!=top||nativePaddingBottom!=bottom){
+            nativePaddingStart=start;nativePaddingEnd=end;nativePaddingTop=top;nativePaddingBottom=bottom;requestLayout();}
+    }
+    @Override public void setPadding(int left,int top,int right,int bottom){setPaddingRelative(rtl?right:left,top,rtl?left:right,bottom);}
     public NetworkSpeedView(){
         super(null);setLayoutParams(new ViewGroup.MarginLayoutParams(24,ViewGroup.LayoutParams.MATCH_PARENT));
         FrameLayout.LayoutParams number=new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER_HORIZONTAL);

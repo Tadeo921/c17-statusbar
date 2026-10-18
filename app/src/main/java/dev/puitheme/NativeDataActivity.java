@@ -3,10 +3,11 @@
 package dev.puitheme;
 
 import android.content.res.Resources;
+import android.content.res.ColorStateList;
+import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -64,7 +65,22 @@ public final class NativeDataActivity {
         private final Drawable delegate;public final float density;
         public boolean composePlacement;public int nativeTint=0xffffffff;
         private ColorFilter nativeFilter;private boolean customFilter;private int appliedTint;
-        ArrowDrawable(Drawable drawable,float density){delegate=drawable;this.density=density;nativeFilter=drawable.getColorFilter();delegate.setCallback(this);}
+        private ColorStateList nativeColors;
+        // An explicit ColorFilter temporarily overrides the native TintList.
+        // Keep that underlying decision separate so clearing a filter cannot
+        // leave its previous black/white branch latched. Without a native tint,
+        // retain the existing initial fallback; do not infer artwork pixels.
+        private final int initialTint;private int underlyingTint;
+        ArrowDrawable(Drawable drawable,float density){delegate=drawable;this.density=density;initialTint=underlyingTint=nativeTint;nativeFilter=drawable.getColorFilter();captureTint();delegate.setCallback(this);}
+        private void captureTint(){
+            if(nativeColors!=null)underlyingTint=nativeColors.getColorForState(getState(),nativeColors.getDefaultColor());
+            nativeTint=underlyingTint;
+            if(nativeFilter!=null)try{
+                Method getter=nativeFilter.getClass().getMethod("getColor");Object value=getter.invoke(nativeFilter);
+                if(value instanceof Integer)nativeTint=(Integer)value;
+            }catch(ReflectiveOperationException|RuntimeException unsupported){/* Non-tint native filters remain unchanged. */}
+        }
+        private void restoreNativeFilter(){if(customFilter){delegate.setColorFilter(nativeFilter);customFilter=false;}}
         @Override public void draw(Canvas canvas) {
             if(colorEnabled()&&!composePlacement){int next=tint(nativeTint);if(!customFilter||appliedTint!=next){delegate.setColorFilter(next,PorterDuff.Mode.SRC_IN);customFilter=true;appliedTint=next;}}
             else if(customFilter){delegate.setColorFilter(nativeFilter);customFilter=false;}
@@ -77,13 +93,17 @@ public final class NativeDataActivity {
         @Override protected void onBoundsChange(Rect bounds){delegate.setBounds(bounds);}
         @Override public void setAlpha(int alpha){delegate.setAlpha(alpha);}
         @Override public int getAlpha(){return delegate.getAlpha();}
-        @Override public void setColorFilter(ColorFilter filter){nativeFilter=filter;customFilter=false;delegate.setColorFilter(filter);try{if(filter instanceof PorterDuffColorFilter){Method getter=filter.getClass().getDeclaredMethod("getColor");getter.setAccessible(true);Object value=getter.invoke(filter);if(value instanceof Integer)nativeTint=(Integer)value;}}catch(ReflectiveOperationException|RuntimeException unsupported){/* Compose supplies its actual native tint separately. */}}
+        @Override public void setColorFilter(ColorFilter filter){nativeFilter=filter;customFilter=false;delegate.setColorFilter(filter);captureTint();invalidateSelf();}
+        @Override public void setTint(int color){setTintList(ColorStateList.valueOf(color));}
+        @Override public void setTintList(ColorStateList colors){restoreNativeFilter();nativeColors=colors;if(colors==null)underlyingTint=initialTint;delegate.setTintList(colors);captureTint();invalidateSelf();}
+        @Override public void setTintMode(PorterDuff.Mode mode){restoreNativeFilter();delegate.setTintMode(mode);invalidateSelf();}
+        @Override public void setTintBlendMode(BlendMode mode){restoreNativeFilter();delegate.setTintBlendMode(mode);invalidateSelf();}
         @Override public ColorFilter getColorFilter(){return delegate.getColorFilter();}
         @Override public int getOpacity(){return delegate.getOpacity();}
         @Override public int getIntrinsicWidth(){return delegate.getIntrinsicWidth();}
         @Override public int getIntrinsicHeight(){return delegate.getIntrinsicHeight();}
-        @Override public boolean isStateful(){return delegate.isStateful();}
-        @Override protected boolean onStateChange(int[] state){return delegate.setState(state);}
+        @Override public boolean isStateful(){return delegate.isStateful()||nativeColors!=null&&nativeColors.isStateful();}
+        @Override protected boolean onStateChange(int[] state){restoreNativeFilter();boolean changed=delegate.setState(state);int previous=nativeTint;captureTint();if(previous!=nativeTint)invalidateSelf();return changed||previous!=nativeTint;}
         @Override protected boolean onLevelChange(int level){return delegate.setLevel(level);}
         @Override public boolean setVisible(boolean visible,boolean restart){return super.setVisible(visible,restart)|delegate.setVisible(visible,restart);}
         @Override public void invalidateDrawable(Drawable who){invalidateSelf();}

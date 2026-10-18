@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.ClipDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.InsetDrawable;
 import android.graphics.drawable.LayerDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -30,12 +31,17 @@ public final class PuiBatteryStyle {
     private final Map<ImageView,Dimensions> sizes=new WeakHashMap<>();
     private Resources resources;
     private boolean enabled=true;
+    /** Device code162: the iOS 27 style uses PUI's exact logic (same native slots, rects, 29x17dp
+     * box and native number) with its own iOS outline, and also without a system percentage. */
+    private boolean ios;
+    private String prefix="c17_pui_battery_";
 
     private static final class Entry {
         final Drawable[] nativeShapes=new Drawable[5],puiShapes=new Drawable[5];
         final int[] colors=new int[5];
         final boolean[] tinted=new boolean[5];
         float nativeTextSize,appliedTextSize;
+        String prefix;
     }
     private static final class Dimensions {
         int nativeWidth,nativeHeight,appliedWidth,appliedHeight;
@@ -62,12 +68,18 @@ public final class PuiBatteryStyle {
     }
 
     public void configure(Bundle settings) {
-        enabled=FeatureOptions.from(settings).effective("battery","battery_style_enabled")
-                &&"pui".equals(settings.getString(StatusBarSettings.BATTERY_STYLE,"pui"));
-        if(!enabled) {
-            for(Drawable drawable:entries.keySet().toArray(new Drawable[0]))restore(drawable);
-            for(ImageView image:sizes.keySet().toArray(new ImageView[0]))restoreSize(image);
+        boolean effective=FeatureOptions.from(settings).effective("battery","battery_style_enabled");
+        String style=settings.getString(StatusBarSettings.BATTERY_STYLE,"pui");
+        ios=Ios27BatteryStyle.known(style);
+        enabled=effective&&("pui".equals(style)||ios);
+        String next=ios?"c17_ios27_battery_":"c17_pui_battery_";
+        // A style switch rebuilds the replacement set from the native shapes on the next draw.
+        for(Drawable drawable:entries.keySet().toArray(new Drawable[0])) {
+            Entry entry=entries.get(drawable);
+            if(!enabled||entry==null||!next.equals(entry.prefix))restore(drawable);
         }
+        prefix=next;
+        if(!enabled)for(ImageView image:sizes.keySet().toArray(new ImageView[0]))restoreSize(image);
     }
 
     private Resources resources(Drawable drawable) throws Exception {
@@ -78,31 +90,52 @@ public final class PuiBatteryStyle {
         return resources;
     }
 
-    private Drawable asset(Resources source,String name) {
-        int id=source.getIdentifier(name,"drawable",PACKAGE);
+    private static Drawable asset(Resources source,String name) {
+        int id=ResourceIds.get(source, name,"drawable",PACKAGE);
         if(id==0)throw new Resources.NotFoundException("Missing PUI battery asset: "+name);
         return source.getDrawable(id,null).mutate();
     }
 
-    private LayerDrawable progress(Drawable graphic) {
-        ClipDrawable clip=new ClipDrawable(graphic,Gravity.LEFT,ClipDrawable.HORIZONTAL);
-        LayerDrawable layers=new LayerDrawable(new Drawable[]{clip});
+    /** Left and right insets (fractions of the native rect) of the iOS body inside its box: c17_ios27_battery_bg / outer_bg. */
+    static final float[] IOS_FILL={.00273f,.06436f},IOS_OUTER_FILL={.01131f,.05958f};
+    static int track(int color) { return 0x8c000000|(color&0xffffff); }
+
+    private static LayerDrawable progress(Drawable graphic) {
+        return progress(graphic,null);
+    }
+    private static LayerDrawable progress(Drawable graphic,float[] insets) {
+        Drawable level=new ClipDrawable(graphic,Gravity.LEFT,ClipDrawable.HORIZONTAL);
+        // Clip only the body rectangle. Clipping an inset graphic at the outer box width
+        // overfills the body (47% became about 50%) and includes the terminal gap.
+        if(insets!=null)level=new InsetDrawable(level,insets[0],0f,insets[1],0f);
+        LayerDrawable layers=new LayerDrawable(new Drawable[]{level});
         layers.setId(0,android.R.id.progress);
         return layers;
     }
 
+    /** Fresh, unowned assets shared by the status bar and inline component renderer.
+     * This factory never touches a native drawable, View, palette or callback. */
+    static Drawable[] createShapes(Resources source,boolean ios) {
+        String name=ios?"c17_ios27_battery_":"c17_pui_battery_";
+        return new Drawable[]{asset(source,name+"bg"),
+                ios?progress(asset(source,name+"fill"),IOS_FILL):progress(asset(source,name+"bg")),
+                asset(source,name+"frame"),asset(source,name+"outer_bg"),
+                ios?progress(asset(source,name+"outer_fill"),IOS_OUTER_FILL):progress(asset(source,name+"outer_fill"))};
+    }
+
     /** Native update methods may replace their fields, so capture the latest native version before each patch. */
     public boolean prepare(Drawable drawable) throws Exception {
+        return prepare(drawable,shapes!=null&&BatteryNativeStyle.percentEnabled((Context)context.invoke(drawable)));
+    }
+    boolean prepare(Drawable drawable,boolean percentage) throws Exception {
         if(shapes==null)return false;
-        if(!enabled){restore(drawable);return false;}
+        if(!enabled||!percentage&&!ios){restore(drawable);return false;}
         Entry entry=entries.get(drawable);
+        if(entry!=null&&!prefix.equals(entry.prefix)){restore(drawable);entry=null;}
         if(entry==null) {
-            Resources source=resources(drawable);entry=new Entry();
-            entry.puiShapes[0]=asset(source,"c17_pui_battery_bg");
-            entry.puiShapes[1]=progress(asset(source,"c17_pui_battery_bg"));
-            entry.puiShapes[2]=asset(source,"c17_pui_battery_frame");
-            entry.puiShapes[3]=asset(source,"c17_pui_battery_outer_bg");
-            entry.puiShapes[4]=progress(asset(source,"c17_pui_battery_outer_fill"));
+            Resources source=resources(drawable);entry=new Entry();entry.prefix=prefix;
+            Drawable[] created=createShapes(source,ios);
+            System.arraycopy(created,0,entry.puiShapes,0,created.length);
             entry.nativeTextSize=((Paint)percentPaint.get(drawable)).getTextSize();entries.put(drawable,entry);
         }
         RectF in=(RectF)insideRect.get(drawable),out=(RectF)outsideRect.get(drawable);
@@ -113,7 +146,8 @@ public final class PuiBatteryStyle {
             if(current!=replacement)entry.nativeShapes[index]=current;
             RectF rect=index<3?in:out;
             if(rect!=null)replacement.setBounds((int)rect.left,(int)rect.top,(int)rect.right,(int)rect.bottom);
-            int color=index==1||index==4?fill:index==2||index==3?edge:bg;
+            // iOS (device code162 reference): an opaque level, a 55% track in the icon colour and no outline.
+            int color=index==1||index==4?(ios?fill|0xff000000:fill):ios?(index==2?edge:track(bg)):index==2||index==3?edge:bg;
             if(!entry.tinted[index]||entry.colors[index]!=color) {
                 replacement.setTint(color);entry.colors[index]=color;entry.tinted[index]=true;
             }
@@ -129,21 +163,26 @@ public final class PuiBatteryStyle {
     }
 
     public void updateView(View owner,Drawable drawable) throws Exception {
+        updateView(owner,drawable,BatteryNativeStyle.percentEnabled(owner.getContext()));
+    }
+    void updateView(View owner,Drawable drawable,boolean percentage) throws Exception {
         if(shapes==null)return;
         ImageView image=findImage(owner,drawable,0);
         if(image==null)return;
-        if(!enabled){restoreSize(image);return;}
+        // PUI needs the system percentage; the iOS 27 glyph is sized whether or not it shows a number.
+        if(!enabled||!percentage&&!ios){restoreSize(image);return;}
         ViewGroup.LayoutParams params=image.getLayoutParams();
         if(params==null||params.width<=0||params.height<=0)return;
         Dimensions dimensions=sizes.get(image);
         if(dimensions==null) {
             dimensions=new Dimensions();dimensions.nativeWidth=params.width;dimensions.nativeHeight=params.height;
             sizes.put(image,dimensions);
-        } else if(params.width!=dimensions.appliedWidth||params.height!=dimensions.appliedHeight) {
-            dimensions.nativeWidth=params.width;dimensions.nativeHeight=params.height;
+        } else {
+            if(params.width!=dimensions.appliedWidth)dimensions.nativeWidth=params.width;
+            if(params.height!=dimensions.appliedHeight)dimensions.nativeHeight=params.height;
         }
         Resources nativeResources=owner.getResources();float density=nativeResources.getDisplayMetrics().density;
-        int nativeWidthId=nativeResources.getIdentifier("status_bar_battery_horizontal_width","dimen","com.android.systemui");
+        int nativeWidthId=ResourceIds.get(nativeResources, "status_bar_battery_horizontal_width","dimen","com.android.systemui");
         float nativeWidth=nativeWidthId==0?29f*density:nativeResources.getDimension(nativeWidthId);
         float factor=dimensions.nativeWidth/Math.max(1f,nativeWidth);
         dimensions.appliedWidth=Math.max(1,Math.round(29f*density*factor));
@@ -167,9 +206,10 @@ public final class PuiBatteryStyle {
     private void restoreSize(ImageView image) {
         Dimensions dimensions=sizes.remove(image);if(dimensions==null)return;
         ViewGroup.LayoutParams params=image.getLayoutParams();if(params==null)return;
-        if(params.width==dimensions.appliedWidth&&params.height==dimensions.appliedHeight) {
-            params.width=dimensions.nativeWidth;params.height=dimensions.nativeHeight;image.setLayoutParams(params);
-        }
+        boolean changed=false;
+        if(params.width==dimensions.appliedWidth&&params.width!=dimensions.nativeWidth){params.width=dimensions.nativeWidth;changed=true;}
+        if(params.height==dimensions.appliedHeight&&params.height!=dimensions.nativeHeight){params.height=dimensions.nativeHeight;changed=true;}
+        if(changed)image.setLayoutParams(params);
     }
 
     public void restore(Drawable drawable) {

@@ -65,7 +65,7 @@ final class QsDeviceCorners {
             // These final fields are the exact inner native ConstraintLayouts in this ROM.
             if (actual instanceof View && actual != card) return (View) actual;
             try {
-                int id = card.getResources().getIdentifier(BODY_NAMES[i], "id", "com.android.systemui");
+                int id = ResourceIds.get(card.getResources(), BODY_NAMES[i], "id", "com.android.systemui");
                 View candidate = id == 0 ? null : card.findViewById(id);
                 if (candidate != null && BODY_NAMES[i].equals(candidate.getResources().getResourceEntryName(candidate.getId())))
                     return candidate;

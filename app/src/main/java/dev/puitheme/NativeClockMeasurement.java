@@ -65,8 +65,8 @@ final class NativeClockMeasurement {
         if (!statClock(view)) return Float.NaN;
         Resources resources = view.getContext().getResources();
         try {
-            int id = resources.getIdentifier("stat_clock_size", "dimen", "com.android.systemui");
-            if (id == 0) id = resources.getIdentifier("stat_clock_size", "dimen", "com.oplus.systemui");
+            int id = ResourceIds.get(resources, "stat_clock_size", "dimen", "com.android.systemui");
+            if (id == 0) id = ResourceIds.get(resources, "stat_clock_size", "dimen", "com.oplus.systemui");
             if (id == 0) return Float.NaN;
             // PixelSize matches OEM's integer rounding. Older desktop fixtures lack it.
             Method getter;

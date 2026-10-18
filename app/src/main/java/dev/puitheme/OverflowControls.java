@@ -27,6 +27,9 @@ public final class OverflowControls {
     private static final class Snapshot {
         final Rect bounds;
         final boolean children, padding;
+        /** Set only once some lease really cleared this node's clip bounds; a node nobody cleared is never written back. */
+        boolean boundsOwned;
+        boolean flagsOwned;
         int users;
         Snapshot(View view) {
             Rect clip = view.getClipBounds();
@@ -37,24 +40,44 @@ public final class OverflowControls {
     }
     private static final class Lease {
         final WeakReference<View> owner;
+        final boolean preserveBounds;
+        final boolean restoreAll;
         final List<WeakReference<View>> nodes = new ArrayList<>();
-        Lease(View owner) { this.owner = new WeakReference<>(owner); }
+        Lease(View owner, boolean preserveBounds, boolean restoreAll) {
+            this.owner = new WeakReference<>(owner); this.preserveBounds = preserveBounds; this.restoreAll = restoreAll;
+        }
     }
 
     public static OverflowControls shared() { return SHARED; }
 
     /** Repeating an acquisition refreshes native flags without increasing its reference count. */
-    public synchronized void acquire(View owner, boolean includeTree) {
+    public synchronized void acquire(View owner, boolean includeTree) { acquire(owner, includeTree, false); }
+
+    /** The public 1.8.2 Wi-Fi/data/speed renderers clear clipping and restore the full original snapshot. */
+    public synchronized void acquireLegacyNetwork(View owner, boolean includeTree) { acquire(owner, includeTree, false, true); }
+
+    /**
+     * With {@code preserveClipBounds} only the children/padding clip flags are relaxed. The clip bounds of the owner, its
+     * subtree and its ancestors stay exactly as the system set them, and are never written back by this lease. Native
+     * status-bar allocation/coordinated-animation containers also keep their clipping flags: overflow of one custom glyph
+     * may relax its own wrappers, but must not make every sibling draw outside the system's row or scaled content area.
+     */
+    public synchronized void acquire(View owner, boolean includeTree, boolean preserveClipBounds) {
+        acquire(owner, includeTree, preserveClipBounds, false);
+    }
+
+    private void acquire(View owner, boolean includeTree, boolean preserveClipBounds, boolean restoreAll) {
         sweep();
         if (owner == null) return;
         List<View> nodes = collect(owner, includeTree);
         Lease previous = owners.get(owner);
-        if (!same(previous, nodes)) {
+        if (!same(previous, nodes) || previous.preserveBounds != preserveClipBounds || previous.restoreAll != restoreAll) {
             if (previous != null) { owners.remove(owner); leases.remove(previous); restore(previous); }
-            Lease next = new Lease(owner);
+            Lease next = new Lease(owner, preserveClipBounds, restoreAll);
             for (View node : nodes) {
                 Snapshot state = snapshots.get(node);
                 if (state == null) { state = new Snapshot(node); snapshots.put(node, state); }
+                if (restoreAll) { state.boundsOwned = true; state.flagsOwned = true; }
                 state.users++;
                 next.nodes.add(new WeakReference<>(node));
             }
@@ -62,13 +85,48 @@ public final class OverflowControls {
             leases.add(next);
         }
         for (View node : nodes) {
-            if (node.getClipBounds() != null) node.setClipBounds(null);
-            if (node instanceof ViewGroup) {
+            if (!preserveClipBounds && node.getClipBounds() != null) {
+                Snapshot state = snapshots.get(node);
+                if (state != null) state.boundsOwned = true;
+                node.setClipBounds(null);
+            }
+            if (node instanceof ViewGroup && (!preserveClipBounds || !outsideGlyph(owner,node))) {
                 ViewGroup group = (ViewGroup) node;
-                if (group.getClipChildren()) group.setClipChildren(false);
-                if (group.getClipToPadding()) group.setClipToPadding(false);
+                if (group.getClipChildren() || group.getClipToPadding()) {
+                    Snapshot state=snapshots.get(node);if(state!=null)state.flagsOwned=true;
+                    if (group.getClipChildren()) group.setClipChildren(false);
+                    if (group.getClipToPadding()) group.setClipToPadding(false);
+                }
             }
         }
+    }
+
+    /** Native animation boundaries and everything beyond them keep the system's clipping contract. */
+    private static boolean outsideGlyph(View owner,View node){
+        // Descendants are local glyph wrappers, rather than ancestors beyond the native row.
+        View descendant=node;
+        for(int depth=0;descendant!=null&&depth<24;depth++){
+            if(descendant==owner)return animationBoundary(owner);
+            descendant=descendant.getParent() instanceof View?(View)descendant.getParent():null;
+        }
+        View current=owner;
+        for(int depth=0;current!=null&&depth<24;depth++){
+            if(animationBoundary(current))return true;
+            if(current==node)return false;
+            current=current.getParent() instanceof View?(View)current.getParent():null;
+        }
+        return true;
+    }
+    private static boolean animationBoundary(View view){
+        for(Class<?> type=view.getClass();type!=null;type=type.getSuperclass()){
+            String name=type.getName();
+            if(name.equals("com.android.systemui.statusbar.phone.StatusIconContainer")
+                    ||name.equals("com.oplus.systemui.statusbar.widget.EndSideContentLayout")
+                    ||name.equals("com.oplus.systemui.statusbar.widget.StartSideExceptHeadsUpLayout")
+                    ||name.equals("com.oplus.systemui.statusbar.widget.KeyguardEndSideContentLayout")
+                    ||name.equals("com.oplus.systemui.statusbar.widget.KeyguardStartSideContentLayout"))return true;
+        }
+        return false;
     }
 
     public synchronized void release(View owner) {
@@ -92,8 +150,8 @@ public final class OverflowControls {
             View view = reference.get();
             Snapshot state = view == null ? null : snapshots.get(view);
             if (state == null || --state.users != 0) continue;
-            view.setClipBounds(state.bounds == null ? null : new Rect(state.bounds));
-            if (view instanceof ViewGroup) {
+            if (state.boundsOwned) view.setClipBounds(state.bounds == null ? null : new Rect(state.bounds));
+            if (view instanceof ViewGroup && state.flagsOwned) {
                 ViewGroup group = (ViewGroup) view;
                 group.setClipChildren(state.children);
                 group.setClipToPadding(state.padding);

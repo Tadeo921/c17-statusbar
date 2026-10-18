@@ -3,4 +3,5 @@ package com.android.systemui.statusbar.notification.row;
 public class NotificationBackgroundViewExt {
     public NotificationBackgroundView bgView;
     public NotificationBackgroundViewExt(NotificationBackgroundView host){bgView=host;}
+    public NotificationBackgroundView getBgView(){return bgView;}
 }

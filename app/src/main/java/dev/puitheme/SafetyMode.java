@@ -18,14 +18,21 @@ public final class SafetyMode {
         if (saved == null) throw new IllegalArgumentException("Missing settings snapshot");
         Bundle runtime = SettingsSnapshot.runtimeCopy(saved);
         if (!enabled(saved)) return runtime;
+        for (String key : new String[]{FluidCloudAccent.LOCK_CUSTOM,FluidCloudAccent.LOCK_GRADIENT,
+                FluidCloudAccent.AOD_CUSTOM,FluidCloudAccent.AOD_GRADIENT,FluidCloudStyle.NOTIFICATION_FOLLOW,
+                FluidCloudStyle.LOCK_CAPSULE,FluidCloudStyle.SCOPE_LOCK,LockNotificationSettings.UNIFY_AOD,
+                AodNotificationBackground.ENABLED}) runtime.putBoolean(key,false);
         for (String group : FeatureOptions.GROUPS) runtime.putBoolean(FeatureOptions.masterKey(group), false);
         runtime.putBoolean(QsTileAppearance.MASTER, false);
+        runtime.putBoolean(IconManagementSettings.ENABLED, false);
+        runtime.putBoolean(QsTileFullFill.ENABLED, false);
         runtime.putBoolean(QsTileCorners.MASTER, false);
         runtime.putBoolean(QsMediaAppearance.MASTER, false);
         runtime.putBoolean(NotificationClearAppearance.MASTER, false);
         runtime.putBoolean(NotificationBigClockSettings.MASTER, false);
         runtime.putBoolean(NotificationBigClockSettings.LANDSCAPE_MASTER, false);
         runtime.putBoolean(NotificationGroupStack.MASTER, false);
+        runtime.putBoolean(NotificationMiniStack.ENABLED, false);
         runtime.putBoolean(FeatureOptions.STACK_LANDSCAPE_ENABLED,false);
         runtime.putBoolean(NativeDataActivity.MASTER,false);
         runtime.putBoolean(NotificationIconArea.MASTER, false);

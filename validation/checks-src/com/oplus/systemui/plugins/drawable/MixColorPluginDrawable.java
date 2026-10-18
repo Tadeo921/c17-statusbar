@@ -5,6 +5,10 @@ public class MixColorPluginDrawable extends PluginDrawable {
     private AutoBlurDrawable autoBlurDrawable=new AutoBlurDrawable();
     public boolean strokeConfigSideEffects;
     public AutoBlurDrawable blur(){return autoBlurDrawable;}
+    public android.graphics.drawable.Drawable getDrawable(){return autoBlurDrawable;}
+    public int draws;
+    @Override public void draw(android.graphics.Canvas canvas){draws++;autoBlurDrawable.draw(canvas);}
+    @Override protected void onBoundsChange(android.graphics.Rect bounds){autoBlurDrawable.setBounds(bounds);}
     public void replaceBlur(AutoBlurDrawable replacement){autoBlurDrawable=replacement;}
     @Override public void setCornerRadius(float radius,Float weight){
         // Simulate native stroke-template side effects before a partially failing setter.

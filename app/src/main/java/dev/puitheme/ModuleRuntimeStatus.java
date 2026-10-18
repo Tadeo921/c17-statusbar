@@ -33,7 +33,7 @@ public final class ModuleRuntimeStatus {
     public static final String METHOD_QUERY = "query_runtime_status";
     public static final String METHOD_REPORT = "report_runtime_status";
     // Change this whenever distributing a build whose runtime gate must replace an earlier build.
-    public static final String BUILD_TOKEN = "c17-runtime-20261004-clock-wallpaper-fonts-code75-release";
+    public static final String BUILD_TOKEN = "c17-runtime-20261018-1.8.3-code192";
     public static final String KEY_NONCE = "nonce";
     public static final String KEY_PID = "pid";
     public static final String KEY_UPTIME = "uptime_ms";
@@ -48,6 +48,7 @@ public final class ModuleRuntimeStatus {
     private static final Object LOCK = new Object();
     private static final ScheduledThreadPoolExecutor WORK = new ScheduledThreadPoolExecutor(1);
     private static final AtomicInteger GENERATION = new AtomicInteger();
+    private static final java.util.concurrent.atomic.AtomicBoolean PERFORMANCE_SIGNAL = new java.util.concurrent.atomic.AtomicBoolean();
     private static Challenge challenge;
     private static BroadcastReceiver systemUiReceiver;
     private static HandlerThread receiverThread;
@@ -57,7 +58,29 @@ public final class ModuleRuntimeStatus {
 
     private ModuleRuntimeStatus() { }
 
+    /** Reuse the existing worker for screen transitions; no touch hook or polling is added. */
+    static void signalPerformance(Context source, boolean interactive) {
+        signalPerformance(source, interactive ? "screen_on" : "screen_off");
+    }
+    private static void signalPerformance(Context source, String event) {
+        if (source == null || !PERFORMANCE_SIGNAL.compareAndSet(false, true)) return;
+        WORK.execute(() -> {
+            try {
+                android.content.pm.ApplicationInfo owner = source.getPackageManager().getApplicationInfo("dev.puitheme.iosstatusbar", 0);
+                // Respect force-stop: only explicitly reopening C17 should resume app scheduling.
+                if ((owner.flags & android.content.pm.ApplicationInfo.FLAG_STOPPED) != 0) return;
+                source.getContentResolver().call(Uri.parse(URI), "performance_schedule", event, null);
+            } catch (Exception unavailable) {
+                // The optional companion must never disturb the injected SystemUI.
+            } finally { PERFORMANCE_SIGNAL.set(false); }
+        });
+    }
+
     public enum State { CHECKING, ACTIVE, NOT_DETECTED, ERROR }
+    /** SystemUI side: what the resident cache really is, sent with each verified report (null: not reported). */
+    static volatile java.util.function.Supplier<Bundle> residentReport;
+    /** SystemUI side: which hook groups really installed, sent with each verified report (null: not reported). */
+    static volatile java.util.function.Supplier<Bundle> hookReport;
     public interface Callback { void onStatus(Snapshot result); }
 
     public static final class Snapshot {
@@ -67,8 +90,18 @@ public final class ModuleRuntimeStatus {
         public final String message, summary, framework, detail, frameworkName, frameworkVersion;
         public final int pid, apiVersion;
         public final long uptimeMillis;
+        /** The resident cache as SystemUI reported it with this answer (null when it did not report one). */
+        public final Bundle residentCache;
+        /** Hook installation state as SystemUI reported it with this answer (null when it did not report one). */
+        public final Bundle hookHealth;
         private Snapshot(State state, String message, int pid, long uptime, int api,
                 String framework, String version) {
+            this(state, message, pid, uptime, api, framework, version, null, null);
+        }
+        private Snapshot(State state, String message, int pid, long uptime, int api,
+                String framework, String version, Bundle residentCache, Bundle hookHealth) {
+            this.residentCache = residentCache == null ? null : new Bundle(residentCache);
+            this.hookHealth = hookHealth == null ? null : new Bundle(hookHealth);
             this.state = state;
             this.active = state == State.ACTIVE;
             this.message = message;
@@ -93,6 +126,22 @@ public final class ModuleRuntimeStatus {
             this.startedUptime = uptime;
             this.deadlineElapsed = elapsed + PROBE_TIMEOUT_MS;
         }
+    }
+
+    /** Only the known fields of the cache report, typed and bounded. */
+    static Bundle residentCopy(Bundle source) {
+        if (source == null) return null;
+        Bundle copy = new Bundle();
+        for (String key : new String[]{ResidentCache.R_INSTALLED, ResidentCache.R_RUNNING, ResidentCache.R_PRESENT})
+            copy.putBoolean(key, source.getBoolean(key, false));
+        copy.putInt(ResidentCache.R_FILES, Math.max(0, source.getInt(ResidentCache.R_FILES, 0)));
+        for (String key : new String[]{ResidentCache.R_BYTES, ResidentCache.R_HITS, ResidentCache.R_MISSES, ResidentCache.R_WRITES})
+            copy.putLong(key, Math.max(0L, source.getLong(key, 0L)));
+        for (String key : new String[]{ResidentCache.R_ERROR, ResidentCache.R_PATH}) {
+            String value = source.getString(key, "");
+            copy.putString(key, value == null ? "" : value.length() > 160 ? value.substring(0, 160) : value);
+        }
+        return copy;
     }
 
     static boolean allowedReporter(int callerUid, int ownUid, int systemUiUid) {
@@ -160,7 +209,7 @@ public final class ModuleRuntimeStatus {
                     SystemClock.elapsedRealtime(), SystemClock.uptimeMillis(), extras.getString(KEY_BUILD),
                     api, framework, version);
             if (accepted) challenge.result = new Snapshot(State.ACTIVE, "模块已在 SystemUI 中激活", pid,
-                    uptime, api, framework, version);
+                    uptime, api, framework, version, residentCopy(extras.getBundle(ResidentCache.KEY)), HookHealth.copy(extras.getBundle(HookHealth.KEY)));
         }
         Bundle response = new Bundle();
         response.putBoolean("accepted", accepted);
@@ -188,6 +237,8 @@ public final class ModuleRuntimeStatus {
                 response.putInt(KEY_API, result.apiVersion);
                 response.putString(KEY_FRAMEWORK, result.frameworkName);
                 response.putString(KEY_FRAMEWORK_VERSION, result.frameworkVersion);
+                if (result.residentCache != null) response.putBundle(ResidentCache.KEY, result.residentCache);
+                if (result.hookHealth != null) response.putBundle(HookHealth.KEY, result.hookHealth);
             }
         }
         return response;
@@ -215,6 +266,12 @@ public final class ModuleRuntimeStatus {
             thread.start();
             BroadcastReceiver receiver = new BroadcastReceiver() {
                 @Override public void onReceive(Context received, Intent intent) {
+                    if (intent != null && Intent.ACTION_PACKAGE_REPLACED.equals(intent.getAction()) && intent.getData() != null) {
+                        String name = intent.getData().getSchemeSpecificPart();
+                        if (SYSTEM_UI.equals(name) || (name != null && name.toLowerCase(Locale.ROOT).contains("systemui")))
+                            signalPerformance(context, "package_changed");
+                        return;
+                    }
                     if (intent == null || !ACTION_PING.equals(intent.getAction())) return;
                     String nonce = intent.getStringExtra(KEY_NONCE);
                     if (!validNonce(nonce)) return;
@@ -226,6 +283,10 @@ public final class ModuleRuntimeStatus {
                     report.putInt(KEY_API, api);
                     report.putString(KEY_FRAMEWORK, framework);
                     report.putString(KEY_FRAMEWORK_VERSION, version);
+                    java.util.function.Supplier<Bundle> resident = residentReport;
+                    if (resident != null) try { report.putBundle(ResidentCache.KEY, resident.get()); } catch (RuntimeException ignored) { }
+                    java.util.function.Supplier<Bundle> hooks = hookReport;
+                    if (hooks != null) try { report.putBundle(HookHealth.KEY, hooks.get()); } catch (RuntimeException ignored) { }
                     try {
                         Bundle response = context.getContentResolver().call(Uri.parse(URI), METHOD_REPORT, null, report);
                         VerifiedProbeListener listener = verifiedProbeListener;
@@ -244,6 +305,18 @@ public final class ModuleRuntimeStatus {
                 else context.registerReceiver(receiver, filter, null, handler);
                 systemUiReceiver = receiver;
                 receiverThread = thread;
+                // PACKAGE_REPLACED is not delivered to manifest receivers on Android 8+.
+                // Reuse this already resident receiver and handler, with a separate package-data filter.
+                try {
+                    IntentFilter packages = new IntentFilter(Intent.ACTION_PACKAGE_REPLACED);
+                    packages.addDataScheme("package");
+                    if (Build.VERSION.SDK_INT >= 33) context.registerReceiver(receiver, packages, null, handler, Context.RECEIVER_EXPORTED);
+                    else context.registerReceiver(receiver, packages, null, handler);
+                } catch (RuntimeException unsupported) { }
+                try {
+                    android.os.PowerManager power = (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                    if (power != null) signalPerformance(context, power.isInteractive());
+                } catch (RuntimeException unavailable) { }
             } catch (RuntimeException error) {
                 thread.quitSafely();
                 throw error;
@@ -343,7 +416,7 @@ public final class ModuleRuntimeStatus {
                     String framework = reply.getString(KEY_FRAMEWORK), version = reply.getString(KEY_FRAMEWORK_VERSION);
                     if (api >= 101 && pid > 0 && validLspName(framework) && validFramework(version)) {
                         finish(new Snapshot(State.ACTIVE, "模块已在 SystemUI 中激活", pid,
-                                reply.getLong(KEY_UPTIME), api, framework, version));
+                                reply.getLong(KEY_UPTIME), api, framework, version, residentCopy(reply.getBundle(ResidentCache.KEY)), HookHealth.copy(reply.getBundle(HookHealth.KEY))));
                         return;
                     }
                 }

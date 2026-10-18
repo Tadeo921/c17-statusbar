@@ -16,6 +16,10 @@ final class QsMediaTransition {
         return 1f - next(elapsed, fromSolid);
     }
 
+    /** The same curve over a duration of the user's choice. */
+    static float next(long elapsed, long duration) { return smooth(elapsed, duration); }
+    static float previous(long elapsed, long duration) { return 1f - smooth(elapsed, duration); }
+
     private static float smooth(long elapsed, long duration) {
         if (elapsed <= 0L) return 0f;
         if (elapsed >= duration) return 1f;

@@ -25,6 +25,7 @@ public final class NativeStatusIcons {
     public static final String SPACING="status_hint_icons_spacing";
     public static final String X="status_hint_icons_x",Y="status_hint_icons_y";
     public static final String PRIORITY="status_hint_icons_priority";
+    public static final String LAYOUT="status_hint_icons_layout";
     public static final String[] PRIORITY_SLOTS={"bluetooth","location","alarm_clock","zen","volume","hotspot","headset","rotate","vpn","nfc","cast","screen_record","microphone","camera","privacy_call","usb","hd","airplane"};
     public static final String[] PRIORITY_LABELS={"蓝牙","定位","闹钟","勿扰","静音与振动","个人热点","耳机","屏幕旋转","VPN","NFC","投屏","屏幕录制","麦克风","相机","通话隐私","USB","高清通话","飞行模式"};
     /** UI uses names only; persisted slot IDs never become an editable code field. */
@@ -132,6 +133,16 @@ public final class NativeStatusIcons {
         return true;
     }
     public boolean enabled(){return !released&&settings.enabled&&!ModuleLifecycle.removed();}
+    /** Existing native measure/state scopes already selected MAX/PRIORITY. No scan or reflection here. */
+    public boolean retainedHint(View child){
+        if(!enabled()||child==null)return true;
+        Node node=nodes.get(child);if(node==null||!node.hint)return true;
+        ViewGroup parent=node.parent.get();Container saved=parent==null?null:containers.get(parent);
+        if(child.getParent()!=parent||saved==null||saved.dirty||saved.count!=parent.getChildCount()
+                ||saved.plan==null||saved.plan.revision!=revision||node.index<0||node.index>=saved.children.size()
+                ||saved.children.get(node.index).get()!=child)return true;
+        return saved.plan.selected[node.index];
+    }
     public void changed(ViewGroup parent){
         if(released||parent==null||nativeContainer==null||!nativeContainer.isInstance(parent))return;
         Container saved=containers.get(parent);
@@ -188,7 +199,7 @@ public final class NativeStatusIcons {
                 boolean hint=nativeIcon.isInstance(child)&&notification.invoke(child)==null&&!excludedSlot(name);
                 Node node=new Node(parent,i,name,hint);saved.metadata[i]=node;nodes.put(child,node);
             }
-            saved.tag=parent.getResources().getIdentifier("status_bar_view_state_tag","id","com.android.systemui");
+            saved.tag=ResourceIds.get(parent.getResources(), "status_bar_view_state_tag","id","com.android.systemui");
             saved.dirty=false;
         }
         return saved;

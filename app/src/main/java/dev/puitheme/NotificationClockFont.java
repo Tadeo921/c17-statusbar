@@ -30,20 +30,24 @@ public final class NotificationClockFont {
     private NotificationClockFont() { }
 
     /** Read a lockscreen sample once; unsupported/missing native assets leave the caller's font intact. */
-    public static Resolver create(Context context, View nativeTemplate) {
+    public static Resolver create(Context context, View nativeTemplate) { return create(context, nativeTemplate, null); }
+
+    /** family: a bundled file name ("OPPOSans4.0.ttf", "OPPODigit00.ttf", "OPPOSerif.ttf") the user picked instead of
+     * the lock screen's current family; null follows the lock screen. A missing or axis-less file falls back to it. */
+    public static Resolver create(Context context, View nativeTemplate, String family) {
         if (context == null) return null;
         Metadata source = metadata(nativeTemplate);
         Context plugin = nativeTemplate == null ? null : nativeTemplate.getContext();
         if (plugin != null) {
             try {
-                Resolver result = resolve(plugin.getAssets(), source);
+                Resolver result = resolve(plugin.getAssets(), source, family);
                 if (result != null) return result;
             } catch (Throwable error) { warn(error); }
         }
         try {
             plugin = context.createPackageContext(PACKAGE,
                     Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY);
-            return resolve(plugin.getAssets(), source);
+            return resolve(plugin.getAssets(), source, family);
         } catch (Throwable error) {
             warn(error); return null;
         }
@@ -93,7 +97,15 @@ public final class NotificationClockFont {
         }
     }
 
-    private static Resolver resolve(AssetManager assets, Metadata source) {
+    private static Resolver resolve(AssetManager assets, Metadata source, String chosen) {
+        String picked = filename(chosen == null ? "" : chosen);
+        if (!picked.isEmpty()) {
+            String candidate = "fonts/tunable/" + picked;
+            WeightRange weights = heightAxes(assets, candidate);
+            // The height axis is a coordinate; every layout step calibrates it against the real ink, so a family
+            // other than the lock screen's own only needs a base to scale from.
+            if (weights != null) return new Resolver(assets, candidate, source, !source.family.endsWith(picked), weights);
+        }
         String name = filename(source.family);
         if (!name.isEmpty()) {
             String candidate = "fonts/tunable/" + name;

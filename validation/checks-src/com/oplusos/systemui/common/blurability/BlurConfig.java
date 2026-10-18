@@ -5,6 +5,10 @@ public class BlurConfig {
             rightBottomCornerRadius=65f,leftBottomCornerRadius=67f;
     public final Object material=new Object(),mixColors=new Object(),lightTemplate=new Object();
     public float blurAmount=35f;
+    public BlurMixConfig platformMixConfig=new BlurMixConfig.BlurMixMulti("native-custom");
+    public BlurMixConfig.BlurMixSingle motionBlurMixConfig=new BlurMixConfig.BlurMixSingle("native-motion-custom");
+    public com.oplus.posteffect.params.GradientStrokeLineParams gradientStrokeLineParam=new com.oplus.posteffect.params.GradientStrokeLineParams();
+    public com.oplus.posteffect.params.InnerShadowParams innerShadowParams=new com.oplus.posteffect.params.InnerShadowParams();
     public Float radiusWeight=.4f;
     public int failWeightCalls,weightUpdates;
     public int failSetCalls;

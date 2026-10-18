@@ -61,7 +61,8 @@ public final class AppUpdateInstallerCheck {
         equal(true,command.contains("EXIT HUP INT TERM"));equal(true,command.contains("sha256sum"));equal(true,command.contains("/data/local/tmp/c17-update-"));
         rejected(()->RootAccess.installCommand(source,hash,-1));rejected(()->RootAccess.installCommand(source,"bad",0));
         rejected(()->RootAccess.installCommand("/data/local/tmp/arbitrary.apk",hash,0));
-        File folder=Files.createTempDirectory("c17-update-check").toFile(),temp=new File(folder,"c17-update-"+"a".repeat(32)+".apk"),keep=new File(folder,"other.apk");
+        // Windows may supply a short 8.3 TEMP path; use the real directory for this valid-cache fixture.
+        File folder=Files.createTempDirectory("c17-update-check").toFile().getCanonicalFile(),temp=new File(folder,"c17-update-"+"a".repeat(32)+".apk"),keep=new File(folder,"other.apk");
         equal(true,temp.createNewFile());equal(true,keep.createNewFile());AppUpdateInstaller.clearOldDownloads(folder);
         equal(false,temp.exists());equal(true,keep.exists());keep.delete();folder.delete();
         System.out.println("AppUpdateInstallerCheck passed "+checks+" checks");

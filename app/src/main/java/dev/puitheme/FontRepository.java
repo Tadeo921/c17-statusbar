@@ -9,7 +9,9 @@ import android.graphics.Paint;
 import android.widget.TextView;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
+import android.os.SystemClock;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -25,7 +27,14 @@ import java.util.function.BooleanSupplier;
 public final class FontRepository {
     private static final String MODULE = "dev.puitheme.iosstatusbar";
     private static String mode = "system", revision = "";
-    private static long styleRevision;
+    private static volatile long styleRevision;
+    private static final long FONT_RETRY_MS=5000L;
+    /** Zero in the stable path; only actual users retry a failed source after this monotonic deadline. */
+    private static volatile long retryAt;
+    private static volatile long scopedRetryAt;
+    private static boolean scopesEnabled;
+    private static Map<String,String> scopes=java.util.Collections.emptyMap();
+    private static final Map<String,Long> SCOPED_RETRIES=new LinkedHashMap<>();
     private static Context moduleContext;
     private static boolean contextFailureLogged, fontFailureLogged;
     private static final Object IMPORT_LOCK = new Object();
@@ -36,13 +45,53 @@ public final class FontRepository {
         @Override protected boolean removeEldestEntry(Map.Entry<String,Typeface> entry) { return size() > 96; }
     };
     private FontRepository() { }
+    /** SystemUI's resident cache (null in the app). */
+    static volatile ResidentCache resident;
+    /** The imported font of this revision as a file in the resident cache, else from the app's provider (and cached for next time). */
+    private static Typeface customFont(int sourceWeight, boolean italic) throws Exception {
+        ResidentCache cache = resident;
+        java.io.File cached = cache == null ? null : cache.font(moduleContext, revision);
+        if (cached != null) return new Typeface.Builder(cached)
+                .setFontVariationSettings("'wght' " + sourceWeight).setWeight(sourceWeight).setItalic(italic).setFallback("sans-serif").build();
+        try (ParcelFileDescriptor font = moduleContext.getContentResolver()
+                .openFileDescriptor(Uri.parse(StatusBarSettings.FONT_URI), "r")) {
+            return font == null ? null : new Typeface.Builder(font.getFileDescriptor())
+                    .setFontVariationSettings("'wght' " + sourceWeight).setWeight(sourceWeight).setItalic(italic).setFallback("sans-serif").build();
+        }
+    }
+    private static Typeface scopedCustomFont(String hash,int sourceWeight,boolean italic)throws Exception{
+        ResidentCache cache=resident;File cached=cache==null?null:cache.font(moduleContext,hash,true);
+        if(cached!=null)return new Typeface.Builder(cached).setFontVariationSettings("'wght' "+sourceWeight)
+                .setWeight(sourceWeight).setItalic(italic).setFallback("sans-serif").build();
+        try(ParcelFileDescriptor font=moduleContext.getContentResolver().openFileDescriptor(libraryUri(hash),"r")){
+            return font==null?null:new Typeface.Builder(font.getFileDescriptor()).setFontVariationSettings("'wght' "+sourceWeight)
+                    .setWeight(sourceWeight).setItalic(italic).setFallback("sans-serif").build();
+        }
+    }
+    static Uri libraryUri(String hash){
+        if(!FontScopes.validRevision(hash))throw new IllegalArgumentException("字体引用无效");
+        return Uri.parse("content://"+StatusBarSettings.AUTHORITY+"/font/library/"+hash);
+    }
     /** A cheap event token for native renderers; reading it never loads or changes a font. */
-    static synchronized long styleRevision(){return styleRevision;}
+    // Source/cache writes occur under the existing font lock, then this volatile token
+    // publishes them. A renderer can test stability without taking the font/cache locks.
+    static long styleRevision(){return styleRevision;}
+    static boolean retryDue(){long deadline=retryAt,scoped=scopedRetryAt,now=SystemClock.uptimeMillis();
+        return deadline!=0L&&now>=deadline||scoped!=0L&&now>=scoped;}
+    /** An invisible failing scope cannot invalidate another scope's otherwise stable typography cache. */
+    static synchronized boolean retryDue(String scope){
+        String source=scopedSource(scope);long deadline;
+        if(source==null)deadline=retryAt;
+        else if("custom".equals(FontScopes.mode(source))){Long selected=SCOPED_RETRIES.get(source);deadline=selected==null?0L:selected;}
+        else return false;
+        return deadline!=0L&&SystemClock.uptimeMillis()>=deadline;
+    }
 
     /** Release mapped fonts/context when the loaded module is removed; persisted files belong to the app. */
     public static synchronized void releaseRuntime() {
         CACHE.clear();MODE_CACHE.clear();FontWeight.release();moduleContext=null;
         mode="system";revision="";contextFailureLogged=false;fontFailureLogged=false;
+        retryAt=0L;scopedRetryAt=0L;SCOPED_RETRIES.clear();scopes=java.util.Collections.emptyMap();scopesEnabled=false;
         styleRevision++;
     }
 
@@ -53,9 +102,27 @@ public final class FontRepository {
         if (newRevision == null) newRevision = "";
         if (!newMode.equals(mode) || !newRevision.equals(revision)) {
             mode = newMode; revision = newRevision; CACHE.clear();MODE_CACHE.clear();FontWeight.release();fontFailureLogged=false;
+            retryAt=0L;
             styleRevision++;
             ModuleDiagnostics.info("font","Font source changed: "+mode);
         }
+    }
+    /** Scope selection is independent of the legacy source and never changes its provider file. */
+    public static synchronized void configureScopes(Bundle settings){
+        boolean enabled=settings!=null&&FeatureOptions.from(settings).enabled("font");
+        Map<String,String> next;
+        try{next=FontScopes.parse(settings==null?FontScopes.DEFAULT:settings.getString(FontScopes.KEY,FontScopes.DEFAULT));}
+        catch(IllegalArgumentException invalid){next=java.util.Collections.emptyMap();ModuleDiagnostics.error("font","Invalid font scopes; retaining legacy choices",invalid);}
+        if(enabled==scopesEnabled&&next.equals(scopes))return;
+        scopesEnabled=enabled;scopes=next;MODE_CACHE.clear();SCOPED_RETRIES.clear();scopedRetryAt=0L;fontFailureLogged=false;styleRevision++;
+    }
+    private static String scopedSource(String scope){return scopesEnabled&&scope!=null?scopes.get(scope):null;}
+    public static synchronized boolean hasAssignment(String scope){return scopedSource(scope)!=null;}
+    public static synchronized String modeForScope(String legacyMode,String scope){
+        String source=scopedSource(scope);return source==null?legacyMode:FontScopes.mode(source);
+    }
+    public static synchronized String revisionForScope(String scope){
+        String source=scopedSource(scope);return source==null?revision:FontScopes.revision(source);
     }
 
     private static boolean ensureModuleContext(Context context) {
@@ -78,23 +145,30 @@ public final class FontRepository {
             int sourceWeight = sourceWeight(mode, bounded);
             boolean italic=nativeFace!=null&&nativeFace.isItalic();
             int cacheKey=sourceWeight*2+(italic?1:0);
-            Typeface loaded = CACHE.get(cacheKey);
-            if (loaded != null) return loaded;
+            Typeface cached=CACHE.get(cacheKey);
+            long deadline=retryAt;
+            boolean retry=deadline!=0L&&SystemClock.uptimeMillis()>=deadline;
+            if(cached!=null&&!retry)return cached;
+            if(deadline!=0L&&!retry)return weighted(nativeFace,bounded);
+            // Even an already cached weight can finish a pending retry when the failing view is hidden.
+            Typeface loaded=null;
             try {
                 if ("pingfang".equals(mode)) {
                     loaded = new Typeface.Builder(moduleContext.getAssets(), "fonts/PingFangSC-VF.ttf")
                             .setFontVariationSettings("'wght' " + sourceWeight).setWeight(sourceWeight).setItalic(italic).setFallback("sans-serif").build();
                 } else if ("custom".equals(mode)) {
-                    try (ParcelFileDescriptor font = moduleContext.getContentResolver()
-                            .openFileDescriptor(Uri.parse(StatusBarSettings.FONT_URI), "r")) {
-                        if (font != null) loaded = new Typeface.Builder(font.getFileDescriptor())
-                                .setFontVariationSettings("'wght' " + sourceWeight).setWeight(sourceWeight).setItalic(italic).setFallback("sans-serif").build();
-                    }
+                    loaded = customFont(sourceWeight, italic);
                 }
-                if (loaded != null) { CACHE.put(cacheKey, loaded); return loaded; }
+                if (loaded != null) {
+                    CACHE.put(cacheKey,loaded);
+                    if(deadline!=0L){retryAt=0L;fontFailureLogged=false;styleRevision++;}
+                    return loaded;
+                }
             } catch (Exception invalidFont) {
                 if (!fontFailureLogged) { fontFailureLogged=true;ModuleDiagnostics.error("font","Font loading failed; using native family",invalidFont); }
             }
+            retryAt=SystemClock.uptimeMillis()+FONT_RETRY_MS;
+            if(cached!=null)return cached;
         }
         return weighted(nativeFace, bounded);
     }
@@ -117,11 +191,7 @@ public final class FontRepository {
                     loaded = new Typeface.Builder(moduleContext.getAssets(), "fonts/PingFangSC-VF.ttf")
                             .setFontVariationSettings("'wght' " + sourceWeight).setWeight(sourceWeight).setItalic(italic).setFallback("sans-serif").build();
                 } else {
-                    try (ParcelFileDescriptor font = moduleContext.getContentResolver()
-                            .openFileDescriptor(Uri.parse(StatusBarSettings.FONT_URI), "r")) {
-                        if (font != null) loaded = new Typeface.Builder(font.getFileDescriptor())
-                                .setFontVariationSettings("'wght' " + sourceWeight).setWeight(sourceWeight).setItalic(italic).setFallback("sans-serif").build();
-                    }
+                    loaded = customFont(sourceWeight, italic);
                 }
                 if (loaded != null) { MODE_CACHE.put(key, loaded); return loaded; }
             } catch (Exception invalidFont) {
@@ -130,11 +200,38 @@ public final class FontRepository {
         }
         return weighted(nativeFace, bounded);
     }
+    public static synchronized Typeface typeface(Typeface nativeFace,int weight,String scope){
+        String source=scopedSource(scope);return source==null?typeface(nativeFace,weight):scopedTypeface(source,nativeFace,weight);
+    }
+    public static synchronized Typeface typefaceForMode(Context context,String selectedMode,Typeface nativeFace,int weight,String scope){
+        String source=scopedSource(scope);
+        if(source==null)return typefaceForMode(context,selectedMode,nativeFace,weight);
+        ensureModuleContext(context);return scopedTypeface(source,nativeFace,weight);
+    }
+    private static Typeface scopedTypeface(String source,Typeface nativeFace,int weight){
+        int bounded=Math.max(1,Math.min(1000,weight));String selected=FontScopes.mode(source);
+        if(ModuleLifecycle.removed()||"system".equals(selected)||moduleContext==null)return weighted(nativeFace,bounded);
+        int actual=sourceWeight(selected,bounded,FontScopes.revision(source));boolean italic=nativeFace!=null&&nativeFace.isItalic();
+        String key="scope:"+source+':'+actual+':'+italic;Typeface loaded=MODE_CACHE.get(key);
+        Long deadline=SCOPED_RETRIES.get(source);boolean retry=deadline!=null&&SystemClock.uptimeMillis()>=deadline;
+        if(loaded!=null&&!retry)return loaded;if(deadline!=null&&!retry)return weighted(nativeFace,bounded);
+        try{
+            if("pingfang".equals(selected))loaded=new Typeface.Builder(moduleContext.getAssets(),"fonts/PingFangSC-VF.ttf")
+                    .setFontVariationSettings("'wght' "+actual).setWeight(actual).setItalic(italic).setFallback("sans-serif").build();
+            else loaded=scopedCustomFont(FontScopes.revision(source),actual,italic);
+            if(loaded!=null){MODE_CACHE.put(key,loaded);if(SCOPED_RETRIES.remove(source)!=null){refreshScopedRetry();styleRevision++;}return loaded;}
+        }catch(Exception invalid){if(!fontFailureLogged){fontFailureLogged=true;ModuleDiagnostics.error("font","Scoped font unavailable; retaining native family",invalid);}}
+        SCOPED_RETRIES.put(source,SystemClock.uptimeMillis()+FONT_RETRY_MS);refreshScopedRetry();return weighted(nativeFace,bounded);
+    }
+    private static void refreshScopedRetry(){long earliest=0L;for(long value:SCOPED_RETRIES.values())if(earliest==0L||value<earliest)earliest=value;scopedRetryAt=earliest;}
 
     private static int sourceWeight(String selectedMode, int requested) {
+        return sourceWeight(selectedMode,requested,revision);
+    }
+    private static int sourceWeight(String selectedMode,int requested,String selectedRevision){
         // The existing bundled asset's fvar range is 100..900, independent of the UI's manual range.
         if ("pingfang".equals(selectedMode)) return Math.max(100, Math.min(900, requested));
-        FontCatalog.Entry catalog = "custom".equals(selectedMode) ? FontCatalog.forRevision(revision) : null;
+        FontCatalog.Entry catalog = "custom".equals(selectedMode) ? FontCatalog.forRevision(selectedRevision) : null;
         return catalog == null ? requested : catalog.clampWeight(requested);
     }
 
@@ -151,10 +248,34 @@ public final class FontRepository {
         FontWeight.apply(paint,typeface(nativeFace,weight),sourceWeight(mode,Math.max(1,Math.min(1000,weight))),
                 "system".equals(mode)?nativeAxes:null);
     }
+    public static synchronized void apply(TextView view,Typeface nativeFace,int weight,String nativeAxes,String scope){
+        String source=scopedSource(scope);if(source==null){apply(view,nativeFace,weight,nativeAxes);return;}
+        ensureModuleContext(view.getContext());FontWeight.apply(view,scopedTypeface(source,nativeFace,weight),
+                weightForMode("global",weight,scope),"system".equals(FontScopes.mode(source))?nativeAxes:null);
+    }
+    public static synchronized void apply(Paint paint,Typeface nativeFace,int weight,String nativeAxes,String scope){
+        String source=scopedSource(scope);if(source==null){apply(paint,nativeFace,weight,nativeAxes);return;}
+        FontWeight.apply(paint,scopedTypeface(source,nativeFace,weight),weightForMode("global",weight,scope),
+                "system".equals(FontScopes.mode(source))?nativeAxes:null);
+    }
+    /** Return the exact source event used under the same lock, including a successful retry publication. */
+    static synchronized long applyRevision(TextView view,Typeface nativeFace,int weight,String nativeAxes){
+        apply(view,nativeFace,weight,nativeAxes);return styleRevision;
+    }
+    static synchronized long applyRevision(Paint paint,Typeface nativeFace,int weight,String nativeAxes){
+        apply(paint,nativeFace,weight,nativeAxes);return styleRevision;
+    }
+    static synchronized long applyRevision(TextView view,Typeface nativeFace,int weight,String nativeAxes,String scope){apply(view,nativeFace,weight,nativeAxes,scope);return styleRevision;}
+    static synchronized long applyRevision(Paint paint,Typeface nativeFace,int weight,String nativeAxes,String scope){apply(paint,nativeFace,weight,nativeAxes,scope);return styleRevision;}
     public static synchronized boolean systemMode(){return "system".equals(mode);}
+    public static synchronized boolean systemMode(String scope){String source=scopedSource(scope);return source==null?systemMode():"system".equals(FontScopes.mode(source));}
     /** Applies the same physical source limits to a separately selected large-clock mode. */
     public static synchronized int weightForMode(String selectedMode,int requested){
         return sourceWeight("global".equals(selectedMode)?mode:selectedMode,Math.max(1,Math.min(1000,requested)));
+    }
+    public static synchronized int weightForMode(String selectedMode,int requested,String scope){
+        String source=scopedSource(scope);return source==null?weightForMode(selectedMode,requested)
+                :sourceWeight(FontScopes.mode(source),Math.max(1,Math.min(1000,requested)),FontScopes.revision(source));
     }
 
     public static String importFont(Context context, Uri uri) throws Exception {
