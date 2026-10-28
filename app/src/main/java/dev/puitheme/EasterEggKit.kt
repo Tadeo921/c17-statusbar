@@ -88,7 +88,7 @@ internal inline fun DrawScope.withEggViewport(draw: DrawScope.() -> Unit) {
 internal const val EGG_TAU = (2.0 * PI).toFloat()
 
 /** The original line of the first show. Every theme keeps it under its own title. */
-internal const val EGG_THANKS = "你发现了隐藏彩蛋 · 谢谢你一直在用"
+internal const val EGG_THANKS = "¡Encontraste un huevo de Pascua oculto! · Gracias por seguir usando la app"
 
 internal fun eggEase(x: Float): Float { val t = x.coerceIn(0f, 1f); return 1f - (1f - t) * (1f - t) * (1f - t) }
 

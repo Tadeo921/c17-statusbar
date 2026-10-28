@@ -38,29 +38,29 @@ public final class FontLibrary {
     private static File fonts(Context context){return new File(context.createDeviceProtectedStorageContext().getFilesDir(),"fonts");}
     private static File folder(Context context)throws IOException{
         File result=new File(fonts(context),"library");
-        if(!result.isDirectory()&&!result.mkdirs())throw new IOException("无法创建字体库");
+        if(!result.isDirectory()&&!result.mkdirs())throw new IOException("No se pudo crear la biblioteca de fuentes.");
         return result;
     }
     private static void revision(String revision)throws IOException{
-        if(revision==null||!revision.matches("[0-9a-f]{64}"))throw new IOException("字体记录无效");
+        if(revision==null||!revision.matches("[0-9a-f]{64}"))throw new IOException("El registro de fuente no es válido.");
     }
     public static String displayName(String name){
         String cleaned=name==null?"":name.replaceAll("[\\p{Cntrl}]","").trim();
         cleaned=cleaned.replaceFirst("(?i)\\.(ttf|otf|ttc)$","");
         if(cleaned.length()>120)cleaned=cleaned.substring(0,120);
-        return cleaned.isEmpty()?"导入字体":cleaned;
+        return cleaned.isEmpty()?"Importar fuente":cleaned;
     }
     /** Exact immutable library source; it never redirects a missing hash to custom.font. */
     public static File providerFile(Context context,android.net.Uri uri)throws IOException{
         String path=uri==null?null:uri.getPath();
-        if(path==null||!path.matches("/font/library/[0-9a-f]{64}"))throw new IOException("字体引用无效");
+        if(path==null||!path.matches("/font/library/[0-9a-f]{64}"))throw new IOException("La referencia de fuente no es válida.");
         String hash=path.substring("/font/library/".length());File file=libraryFile(context,hash);
-        if(!matchesFile(file,hash))throw new IOException("字体校验失败，请重新导入");return file;
+        if(!matchesFile(file,hash))throw new IOException("Falló la verificación de la fuente. Vuelve a importarla.");return file;
     }
     private static File libraryFile(Context context,String hash)throws IOException{
         revision(hash);File directory=folder(context),file=new File(directory,hash+".font");
         if(!file.getCanonicalFile().getParentFile().equals(directory.getCanonicalFile())
-                ||!file.isFile()||file.length()<4||file.length()>96L*1024L*1024L)throw new IOException("字体未导入或已删除");
+                ||!file.isFile()||file.length()<4||file.length()>96L*1024L*1024L)throw new IOException("La fuente no se importó o se eliminó.");
         return file;
     }
     /** Used on a worker before applying/importing an assignment; another font cannot satisfy this reference. */
@@ -134,7 +134,7 @@ public final class FontLibrary {
             ArrayList<Entry> result=new ArrayList<>();
             if(files!=null)for(File file:files){
                 String hash=file.getName().substring(0,64);FontCatalog.Entry catalog=FontCatalog.forRevision(hash);
-                String name=catalog==null?"导入字体 · "+hash.substring(0,8):catalog.displayName;
+                String name=catalog==null?"Importar fuente · "+hash.substring(0,8):catalog.displayName;
                 File metadata=new File(directory,hash+".name");
                 if(metadata.isFile()&&metadata.length()<=1024){
                     byte[] bytes=new byte[(int)metadata.length()];
@@ -164,8 +164,8 @@ public final class FontLibrary {
     public static FontRepository.PreparedFont prepare(Context context,String hash)throws Exception{
         synchronized(LOCK){
             revision(hash);File source=new File(folder(context),hash+".font");
-            if(!source.isFile())throw new IOException("字体文件已删除，请重新导入或下载");
-            if(!hash.equals(FontFileValidator.sha256(source,96L*1024*1024,null)))throw new IOException("字体校验失败，请重新导入或下载");
+            if(!source.isFile())throw new IOException("El archivo de fuente se eliminó. Vuelve a importarlo o descargarlo.");
+            if(!hash.equals(FontFileValidator.sha256(source,96L*1024*1024,null)))throw new IOException("Falló la verificación de la fuente. Vuelve a importarla o descargarla.");
             File temporary=File.createTempFile("library-",".font",fonts(context));
             android.system.Os.remove(temporary.getAbsolutePath());
             try{
@@ -175,13 +175,13 @@ public final class FontLibrary {
         }
     }
     public static File downloaded(Context context,FontCatalog.Entry entry)throws IOException{
-        if(entry==null||FontCatalog.find(entry.id)!=entry)throw new IOException("字体来源无效");
+        if(entry==null||FontCatalog.find(entry.id)!=entry)throw new IOException("El origen de la fuente no es válido.");
         File stored=new File(folder(context),entry.sha256+".font");
         return stored.isFile()?stored:null;
     }
     public static void rename(Context context,String hash,String name)throws IOException{
         synchronized(LOCK){revision(hash);File directory=folder(context);
-            if(!new File(directory,hash+".font").isFile())throw new IOException("字体已删除");
+            if(!new File(directory,hash+".font").isFile())throw new IOException("La fuente se eliminó.");
             writeName(directory,hash,displayName(name));
         }
     }
@@ -215,14 +215,14 @@ public final class FontLibrary {
         public void commit(BooleanSupplier canCommit,BooleanSupplier saveOptions,Runnable restoreOptions)throws Exception{
             Objects.requireNonNull(canCommit);Objects.requireNonNull(saveOptions);Objects.requireNonNull(restoreOptions);
             synchronized(LOCK){
-                if(closed)throw new IOException("字体删除暂存已关闭");
+                if(closed)throw new IOException("El área temporal para eliminar la fuente está cerrada.");
                 boolean optionsAttempted=false;
                 try{
-                    if(!canCommit.getAsBoolean())throw new IOException("编辑权限已变化，字体未删除");
-                    optionsAttempted=true;if(!saveOptions.getAsBoolean())throw new IOException("字体回退未保存，字体未删除");
-                    if(!canCommit.getAsBoolean())throw new IOException("编辑权限已变化，字体未删除");
+                    if(!canCommit.getAsBoolean())throw new IOException("Los permisos de edición cambiaron; no se eliminó la fuente.");
+                    optionsAttempted=true;if(!saveOptions.getAsBoolean())throw new IOException("No se guardó la restauración de fuente; no se eliminó la fuente.");
+                    if(!canCommit.getAsBoolean())throw new IOException("Los permisos de edición cambiaron; no se eliminó la fuente.");
                     for(RemovedFile file:files){if(file.original.exists())android.system.Os.remove(file.original.getAbsolutePath());file.removed=true;}
-                    if(!canCommit.getAsBoolean())throw new IOException("编辑权限已变化，已恢复字体");
+                    if(!canCommit.getAsBoolean())throw new IOException("Los permisos de edición cambiaron; se restauró la fuente.");
                 }catch(Exception failure){
                     for(RemovedFile file:files)if(file.removed){
                         try{android.system.Os.rename(file.backup.getAbsolutePath(),file.original.getAbsolutePath());file.backup=null;}
@@ -240,7 +240,7 @@ public final class FontLibrary {
         try{
             try(FileOutputStream output=new FileOutputStream(temporary)){output.write(name.getBytes(StandardCharsets.UTF_8));output.getFD().sync();}
             android.system.Os.rename(temporary.getAbsolutePath(),new File(directory,hash+".name").getAbsolutePath());
-        }catch(Exception failure){throw new IOException("字体名称保存失败",failure);}
+        }catch(Exception failure){throw new IOException("No se pudo guardar el nombre de la fuente.",failure);}
         finally{if(temporary.exists())temporary.delete();}
     }
     private static void linkOrCopy(File source,File target)throws Exception{

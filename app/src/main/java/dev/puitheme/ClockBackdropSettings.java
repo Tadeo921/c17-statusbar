@@ -57,10 +57,10 @@ public final class ClockBackdropSettings {
     }
     private static String rangeError(String key) {
         key=NotificationBigClockSettings.portraitKey(key);
-        if(EDGE_WIDTH.equals(key))return "描边宽度应为 0 到 4 dp";
-        if(DEPTH_WIDTH.equals(key))return "立体边缘宽度应为 0 到 8 dp";
-        if(HIGHLIGHT_ANGLE.equals(key))return "高光角度应为 0 到 360°";
-        return "强度应为 0 到 100%";
+        if(EDGE_WIDTH.equals(key))return "El ancho del contorno debe estar entre 0 y 4 dp";
+        if(DEPTH_WIDTH.equals(key))return "El ancho del borde tridimensional debe estar entre 0 y 8 dp";
+        if(HIGHLIGHT_ANGLE.equals(key))return "El ángulo del reflejo debe estar entre 0 y 360°";
+        return "La intensidad debe estar entre 0 y 100%";
     }
     private ClockBackdropSettings() { }
 }

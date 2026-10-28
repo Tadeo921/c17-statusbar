@@ -9,10 +9,10 @@ import java.util.Collections;
 
 /** App-only acknowledgement. It is never part of the hook settings, mirror or JSON export. */
 public final class FreeNotice {
-    public static final String PHRASE = "本模块永久免费，捐赠自愿，请勿付费购买。";
-    public static final String DESCRIPTION = "本模块是免费、开源项目，不是付费产品，所有功能永久免费，永不收费。\n\n"
-            + "捐赠完全自愿，只是对作者的支持；不捐赠也可以正常使用，不会影响任何功能。" + ProjectContact.DONATION_NOTE + "\n\n"
-            + "请勿向任何人付费购买本模块、激活码或所谓收费版本。遇到售卖、收费激活或强制捐赠，请谨防被骗。";
+    public static final String PHRASE = "Este módulo es gratuito para siempre. Las donaciones son voluntarias; no pagues por comprarlo.";
+    public static final String DESCRIPTION = "Este módulo es un proyecto gratuito y de código abierto, no un producto de pago. Todas las funciones son y serán gratuitas.\n\n"
+            + "Donar es totalmente voluntario y sirve para apoyar al autor. Puedes usar todas las funciones sin donar." + ProjectContact.DONATION_NOTE + "\n\n"
+            + "No pagues a nadie por este módulo, por claves de activación ni por supuestas versiones de pago. Desconfía de las ventas, activaciones cobradas o donaciones obligatorias.";
     private static final String PREFERENCES = "app_free_notice";
     private static final String ACCEPTED_VERSION = "accepted_version";
     private static final int VERSION = 1;

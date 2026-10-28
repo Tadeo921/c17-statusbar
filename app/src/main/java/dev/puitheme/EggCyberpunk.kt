@@ -242,7 +242,7 @@ internal class CyberpunkEgg(icon: ImageBitmap, measurer: TextMeasurer) : EggScen
         val half = title.size.width / 2f * charge
         drawLine(Brush.horizontalGradient(listOf(cyberCyan, cyberMagenta, cyberYellow), cx - half, cx + half),
             Offset(cx - half, lineY), Offset(cx + half, lineY), 3f * dp, alpha = show, blendMode = BlendMode.Plus)
-        val sub = layout("霓虹不灭 · 状态栏已接入夜色", 15.sp, FontWeight.Medium)
+        val sub = layout("El neón no se apaga · la barra de estado se funde con la noche", 15.sp, FontWeight.Medium)
         centred(sub, cx, lineY + 12f * dp, Color(0xFFE6F9FF), eggIn(t, 1.8f, .6f) * fade)
         val thanks = layout(EGG_THANKS, 13.sp, FontWeight.Medium)
         centred(thanks, cx, lineY + 16f * dp + sub.size.height, cyberCyan, .9f * eggIn(t, 2.2f, .6f) * fade)

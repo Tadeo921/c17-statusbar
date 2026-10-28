@@ -101,29 +101,29 @@ public final class BigClockWidgetsSettings {
         return -1;
     }
     public static String textValidationError(String text){
-        if(text==null||text.length()>MAX_TEXT||text.indexOf('\n')>=0||text.indexOf('\r')>=0)return "请使用不超过 "+MAX_TEXT+" 个字符的单行文字";
+        if(text==null||text.length()>MAX_TEXT||text.indexOf('\n')>=0||text.indexOf('\r')>=0)return "Usa como máximo "+MAX_TEXT+" caracteres en una sola línea.";
         return BigClockTextContent.templateError(text);
     }
     /** Packages only: never an Intent URI or a flattened activity component. */
     public static String launchAppValidationError(String value) {
-        if(value==null||value.length()>255)return "请选择有效应用";
+        if(value==null||value.length()>255)return "Selecciona una aplicación válida.";
         if(value.isEmpty())return null;
         boolean start=true;
         for(int i=0;i<value.length();i++) {
             char c=value.charAt(i);
-            if(c=='.'){if(start)return "请选择有效应用";start=true;continue;}
+            if(c=='.'){if(start)return "Selecciona una aplicación válida.";start=true;continue;}
             boolean letter=c>='a'&&c<='z'||c>='A'&&c<='Z'||c=='_';
-            if(!letter&&(start||c<'0'||c>'9'))return "请选择有效应用";
+            if(!letter&&(start||c<'0'||c>'9'))return "Selecciona una aplicación válida.";
             start=false;
         }
-        return start?"请选择有效应用":null;
+        return start?"Selecciona una aplicación válida.":null;
     }
     public static String numericValidationError(String key,float value){
-        if(!Float.isFinite(value))return "请输入有限数字";
-        if(sizeKey(key)&&(value<MIN_SIZE||value>MAX_SIZE))return "组件字号应为 8 到 64 dp";
-        if(weightKey(key)&&(value<MIN_WEIGHT||value>MAX_WEIGHT))return "组件字体粗细应为 100 到 1000";
-        if(offsetKey(key)&&(value<-MAX_OFFSET||value>MAX_OFFSET))return "组件位置应为 -1000 到 1000 dp";
-        if(maskOpacityKey(key)&&(value<0f||value>100f))return "组件遮罩强度应为 0 到 100%";
+        if(!Float.isFinite(value))return "Introduce un número finito.";
+        if(sizeKey(key)&&(value<MIN_SIZE||value>MAX_SIZE))return "El tamaño de fuente del componente debe estar entre 8 y 64 dp.";
+        if(weightKey(key)&&(value<MIN_WEIGHT||value>MAX_WEIGHT))return "El grosor de la fuente del componente debe estar entre 100 y 1000.";
+        if(offsetKey(key)&&(value<-MAX_OFFSET||value>MAX_OFFSET))return "La posición del componente debe estar entre -1000 y 1000 dp.";
+        if(maskOpacityKey(key)&&(value<0f||value>100f))return "La intensidad de la máscara del componente debe estar entre 0 y 100 %.";
         return null;
     }
     public static int side(String key){

@@ -28,25 +28,25 @@
     "total_since", "total_compiles", "total_wall_ms", "total_cpu_ms", "total_size_kb", "total_reuses", "total_avoided_ms",
     "runtime_sampled", "runtime_jit_ms", "runtime_proc_s", "runtime_aot"]);
   const errors = Object.freeze({
-    none: "", busy: "已有任务正在执行，请稍后刷新。", root_required: "未获得 Root 权限，操作未执行。",
-    module_inactive: "模块已停用或待卸载，优化未执行。", device_hot: "电池温度达到 55℃，自动任务已延期。",
-    battery_low: "电量为 15% 或更低，自动任务已延期。", device_interactive: "等待息屏或连续 10 分钟无操作。",
-    power_unknown: "无法读取电池电量，自动任务已延期。", thermal_unknown: "无法读取电池温度，自动任务已延期。",
-    screen_unknown: "无法确认空闲状态，自动任务已延期。", boot_timeout: "等待系统启动超时，下次启动再试。",
-    boot_incomplete: "系统启动尚未完成，自动任务已延期。", idle_unknown: "无法确认无操作时长，等待息屏后再处理。",
-    compile_failed: "系统未完成编译，运行记录已保留。", compile_timeout: "编译等待超时，已请求取消；请核对运行记录。",
-    compile_cancel_failed: "未能确认 ART 编译任务已取消。暂不启动新任务，请在 C17 查看运行记录。",
-    restore_cancel_failed: "未能确认 ART 恢复任务已取消。失败记录已保留，请在 C17 查看。",
-    art_cancel_unavailable: "系统缺少可靠的 ART 取消能力，本次未开始。", timeout_unavailable: "系统缺少可靠的操作超时能力，本次未开始。",
-    art_unverified: "当前 ART 结果尚未核验。", interrupted: "任务中断；已尝试取消，是否结束请查看记录。",
-    restore_failed: "恢复系统编译方式未完成，失败记录已保留。", restore_timeout: "恢复等待超时，失败记录已保留。",
-    no_package: "未识别到系统界面组件。", package_query_failed: "系统组件查询失败，本次未完成。",
-    fingerprint_write_failed: "无法保存组件记录。", status_write_failed: "无法保存运行记录。",
-    path_link_rejected: "模块路径校验失败，操作已停止。", data_path_rejected: "运行记录目录校验失败。",
-    module_path_rejected: "模块安装路径校验失败。", module_id_rejected: "模块身份校验失败。",
-    module_version_rejected: "模块版本记录异常。", migration_failed: "旧记录迁移未完成，记录已保留。",
-    mode_rejected: "不支持此运行模式。", data_create_failed: "无法创建运行记录目录。",
-    uninstall_incomplete: "卸载仍有残留记录，请在 C17 查看。", uninstall_failed: "卸载清理未完成，记录已保留。"
+    none: "", busy: "Ya hay una tarea en ejecución. Actualiza el estado más tarde.", root_required: "No se concedieron permisos Root; no se ejecutó la operación.",
+    module_inactive: "El módulo está desactivado o pendiente de desinstalación; no se ejecutó la optimización.", device_hot: "La batería alcanzó los 55 °C; se aplazó la tarea automática.",
+    battery_low: "La batería está al 15 % o menos; se aplazó la tarea automática.", device_interactive: "Esperando a que se apague la pantalla o a 10 minutos de inactividad.",
+    power_unknown: "No se pudo leer el nivel de batería; se aplazó la tarea automática.", thermal_unknown: "No se pudo leer la temperatura de la batería; se aplazó la tarea automática.",
+    screen_unknown: "No se pudo confirmar la inactividad; se aplazó la tarea automática.", boot_timeout: "Se agotó el tiempo de espera del inicio del sistema; se intentará en el próximo arranque.",
+    boot_incomplete: "El sistema todavía está iniciándose; se aplazó la tarea automática.", idle_unknown: "No se pudo determinar el tiempo de inactividad; se esperará a que se apague la pantalla.",
+    compile_failed: "El sistema no completó la compilación. Se conservaron los registros de ejecución.", compile_timeout: "Se agotó el tiempo de espera de la compilación y se solicitó cancelar. Revisa los registros de ejecución.",
+    compile_cancel_failed: "No se pudo confirmar la cancelación de la tarea de compilación de ART. No se iniciará otra tarea por ahora; revisa los registros en C17.",
+    restore_cancel_failed: "No se pudo confirmar la cancelación de la tarea de restauración de ART. Se conservó el registro del fallo; consulta C17.",
+    art_cancel_unavailable: "El sistema no permite cancelar tareas de ART de forma fiable. Esta ejecución no se inició.", timeout_unavailable: "El sistema no ofrece un límite de tiempo de operación fiable. Esta ejecución no se inició.",
+    art_unverified: "Los resultados actuales de ART todavía no se verificaron.", interrupted: "La tarea se interrumpió y se intentó cancelar. Comprueba los registros para saber si terminó.",
+    restore_failed: "No se completó la restauración del método de compilación del sistema. Se conservó el registro del fallo.", restore_timeout: "Se agotó el tiempo de espera de la restauración. Se conservó el registro del fallo.",
+    no_package: "No se reconocieron componentes de la interfaz del sistema.", package_query_failed: "Falló la consulta de componentes del sistema; la operación no se completó.",
+    fingerprint_write_failed: "No se pudieron guardar los registros de componentes.", status_write_failed: "No se pudieron guardar los registros de ejecución.",
+    path_link_rejected: "Falló la validación de la ruta del módulo; se detuvo la operación.", data_path_rejected: "Falló la validación del directorio de registros.",
+    module_path_rejected: "Falló la validación de la ruta de instalación del módulo.", module_id_rejected: "Falló la validación de identidad del módulo.",
+    module_version_rejected: "El registro de versión del módulo es anómalo.", migration_failed: "No se completó la migración de registros antiguos. Se conservaron los registros.",
+    mode_rejected: "Este modo de ejecución no es compatible.", data_create_failed: "No se pudo crear el directorio de registros de ejecución.",
+    uninstall_incomplete: "Quedan registros después de la desinstalación. Revísalos en C17.", uninstall_failed: "No se completó la limpieza de la desinstalación. Se conservaron los registros."
   });
   let callbackCounter = 0;
   let snapshot = null;
@@ -67,7 +67,7 @@
     return Number.isSafeInteger(result) && result <= maximum ? result : null;
   }
   function parse(raw) {
-    if (typeof raw !== "string" || raw.length > 16384) throw new Error("运行记录大小异常");
+    if (typeof raw !== "string" || raw.length > 16384) throw new Error("Tamaño de registro de ejecución no válido");
     const data = Object.create(null);
     let frame = false;
     let ended = false;
@@ -75,34 +75,34 @@
       const line = original.trim();
       if (!line) continue;
       if (line === "C17_WEB:begin" || line === "C17_PERF:begin") {
-        if (frame || ended) throw new Error("运行记录重复");
+        if (frame || ended) throw new Error("El registro de ejecución está duplicado");
         frame = true;
       } else if (line === "C17_WEB:end" || line === "C17_PERF:end") {
-        if (!frame || ended) throw new Error("运行记录不完整");
+        if (!frame || ended) throw new Error("El registro de ejecución está incompleto");
         frame = false; ended = true;
       } else if (frame) {
         const match = /^(?:C17_WEB:|C17_PERF:)?([a-z_]+)=(.*)$/.exec(line);
-        if (!match) throw new Error("运行记录格式异常");
+        if (!match) throw new Error("Formato del registro de ejecución no válido");
         if (!fields.has(match[1])) continue;
-        if (Object.prototype.hasOwnProperty.call(data, match[1]) || match[2].length > 1024) throw new Error("运行记录字段异常");
+        if (Object.prototype.hasOwnProperty.call(data, match[1]) || match[2].length > 1024) throw new Error("Campo del registro de ejecución no válido");
         data[match[1]] = match[2];
       }
     }
-    if (!ended || frame) throw new Error("运行记录不完整");
+    if (!ended || frame) throw new Error("El registro de ejecución está incompleto");
     for (const key of ["installed", "pending", "disabled", "remove", "record_present"]) {
-      if (!/^[01]$/.test(data[key] || "")) throw new Error("模块状态无法确认");
+      if (!/^[01]$/.test(data[key] || "")) throw new Error("No se pudo confirmar el estado del módulo");
     }
-    if (!/^[0-9a-f-]{36}$/i.test(data.boot || "")) throw new Error("当前开机记录无法确认");
-    if (!/^(0|1|unknown)$/.test(data.busy || "") || !/^(0|1|unknown)$/.test(data.active_job || "")) throw new Error("任务状态无法确认");
-    if (data.installed === "1" && count(data.module_version_code, 9999) === null) throw new Error("模块版本无法确认");
+    if (!/^[0-9a-f-]{36}$/i.test(data.boot || "")) throw new Error("No se pudo confirmar el registro del arranque actual");
+    if (!/^(0|1|unknown)$/.test(data.busy || "") || !/^(0|1|unknown)$/.test(data.active_job || "")) throw new Error("No se pudo confirmar el estado de la tarea");
+    if (data.installed === "1" && count(data.module_version_code, 9999) === null) throw new Error("No se pudo confirmar la versión del módulo");
     if (data.record_present === "1") {
-      if (!/^(ok|current|waiting|running|deferred|failed)$/.test(data.last_state || "")) throw new Error("运行状态无法确认");
+      if (!/^(ok|current|waiting|running|deferred|failed)$/.test(data.last_state || "")) throw new Error("No se pudo confirmar el estado de ejecución");
       if (count(data.last_time, 9999999999) === null || count(data.last_module_version_code, 9999) === null ||
-        !/^[0-9a-f-]{36}$/i.test(data.last_boot || "") || !/^(boot|run|auto|idle|scheduled|uninstall)$/.test(data.last_mode || "")) throw new Error("记录来源无法确认");
+        !/^[0-9a-f-]{36}$/i.test(data.last_boot || "") || !/^(boot|run|auto|idle|scheduled|uninstall)$/.test(data.last_mode || "")) throw new Error("No se pudo confirmar el origen del registro");
       for (const key of ["compiled", "packages", "reused", "verified", "deferred"]) {
-        if (count(data["last_" + key], 9999) === null) throw new Error("运行计数无法确认");
+        if (count(data["last_" + key], 9999) === null) throw new Error("No se pudo confirmar el contador de ejecuciones");
       }
-      if (!/^[a-z0-9_:.\-]{1,120}$/i.test(data.last_error || "")) throw new Error("错误记录无法确认");
+      if (!/^[a-z0-9_:.\-]{1,120}$/i.test(data.last_error || "")) throw new Error("No se pudo confirmar el registro del error");
     }
     return data;
   }
@@ -111,34 +111,34 @@
       data.last_module_version_code === data.module_version_code && Number(data.module_version_code) >= EXPECTED_VERSION;
   }
   function errorMessage(code) {
-    return Object.prototype.hasOwnProperty.call(errors, code) ? errors[code] : "操作未完成，请在 C17 查看详细记录（" + code + "）。";
+    return Object.prototype.hasOwnProperty.call(errors, code) ? errors[code] : "La operación no se completó. Consulta los detalles en C17 (" + code + "）。";
   }
   function present(data, localBusy) {
     const current = currentRecord(data);
-    const result = { title: "已安装", message: "按需检查，有效结果直接复用。", tone: "blue", canRun: true, canToggle: true, running: false };
-    if (data.installed !== "1") return { title: data.pending === "1" ? "待重启" : "未安装", message: data.pending === "1" ? "重启后加载附属模块。" : "请在 C17 安装附属模块。", tone: "neutral", canRun: false, canToggle: false, running: false };
-    if (data.remove === "1") return { title: "待卸载", message: "重启后处理卸载及恢复。", tone: "red", canRun: false, canToggle: false, running: false };
+    const result = { title: "Instalado", message: "Se comprueba cuando hace falta y se reutilizan los resultados válidos.", tone: "blue", canRun: true, canToggle: true, running: false };
+    if (data.installed !== "1") return { title: data.pending === "1" ? "Pendiente de reinicio" : "No instalado", message: data.pending === "1" ? "El módulo complementario se cargará después de reiniciar." : "Instala el módulo complementario desde C17.", tone: "neutral", canRun: false, canToggle: false, running: false };
+    if (data.remove === "1") return { title: "Pendiente de desinstalación", message: "La desinstalación y la restauración se procesarán tras reiniciar.", tone: "red", canRun: false, canToggle: false, running: false };
     const uncertain = data.busy === "unknown" || data.active_job === "unknown";
     const live = localBusy || data.busy === "1";
     const unresolved = current && /^(waiting|running)$/.test(data.last_state) && !live;
     // A recorded cancel failure only holds while its task marker still exists; the module drops an unknown one after 15 minutes.
     const cancelled = current && data.active_job !== "0" && /^(compile_cancel_failed|restore_cancel_failed)$/.test(data.last_error || "");
-    if (uncertain) return { title: "无法确认", message: "任务状态尚未确认，暂不启动新任务。", tone: "amber", canRun: false, canToggle: false, running: false };
-    if (cancelled || data.active_job === "1" && !live) return { title: "取消未确认", message: "未能确认系统任务已经结束。", tone: "red", canRun: false, canToggle: false, running: false };
-    if (data.disabled === "1") return { title: "已停用", message: live ? "当前任务仍需确认结束；停用阻止后续自动处理。" : "自动处理已停用。", tone: "amber", canRun: false,
+    if (uncertain) return { title: "No se puede confirmar", message: "El estado de la tarea aún no está confirmado. No se iniciará otra tarea por ahora.", tone: "amber", canRun: false, canToggle: false, running: false };
+    if (cancelled || data.active_job === "1" && !live) return { title: "Cancelación sin confirmar", message: "No se pudo confirmar que la tarea del sistema haya terminado.", tone: "red", canRun: false, canToggle: false, running: false };
+    if (data.disabled === "1") return { title: "Desactivado", message: live ? "Todavía hay que confirmar que termine la tarea actual; la desactivación impide el procesamiento automático posterior." : "El procesamiento automático está desactivado.", tone: "amber", canRun: false,
       canToggle: !live && data.pending !== "1" && Number(data.module_version_code) >= EXPECTED_VERSION, running: live };
-    if (data.pending === "1") return { title: "待重启", message: "重启后加载新版本。", tone: "cyan", canRun: false, canToggle: false, running: false };
-    if (Number(data.module_version_code) < EXPECTED_VERSION) return { title: "待更新", message: "请在 C17 更新附属模块。", tone: "amber", canRun: false, canToggle: false, running: false };
-    if (live) return { title: current && data.last_state === "waiting" && data.last_mode !== "run" ? "等待空闲" : "优化中", message: "任务正在执行，稍后自动更新。", tone: "cyan", canRun: false, canToggle: false, running: true };
-    if (unresolved) return { title: "结果待确认", message: "当前运行记录尚未收尾，请刷新或在 C17 查看。", tone: "amber", canRun: false, canToggle: false, running: false };
-    if (!current && data.record_present === "1") result.message = "上次记录供参考，当前尚未检查。";
-    if (current && data.last_state === "ok") { result.title = "优化完成"; result.message = "本次处理完成，无需手动重启系统界面。"; result.tone = "green"; }
-    if (current && data.last_state === "current") { result.title = "无需编译"; result.message = "有效结果已复用。"; result.tone = "green"; }
-    if (current && data.last_state === "deferred") { result.title = "已延期"; result.message = data.last_mode === "run" ? "本次未执行，请查看原因。" : "空闲条件满足后再检查。"; result.tone = "amber"; }
+    if (data.pending === "1") return { title: "Pendiente de reinicio", message: "La nueva versión se cargará después de reiniciar.", tone: "cyan", canRun: false, canToggle: false, running: false };
+    if (Number(data.module_version_code) < EXPECTED_VERSION) return { title: "Pendiente de actualización", message: "Actualiza el módulo complementario desde C17.", tone: "amber", canRun: false, canToggle: false, running: false };
+    if (live) return { title: current && data.last_state === "waiting" && data.last_mode !== "run" ? "Esperando inactividad" : "Optimizando", message: "La tarea está en curso; el estado se actualizará automáticamente.", tone: "cyan", canRun: false, canToggle: false, running: true };
+    if (unresolved) return { title: "Resultado pendiente de confirmar", message: "El registro actual todavía no está cerrado. Actualiza el estado o consulta C17.", tone: "amber", canRun: false, canToggle: false, running: false };
+    if (!current && data.record_present === "1") result.message = "El registro anterior es solo orientativo; todavía no se comprobó el estado actual.";
+    if (current && data.last_state === "ok") { result.title = "Optimización completada"; result.message = "El procesamiento terminó; no hace falta reiniciar manualmente la interfaz del sistema."; result.tone = "green"; }
+    if (current && data.last_state === "current") { result.title = "No hace falta compilar"; result.message = "Se reutilizaron los resultados válidos."; result.tone = "green"; }
+    if (current && data.last_state === "deferred") { result.title = "Aplazado"; result.message = data.last_mode === "run" ? "Esta vez no se ejecutó; consulta el motivo." : "Se volverá a comprobar cuando se cumplan las condiciones de inactividad."; result.tone = "amber"; }
     if (current && data.last_state === "deferred" && /^(art_cancel_unavailable|timeout_unavailable)$/.test(data.last_error || "")) {
-      result.title = "编译未开始"; result.message = errorMessage(data.last_error);
+      result.title = "La compilación no se inició"; result.message = errorMessage(data.last_error);
     }
-    if (current && data.last_state === "failed") { result.title = "未完成"; result.message = "运行记录已保留，请查看原因。"; result.tone = "red"; }
+    if (current && data.last_state === "failed") { result.title = "No completado"; result.message = "Se conservaron los registros de ejecución; consulta el motivo."; result.tone = "red"; }
     return result;
   }
   function nativeExec(kind) {
@@ -146,12 +146,12 @@
       const name = "C17WebCallback" + (++callbackCounter);
       const timeout = window.setTimeout(() => {
         delete window[name];
-        reject(new Error("管理器响应超时；这不代表系统任务已经取消"));
+        reject(new Error("El administrador tardó demasiado en responder; eso no significa que la tarea del sistema se haya cancelado"));
       }, c17 ? 50000 : 12000);
       window[name] = (errno, stdout, stderr) => {
         window.clearTimeout(timeout); delete window[name];
         const code = Number(errno);
-        if (!Number.isInteger(code) || typeof stdout !== "string" || typeof stderr !== "string") reject(new Error("管理器返回格式异常"));
+        if (!Number.isInteger(code) || typeof stdout !== "string" || typeof stderr !== "string") reject(new Error("El administrador devolvió un formato no válido"));
         else resolve({ code, stdout, stderr });
       };
       try {
@@ -161,29 +161,29 @@
           else c17.setEnabled(kind === "enable", name);
         } else ksu.exec(COMMANDS[kind], "{}", name);
       }
-      catch (_) { window.clearTimeout(timeout); delete window[name]; reject(new Error("管理器执行接口不可用")); }
+      catch (_) { window.clearTimeout(timeout); delete window[name]; reject(new Error("La interfaz de ejecución del administrador no está disponible")); }
     });
   }
   function timestamp(value) {
     const seconds = count(value, 9999999999);
-    if (!seconds) return "暂无时间";
-    return new Date(seconds * 1000).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+    if (!seconds) return "Sin hora registrada";
+    return new Date(seconds * 1000).toLocaleString("es-AR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
   }
   function scheduleText(data) {
     if (data.schedule_kind === "on_demand") {
-      if (data.schedule_state === "scheduled") return "已登记检查计划 · 系统可能延后";
-      if (data.schedule_state === "inactive") return "暂无待处理任务";
-      if (data.schedule_state === "unavailable") return "自动检查不可用，请在 C17 查看";
-      if (data.schedule_state === "running") return "正在确认自动任务";
-      if (data.schedule_state === "deferred") return "本轮已延期，等待下次空闲事件";
-      if (data.schedule_state === "blocked") return "任务结果未确认，本次开机暂停自动检查";
-      return "检查计划尚未确认";
+      if (data.schedule_state === "scheduled") return "Plan de comprobación registrado · el sistema puede aplazarlo";
+      if (data.schedule_state === "inactive") return "No hay tareas pendientes";
+      if (data.schedule_state === "unavailable") return "La comprobación automática no está disponible; consulta C17";
+      if (data.schedule_state === "running") return "Confirmando la tarea automática";
+      if (data.schedule_state === "deferred") return "Esta ronda se aplazó; se espera al próximo evento de inactividad.";
+      if (data.schedule_state === "blocked") return "El resultado de la tarea no está confirmado; la comprobación automática se pausa durante este arranque";
+      return "El plan de comprobación todavía no está confirmado";
     }
-    if (data.schedule_present !== "1") return "未确认自动检查，请在 C17 查看";
-    if (data.schedule_enabled === "0" || data.schedule_state === "disabled") return "自动检查已停用";
-    if (data.schedule_state === "registered") return "已安排 · 等待空闲";
-    if (data.schedule_state === "unavailable") return "自动检查不可用，请在 C17 查看";
-    return "自动检查状态待确认";
+    if (data.schedule_present !== "1") return "La comprobación automática no está confirmada; consulta C17";
+    if (data.schedule_enabled === "0" || data.schedule_state === "disabled") return "Comprobación automática desactivada";
+    if (data.schedule_state === "registered") return "Programado · esperando inactividad";
+    if (data.schedule_state === "unavailable") return "La comprobación automática no está disponible; consulta C17";
+    return "Estado de la comprobación automática pendiente de confirmar";
   }
   const RING_LENGTH = 213.6;
   // Pure views over a parsed snapshot, exported for the local fixtures.
@@ -193,7 +193,7 @@
     const share = known ? Math.min(1, verified / packages) : 0;
     return { dash: (share * RING_LENGTH).toFixed(1) + " " + RING_LENGTH, opacity: known && !current ? "0.55" : "1", label: known ? verified + "/" + packages : "—" };
   }
-  function seconds(ms) { return (ms / 1000).toFixed(ms >= 10000 ? 0 : 1) + " 秒"; }
+  function seconds(ms) { return (ms / 1000).toFixed(ms >= 10000 ? 0 : 1) + " s"; }
   // Costs are what ART reported for each compile; "avoided" is an estimate; the runtime lines are one sample, not a comparison.
   function benefitView(data) {
     const compiles = count(data.total_compiles, 9999999), reuses = count(data.total_reuses, 9999999);
@@ -206,15 +206,15 @@
     const aot = data.runtime_aot === "1";
     const longEnough = haveSample && jit !== null && age >= 60;
     return {
-      since: ledger ? "自 " + timestamp(data.total_since) + " 起" : "尚无记录",
-      compiles: ledger ? (compiles || 0) + " 次" : "—",
-      compilesNote: ledger ? "耗时 " + seconds(wall || 0) + (sizeKb ? " · 新增产物 " + Math.round(sizeKb / 1024) + " MB" : "") : "ART 实测耗时",
-      saved: ledger ? (reuses || 0) + " 次" : "—",
-      savedNote: ledger ? "约省编译 " + seconds(saved || 0) + "（估算）" : "相比每次都重编",
-      aot: haveSample ? (aot ? "已使用" : "未使用") : "—",
-      aotNote: haveSample ? (aot ? "系统界面运行的是预编译产物" : "系统界面尚在解释执行") : "是否使用预编译产物",
-      jit: longEnough ? Math.round(jit / (age / 60)) + " ms/分" : "—",
-      jitNote: longEnough ? "JIT 线程占用 · 进程已运行 " + Math.round(age / 60) + " 分钟" : haveSample ? "进程刚启动，样本太短" : "JIT 线程占用"
+      since: ledger ? "Desde " + timestamp(data.total_since) + "" : "Aún no hay registros",
+      compiles: ledger ? (compiles || 0) + " veces" : "—",
+      compilesNote: ledger ? "Tiempo empleado: " + seconds(wall || 0) + (sizeKb ? " · nuevos archivos: " + Math.round(sizeKb / 1024) + " MB" : "") : "Tiempo medido por ART",
+      saved: ledger ? (reuses || 0) + " veces" : "—",
+      savedNote: ledger ? "Tiempo de compilación ahorrado aprox.: " + seconds(saved || 0) + " (estimado)" : "Comparado con recompilar cada vez",
+      aot: haveSample ? (aot ? "En uso" : "Sin uso") : "—",
+      aotNote: haveSample ? (aot ? "La interfaz del sistema utiliza código precompilado" : "La interfaz del sistema todavía usa interpretación") : "Uso de código precompilado",
+      jit: longEnough ? Math.round(jit / (age / 60)) + " ms/min" : "—",
+      jitNote: longEnough ? "Uso del hilo JIT · el proceso lleva " + Math.round(age / 60) + " min" : haveSample ? "El proceso acaba de iniciarse; la muestra es demasiado breve" : "Uso del hilo JIT"
     };
   }
   function renderRing(current) {
@@ -234,46 +234,46 @@
   function render() {
     const connected = !!bridge || demo;
     const holding = Date.now() < holdUntil;
-    let view = snapshot ? present(snapshot, false) : { title: "正在读取", message: "正在连接管理器…", tone: "neutral", canRun: false, canToggle: false, running: false };
+    let view = snapshot ? present(snapshot, false) : { title: "Leyendo…", message: "Conectando con el administrador…", tone: "neutral", canRun: false, canToggle: false, running: false };
     if (snapshot && !view.running && view.canToggle && (acting || unconfirmed || holding)) {
-      view = { title: unconfirmed ? "等待确认" : acting ? actionKind === "run" ? "提交中" : "处理中" : "已提交",
-        message: unconfirmed ? "尚未确认任务结果，请刷新后查看。" : "正在确认新的运行记录。", tone: "cyan", canRun: false, canToggle: false, running: false };
+      view = { title: unconfirmed ? "Esperando confirmación" : acting ? actionKind === "run" ? "Enviando" : "Procesando" : "Enviado",
+        message: unconfirmed ? "El resultado de la tarea aún no está confirmado. Actualiza el estado para comprobarlo." : "Confirmando el nuevo registro de ejecución.", tone: "cyan", canRun: false, canToggle: false, running: false };
     }
-    if (!connected) view = { title: "请在 C17 查看", message: "当前管理器未提供执行接口。", tone: "neutral", canRun: false, canToggle: false, running: false };
-    else if (readError) view = { title: "无法确认", message: "未能读取真实状态，请刷新或在 C17 查看。", tone: "amber", canRun: false, canToggle: false, running: false };
+    if (!connected) view = { title: "Consulta C17", message: "El administrador actual no ofrece una interfaz de ejecución.", tone: "neutral", canRun: false, canToggle: false, running: false };
+    else if (readError) view = { title: "No se puede confirmar", message: "No se pudo leer el estado real. Actualiza el estado o consulta C17.", tone: "amber", canRun: false, canToggle: false, running: false };
     text("status-title", view.title); text("status-message", view.message);
     el("status-card").dataset.tone = view.tone;
     el("status-card").dataset.running = String(view.running && !hidden());
     el("optimize").disabled = !bridge || !view.canRun || reading || acting || unconfirmed || holding;
     el("module-toggle").disabled = !bridge || !view.canToggle || reading || acting || unconfirmed || holding;
     el("refresh").disabled = !connected || reading;
-    text("optimize-title", acting || unconfirmed ? "正在提交…" : view.running ? "优化进行中" : "立即优化");
+    text("optimize-title", acting || unconfirmed ? "Enviando…" : view.running ? "Optimización en curso" : "Optimizar ahora");
     el("demo-notice").hidden = !demo;
-    text("action-hint", actionNotice || (reading ? "正在刷新…" : demo ? "离线演示，不会执行操作" : !connected ? "可在 C17 的附属模块页面查看和操作" : view.canRun ? "手动立即执行；保留超时与取消保护" : "当前状态暂不启动新任务"));
-    const diagnoses = { uuid_missing: "系统未提供可跟踪的任务编号。", cancel_pending: "已请求取消，系统仍未确认退出。", cancel_unrecognized: "系统取消返回无法核验。", final_unrecognized: "系统最终返回无法核验。", active_unknown: "存在未确认的任务记录。", client_failed: "系统包管理器暂时没有应答，已自动重试。" };
+    text("action-hint", actionNotice || (reading ? "Actualizando…" : demo ? "Demostración sin conexión; no se ejecutarán operaciones" : !connected ? "Puedes consultar y operar desde la página del módulo complementario de C17" : view.canRun ? "Ejecución manual inmediata; se mantienen la protección contra tiempos de espera y la cancelación" : "No se iniciará otra tarea en el estado actual"));
+    const diagnoses = { uuid_missing: "El sistema no proporcionó un identificador de tarea que se pueda seguir.", cancel_pending: "Se solicitó la cancelación, pero el sistema aún no confirmó la finalización.", cancel_unrecognized: "No se pudo verificar la respuesta de cancelación del sistema.", final_unrecognized: "No se pudo verificar el resultado final del sistema.", active_unknown: "Hay un registro de tarea pendiente de confirmar.", client_failed: "El administrador de paquetes del sistema no respondió temporalmente; se volvió a intentar automáticamente." };
     const reason = readError || (snapshot && snapshot.record_present === "1" && snapshot.last_error !== "none" ? errorMessage(snapshot.last_error) + " " + (diagnoses[snapshot.last_diagnostic] || "") : "");
     text("reason", reason); el("reason").hidden = !reason;
     if (!snapshot) return;
-    text("version", "附属模块 " + (snapshot.module_version || "—"));
+    text("version", "Módulo complementario " + (snapshot.module_version || "—"));
     const hasRecord = snapshot.record_present === "1";
     const current = currentRecord(snapshot);
-    text("source", hasRecord ? (snapshot.last_mode === "run" ? "手动优化" : snapshot.last_mode === "boot" ? "开机自动" : snapshot.last_mode === "uninstall" ? "卸载恢复" : "空闲自动") + (current ? "" : " · 历史记录") : "尚无运行记录");
+    text("source", hasRecord ? (snapshot.last_mode === "run" ? "Optimización manual" : snapshot.last_mode === "boot" ? "Automático al iniciar" : snapshot.last_mode === "uninstall" ? "Restauración al desinstalar" : "Automático en inactividad") + (current ? "" : " · registro histórico") : "Todavía no hay registros de ejecución");
     text("time", hasRecord ? timestamp(snapshot.last_time) : "—");
     for (const key of ["compiled", "reused", "deferred"]) text(key, hasRecord ? snapshot["last_" + key] : "—");
     text("verified", hasRecord ? snapshot.last_verified + "/" + snapshot.last_packages : "—");
     renderRing(current);
     renderBenefits();
-    text("module-toggle-title", snapshot.disabled === "1" ? "启用模块" : "停用模块");
-    text("module-toggle-note", snapshot.disabled === "1" ? "恢复后续处理" : "暂停后续处理");
-    const plans = { scheduled: "计划待空闲", registered: "计划待空闲", inactive: "暂无待处理", disabled: "已停用", unavailable: "暂不可用", deferred: "等待下次空闲", blocked: "暂停新任务", running: "确认中" };
-    text("auto-title", snapshot.disabled === "1" ? "已停用" : plans[snapshot.schedule_state] || "状态待确认");
+    text("module-toggle-title", snapshot.disabled === "1" ? "Activar módulo" : "Desactivar módulo");
+    text("module-toggle-note", snapshot.disabled === "1" ? "Reanudar el procesamiento posterior" : "Pausar el procesamiento posterior");
+    const plans = { scheduled: "Programado; a la espera de inactividad", registered: "Programado; a la espera de inactividad", inactive: "Sin tareas pendientes", disabled: "Desactivado", unavailable: "Temporalmente no disponible", deferred: "Esperando la próxima inactividad", blocked: "Pausar tareas nuevas", running: "Confirmando" };
+    text("auto-title", snapshot.disabled === "1" ? "Desactivado" : plans[snapshot.schedule_state] || "Estado pendiente de confirmar");
     text("schedule", scheduleText(snapshot));
-    text("auto-tag", snapshot.disabled === "1" ? "已停用" : plans[snapshot.schedule_state] || "待确认");
-    text("record-validity", !hasRecord ? "尚无记录" : current ? "当前开机 · 当前模块版本" : "历史记录，不能证明当前任务");
+    text("auto-tag", snapshot.disabled === "1" ? "Desactivado" : plans[snapshot.schedule_state] || "Pendiente de confirmar");
+    text("record-validity", !hasRecord ? "Aún no hay registros" : current ? "Arranque actual · versión actual del módulo" : "Registro histórico; no confirma la tarea actual");
     const verified = Number(snapshot.last_verified || 0);
     const packages = Number(snapshot.last_packages || 0);
-    text("verification", !hasRecord || verified === 0 ? "尚未核验" : verified === packages && packages > 0 && snapshot.last_verification === "verified" ? "记录中全部组件已核验" : "仅部分组件已核验");
-    text("priority", snapshot.last_priority === "background" ? "系统 ART 后台优先级" : hasRecord ? "系统兼容模式" : "—");
+    text("verification", !hasRecord || verified === 0 ? "Aún no verificado" : verified === packages && packages > 0 && snapshot.last_verification === "verified" ? "Se verificaron todos los componentes registrados" : "Solo se verificaron algunos componentes");
+    text("priority", snapshot.last_priority === "background" ? "Prioridad de ART en segundo plano del sistema" : hasRecord ? "Modo de compatibilidad del sistema" : "—");
   }
   function scheduleRefresh() {
     if (timer) window.clearTimeout(timer);
@@ -288,13 +288,13 @@
       if (demo) snapshot = parse(window.C17_WEBUI_DEMO);
       else if (bridge) {
         const result = await nativeExec("read");
-        if (result.code !== 0) throw new Error(result.code === 21 ? "未获得 Root 权限" : "状态读取失败（" + result.code + "），请在 C17 查看");
+        if (result.code !== 0) throw new Error(result.code === 21 ? "No se concedieron permisos Root" : "Falló la lectura del estado (" + result.code + "），Consulta C17");
         snapshot = parse(result.stdout);
       }
       readError = "";
       if (manual && snapshot && unconfirmed && snapshot.busy === "0" && snapshot.active_job === "0" && Date.now() >= holdUntil) unconfirmed = false;
-      if (manual && !acting) actionNotice = "状态已刷新";
-    text("connection", demo ? "只读示例 · 未连接手机" : bridge ? "刚刚更新 · 离开页面停止刷新" : "当前管理器未提供执行接口");
+      if (manual && !acting) actionNotice = "Estado actualizado";
+    text("connection", demo ? "Demostración de solo lectura · sin conexión con el teléfono" : bridge ? "Actualizado recién · la actualización se detiene al salir de la página" : "El administrador actual no ofrece una interfaz de ejecución");
     } catch (error) { readError = error.message; }
     finally { reading = false; render(); scheduleRefresh(); }
   }
@@ -302,12 +302,12 @@
     if (!bridge || !snapshot || reading || acting || unconfirmed || Date.now() < holdUntil || hidden()) return;
     const view = present(snapshot, false);
     if (kind === "run" ? !view.canRun : !view.canToggle) return;
-    acting = true; actionKind = kind; actionNotice = kind === "run" ? "正在提交优化任务…" : "正在更新模块状态…"; render();
+    acting = true; actionKind = kind; actionNotice = kind === "run" ? "Enviando la tarea de optimización…" : "Actualizando el estado del módulo…"; render();
     try {
       holdUntil = Date.now() + 8000;
       const result = await nativeExec(kind);
-      if (result.code !== 0) throw new Error("操作未完成（" + result.code + "），请查看运行记录");
-      actionNotice = kind === "run" ? "已提交；以运行记录为准" : "操作已提交，正在确认状态";
+      if (result.code !== 0) throw new Error("La operación no se completó (" + result.code + "); consulta los registros de ejecución");
+      actionNotice = kind === "run" ? "Enviado; el registro de ejecución es la referencia" : "Operación enviada; confirmando el estado";
     } catch (error) {
       actionNotice = error.message; unconfirmed = true;
     } finally { acting = false; await refresh(false); render(); }

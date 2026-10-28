@@ -43,50 +43,50 @@ final class HookHealth {
     private static void group(String id, String label, String impact) { GROUP_INFO.put(id, new Group(label, impact, false)); }
     private static void lazy(String id, String label, String impact) { LAZY_INFO.put(id, new Group(label, impact, true)); }
     static {
-        group("context", "基础环境", "所有功能都依赖它；缺失时模块基本不工作");
-        group("panel_mode", "面板模式识别", "下拉面板的单双面板判断，影响通知中心与控制中心相关设置");
-        group("shade_wallpaper", "下拉面板壁纸", "下拉面板壁纸");
-        group("model", "网络与电池状态", "状态栏网络、电池相关功能取不到状态");
-        group("drawable", "状态栏图标绘制", "状态栏图案、颜色与透明度");
-        group("badge", "角标隐藏", "网络角标隐藏");
-        group("wifi", "Wi-Fi 图标", "Wi-Fi 图标大小、位置与样式");
-        group("speed", "网速", "网速显示与位置");
-        group("compose", "状态栏 Compose 适配", "新版 Compose 状态栏上的文字、图标与排序");
-        group("network_order", "网络图标排序", "Wi-Fi、蜂窝、数据图标的顺序与位置");
-        group("status_flow", "状态栏排序与边距", "状态栏排序（实验性）、左右间距");
-        group("status_hints", "系统提示图标", "蓝牙、定位等提示图标的数量与间距");
-        group("text", "时钟与文字", "状态栏时钟、运营商文字、锁屏时钟与文字样式");
-        group("battery", "电池", "电池图标、百分比与充电样式");
-        group("data_spacing", "数据与电池间距", "网络与电池之间的间距");
-        group("tiles", "控制中心磁贴翻页", "磁贴页切换效果（可按需安装）");
-        group("qs_appearance", "磁贴颜色", "控制中心磁贴底色、渐变与透明度");
-        group("qs_full_fill", "2×1 磁贴铺满", "2×1 磁贴铺满外观");
-        group("qs_corners", "磁贴圆角", "磁贴与按钮圆角");
-        group("qs_icon_size", "磁贴图标大小", "控制中心磁贴图标大小");
-        group("icon_management", "图标管理", "控制中心图案、颜色、透明度与已接入的动态图标");
-        group("qs_panel_corners", "面板圆角", "控制中心与通知面板圆角");
-        group("qs_media", "音乐卡片", "控制中心音乐卡片封面背景");
-        group("big_clock", "大时钟", "通知中心大时钟、日期、左右文字组件与背景");
-        group("notification_clear", "清除按钮", "通知清除按钮外观");
-        group("notification_icons", "通知图标", "状态栏通知图标显示");
-        group("notification_row_icons", "通知行图标", "通知卡片内的应用图标");
-        group("c17_highlights", "高光去除", "通知与卡片高光去除");
-        group("lockscreen_blur", "锁屏模糊与背景", "锁屏、AOD 的模糊与流体云背景");
-        group("fluid_accent", "流体云强调色", "流体云跟随媒体色、锁屏与 AOD 外观");
-        group("fluid_media", "流体云音乐卡", "音乐流体云卡片绘制（可按需安装）");
-        group("fluid_notification", "流体云样式", "流体云样式、通知跟随");
-        group("mini_stack", "同应用小堆叠", "同应用通知小堆叠");
+        group("context", "Entorno básico", "Todas las funciones dependen de este entorno; sin él, el módulo prácticamente no funciona.");
+        group("panel_mode", "Detección del modo de panel", "Determina si el panel desplegable está combinado o separado; afecta a los ajustes del centro de notificaciones y del centro de control.");
+        group("shade_wallpaper", "Fondo del panel desplegable", "Fondo del panel desplegable");
+        group("model", "Estado de red y batería", "Las funciones de red y batería de la barra de estado no pueden obtener su estado.");
+        group("drawable", "Dibujo de iconos de la barra de estado", "Formas, colores y opacidad de los iconos de la barra de estado.");
+        group("badge", "Ocultación de indicadores", "Ocultación de los indicadores de red.");
+        group("wifi", "Icono de Wi-Fi", "Tamaño, posición y estilo del icono Wi-Fi.");
+        group("speed", "Velocidad de red", "Visualización y posición de la velocidad de red.");
+        group("compose", "Compatibilidad de Compose con la barra de estado", "Texto, iconos y orden en la nueva barra de estado basada en Compose.");
+        group("network_order", "Orden de los iconos de red", "Orden y posición de los iconos de Wi-Fi, red móvil y datos.");
+        group("status_flow", "Orden y márgenes de la barra de estado", "Orden experimental de la barra de estado y espaciado lateral.");
+        group("status_hints", "Iconos de aviso del sistema", "Cantidad y espaciado de los iconos de aviso, como Bluetooth y ubicación.");
+        group("text", "Reloj y texto", "Reloj de la barra de estado, texto del operador y estilos del reloj y los textos de la pantalla de bloqueo.");
+        group("battery", "Batería", "Icono de batería, porcentaje y estilo de carga.");
+        group("data_spacing", "Separación entre datos y batería", "Separación entre los iconos de red y batería.");
+        group("tiles", "Desplazamiento entre páginas de tarjetas del centro de control", "Efecto de transición entre páginas de tarjetas (instalable bajo demanda).");
+        group("qs_appearance", "Color de las tarjetas", "Color de fondo, degradado y opacidad de las tarjetas del centro de control.");
+        group("qs_full_fill", "Expandir las tarjetas 2×1 para llenar el área", "Apariencia de las tarjetas 2×1 a pantalla completa.");
+        group("qs_corners", "Esquinas redondeadas de las tarjetas", "Radio de las esquinas de tarjetas y botones.");
+        group("qs_icon_size", "Tamaño de los iconos de las tarjetas", "Tamaño de los iconos de las tarjetas del centro de control.");
+        group("icon_management", "Gestión de iconos", "Iconos, colores, opacidad y paquetes de iconos animados integrados del centro de control.");
+        group("qs_panel_corners", "Esquinas redondeadas del panel", "Radio de las esquinas del centro de control y del panel de notificaciones.");
+        group("qs_media", "Tarjeta musical", "Fondo de la portada de la tarjeta musical del centro de control.");
+        group("big_clock", "Reloj grande", "Reloj grande, fecha, componentes de texto laterales y fondo del centro de notificaciones.");
+        group("notification_clear", "Botón de borrar", "Apariencia del botón para borrar notificaciones.");
+        group("notification_icons", "Iconos de notificación", "Visibilidad de los iconos de notificación de la barra de estado");
+        group("notification_row_icons", "Iconos de las filas de notificación", "Iconos de aplicaciones dentro de las tarjetas de notificación.");
+        group("c17_highlights", "Eliminación de reflejos", "Eliminación de reflejos en notificaciones y tarjetas.");
+        group("lockscreen_blur", "Desenfoque y fondo de la pantalla de bloqueo", "Desenfoque y fondo de Fluid Cloud en la pantalla de bloqueo y AOD.");
+        group("fluid_accent", "Color de énfasis de Fluid Cloud", "Color de Fluid Cloud según el contenido multimedia y apariencia en la pantalla de bloqueo y AOD.");
+        group("fluid_media", "Tarjeta musical de Fluid Cloud", "Dibujo de la tarjeta musical de Fluid Cloud (instalable bajo demanda).");
+        group("fluid_notification", "Estilo de Fluid Cloud", "Estilo de Fluid Cloud y sincronización con las notificaciones.");
+        group("mini_stack", "Apilado pequeño por aplicación", "Apilado compacto de notificaciones de una misma aplicación.");
 
-        lazy("statusbar_flow_layout", "状态栏排序布局", "状态栏排序（实验性）与左右间距");
-        lazy("status_hint_child_index", "提示图标布局", "系统提示图标的数量、间距与排序");
-        lazy("network_order_child_index", "网络图标顺序", "Wi-Fi、蜂窝、数据图标的顺序");
-        lazy("network_shared_native_placement", "网络共用位置", "网络图标的共用位置");
-        lazy("shade_wallpaper", "下拉面板壁纸绘制", "下拉面板壁纸");
-        lazy("qs_media_child", "音乐卡片子视图", "控制中心音乐卡片封面背景");
-        lazy("notification_mini_stack", "同应用小堆叠", "同应用通知小堆叠");
-        lazy("lock_hide", "锁屏元素隐藏", "锁屏时间、日期、提示等元素的隐藏");
-        lazy("device_gradient", "卡片渐变", "流体云原生渐变");
-        lazy("capsule_bounce", "胶囊出现回弹", "流体云胶囊的出现回弹");
+        lazy("statusbar_flow_layout", "Distribución del orden de la barra de estado", "Orden experimental de la barra de estado y espaciado lateral.");
+        lazy("status_hint_child_index", "Distribución de los iconos de aviso", "Cantidad, espaciado y orden de los iconos de aviso del sistema.");
+        lazy("network_order_child_index", "Orden de los iconos de red", "Orden de los iconos de Wi-Fi, red móvil y datos");
+        lazy("network_shared_native_placement", "Posición compartida de los iconos de red", "Posición compartida de los iconos de red");
+        lazy("shade_wallpaper", "Dibujo del fondo del panel desplegable", "Fondo del panel desplegable");
+        lazy("qs_media_child", "Vista secundaria de la tarjeta musical", "Fondo de la portada de la tarjeta musical del centro de control.");
+        lazy("notification_mini_stack", "Apilado pequeño por aplicación", "Apilado compacto de notificaciones de una misma aplicación.");
+        lazy("lock_hide", "Ocultación de elementos de la pantalla de bloqueo", "Oculta la hora, la fecha y otros elementos de aviso de la pantalla de bloqueo.");
+        lazy("device_gradient", "Degradado de las tarjetas", "Degradado nativo de Fluid Cloud.");
+        lazy("capsule_bounce", "Rebote al aparecer la cápsula", "Animación de rebote al aparecer la cápsula de Fluid Cloud.");
     }
 
     private HookHealth() { }
@@ -148,8 +148,8 @@ final class HookHealth {
     static List<Finding> findings(Bundle report) {
         List<Finding> result = new ArrayList<>();
         if (report == null) {
-            result.add(new Finding("hooks_unknown", Severity.INFO, "还没有拿到系统界面的挂钩状态",
-                    "模块未在系统界面里生效，或系统界面还没有回应。先在主页确认“当前版本”已生效，再回来刷新。"));
+            result.add(new Finding("hooks_unknown", Severity.INFO, "Todavía no se recibió el estado de los hooks de la interfaz del sistema.",
+                    "El módulo no está activo en la interfaz del sistema o esta todavía no respondió. Comprueba en Inicio que la versión actual esté aplicada y vuelve a actualizar."));
             return result;
         }
         Map<String, Integer> counts = counts(report);
@@ -165,30 +165,30 @@ final class HookHealth {
             else if (!info.onDemand && !"tiles".equals(id) && !"fluid_media".equals(id)) broken.add(id);
         }
         if (broken.isEmpty()) {
-            result.add(new Finding("hooks_ok", Severity.OK, "挂钩全部就绪",
-                    ready.size() + " 组功能已安装，共 " + hooks + " 个挂钩。"));
+            result.add(new Finding("hooks_ok", Severity.OK, "Todos los hooks están listos",
+                    ready.size() + " grupos de funciones instalados; total de hooks: " + hooks + " hooks."));
         } else {
             boolean base = broken.contains("context");
-            StringBuilder detail = new StringBuilder("以下功能的挂钩没有装上，对应设置会无效：");
+            StringBuilder detail = new StringBuilder("No se instalaron los hooks de estas funciones; sus ajustes no tendrán efecto:");
             for (String id : broken) detail.append("\n· ").append(label(id)).append("：").append(GROUP_INFO.get(id).impact);
-            detail.append("\n常见原因是系统界面更新后内部类名变化，或这台设备的系统界面没有对应结构。开启诊断日志后重启系统界面，把导出的报告发给作者。");
+            detail.append("\nLas causas habituales son cambios en los nombres de clases internas tras una actualización de SystemUI o la ausencia de esa estructura en este dispositivo. Activa el registro de diagnóstico, reinicia SystemUI y envía el informe exportado al autor.");
             result.add(new Finding("hooks_missing", base ? Severity.ERROR : Severity.WARN,
-                    broken.size() + " 组功能的挂钩未就绪", detail.toString()));
+                    broken.size() + " grupos de funciones sin hooks listos", detail.toString()));
         }
         Map<String, String> lazy = lazyStates(report);
         List<String> failed = new ArrayList<>();
         for (Map.Entry<String, String> entry : lazy.entrySet()) if ("failed".equals(entry.getValue())) failed.add(entry.getKey());
         if (!failed.isEmpty()) {
-            StringBuilder detail = new StringBuilder("这些按需挂钩在需要时安装失败：");
+            StringBuilder detail = new StringBuilder("No se pudieron instalar estos hooks bajo demanda cuando se necesitaron:");
             for (String name : failed) detail.append("\n· ").append(label(name)).append("：").append(effect(name));
-            result.add(new Finding("lazy_failed", Severity.WARN, failed.size() + " 个按需挂钩安装失败", detail.toString()));
+            result.add(new Finding("lazy_failed", Severity.WARN, failed.size() + " hooks bajo demanda no se pudieron instalar", detail.toString()));
         }
         return result;
     }
 
     private static String effect(String lazyName) {
         Group group = LAZY_INFO.get(lazyName);
-        return group == null ? "对应功能可能无效" : group.impact;
+        return group == null ? "La función correspondiente podría no funcionar." : group.impact;
     }
 
     /** Every group in a stable order with its state, for the detail list. */
@@ -200,11 +200,11 @@ final class HookHealth {
         for (String id : GROUP_INFO.keySet()) {
             int count = counts.containsKey(id) ? counts.get(id) : 0;
             boolean done = count > 0 || (complete != null && complete.contains(id));
-            rows.add(new String[]{id, GROUP_INFO.get(id).label, done ? "就绪" : GROUP_INFO.get(id).onDemand || "tiles".equals(id) || "fluid_media".equals(id) ? "按需" : "未就绪",
-                    count > 0 ? count + " 个挂钩" : ""});
+            rows.add(new String[]{id, GROUP_INFO.get(id).label, done ? "Listo" : GROUP_INFO.get(id).onDemand || "tiles".equals(id) || "fluid_media".equals(id) ? "Bajo demanda" : "No listo",
+                    count > 0 ? count + " hooks" : ""});
         }
         for (Map.Entry<String, String> entry : lazyStates(report).entrySet())
-            rows.add(new String[]{entry.getKey(), label(entry.getKey()), "on".equals(entry.getValue()) ? "已装" : "failed".equals(entry.getValue()) ? "失败" : "未启用", "按需"});
+            rows.add(new String[]{entry.getKey(), label(entry.getKey()), "on".equals(entry.getValue()) ? "Instalado" : "failed".equals(entry.getValue()) ? "Fallido" : "No activado", "Bajo demanda"});
         return rows;
     }
 

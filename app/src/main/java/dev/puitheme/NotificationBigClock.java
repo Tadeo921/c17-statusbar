@@ -2045,7 +2045,7 @@ public final class NotificationBigClock {
                     }
                     @Override public void onComponentClick(View target,int side,String packageName) {
                         if(componentClickAllowed(target)&&!clockLauncher.launchApp(getContext(),packageName))
-                            android.widget.Toast.makeText(getContext(),"无法打开所选应用，请重新选择",android.widget.Toast.LENGTH_SHORT).show();
+                            android.widget.Toast.makeText(getContext(),"No se pudo abrir la aplicación seleccionada. Vuelve a elegirla.",android.widget.Toast.LENGTH_SHORT).show();
                     }
                 });
                 headerMotion.addView(components,new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT));

@@ -1,10 +1,13 @@
-# Status C17 · 1.8.3
+> **Unofficial Spanish-localization fork:** Spanish documentation and interface strings are being adapted with AI assistance and partial human review. This work may contain errors and is not an upstream release. No translated APK built by this fork is claimed to be verified. See [the Spanish overview](README.md) and [translation notes](TRADUCCION-ES.md). Original project: [SANWU5/c17-statusbar](https://github.com/SANWU5/c17-statusbar).
+
+---
+# Status C17 Â· 1.8.3
 
 A SystemUI customization module for ColorOS 17, primarily adapted using OnePlus 13. Customize the status bar, notifications, Control Center, Fluid Cloud and lock screen, with a choice of COUI or Miuix for the settings app. Uses LibXposed API 101; package name: `dev.puitheme.iosstatusbar`.
 
 **Stable release 1.8.3.** The [complete release notes](docs/RELEASE-1.8.3.zh-CN.md) compare this release with 1.8.2 across 16 feature areas, including detailed additions, improvements and fixes.
 
-[Download APK](https://github.com/SANWU5/c17-statusbar/releases) · [中文](README.md) · [Changelog](CHANGELOG.md) · [Icon-pack specification and examples](https://github.com/SANWU5/c17-icon-packs)
+[Download APK](https://github.com/SANWU5/c17-statusbar/releases) Â· [ä¸­æ–‡](README.md) Â· [Changelog](CHANGELOG.md) Â· [Icon-pack specification and examples](https://github.com/SANWU5/c17-icon-packs)
 
 ## Features
 
@@ -17,7 +20,7 @@ A SystemUI customization module for ColorOS 17, primarily adapted using OnePlus 
 | Notification clock | Separate portrait/landscape settings, native fonts, digit-spacing and time-animation controls, lock-screen-like materials, glass, background inside glyphs, masks, outlines and lighting. Portrait supports rebound blur and app-launch actions. |
 | Text components and weather | Two portrait side components with independent appearance, position, row swapping and actions. Weather, date, battery, signal and network presets support conditional templates. Weather reads the system's cached located city without relying on lock-screen widgets. |
 | Notification icons and stacks | Follow the launcher's current icon pack and system icon shape, with per-app replacements taking priority. Same-app mini stacks and whole-list stacking are independent; hide counts or covered rear cards while retaining native gestures and clearing. |
-| Control Center and media | Full-fill 2×1 tiles, header-button visibility, tile colors and gradient ranges, cover-derived or custom media backgrounds and transitions. Unified corners cover tiles, press layers, detail buttons and brightness/volume sliders. |
+| Control Center and media | Full-fill 2Ã—1 tiles, header-button visibility, tile colors and gradient ranges, cover-derived or custom media backgrounds and transitions. Unified corners cover tiles, press layers, detail buttons and brightness/volume sliders. |
 | Expanded Fluid Cloud | Solid or native-gradient fills, opacity, media-color following and transitions, with 13 independently selectable business categories. |
 | Camera-area capsule | Backgrounds, blur, borders, animated border colors, inward glow, cover/corner settings, rebound and live music spectrum. Optional persistence retains manual dismissal and normal task cleanup. |
 | Lock screen and AOD | Separate fills, masks, brightening and media colors, supported white-glass notification backgrounds, bottom-capsule colors, top wallpaper blur and lock-icon hiding. |
@@ -29,7 +32,7 @@ A SystemUI customization module for ColorOS 17, primarily adapted using OnePlus 
 
 ### Icons and fonts
 
-Open **Other → Icon management** to import **v3 ZIP or unencrypted, single-volume RAR4/RAR5**, or fetch a pack from GitHub. Static assets support transparent PNG and restricted VectorDrawable XML. External animations are limited to supported quick toggles. Preview the selected scope before applying; missing or unsupported states retain native artwork. [Pack specification](https://github.com/SANWU5/c17-icon-packs) · [Color palettes](docs/ICON-COLOR-PRESETS.zh-CN.md)
+Open **Other â†’ Icon management** to import **v3 ZIP or unencrypted, single-volume RAR4/RAR5**, or fetch a pack from GitHub. Static assets support transparent PNG and restricted VectorDrawable XML. External animations are limited to supported quick toggles. Preview the selected scope before applying; missing or unsupported states retain native artwork. [Pack specification](https://github.com/SANWU5/c17-icon-packs) Â· [Color palettes](docs/ICON-COLOR-PRESETS.zh-CN.md)
 
 The public build includes the original **C17 example library**, without a bundled PUI icon suite. You can import v3 packs you are entitled to use. PUI compatibility mappings and the existing PUI battery style remain available. Separate partial iOS27 test packs are not a built-in library or a complete iPhone interface.
 
@@ -45,22 +48,22 @@ For older signing identities, see the [upgrade notes](docs/PARAMETER-UPGRADE-1.6
 
 - Legacy v1/v2 icon packs, library-priority layers and theme-ZIP import are retired. Select sources again in the new icon manager; other module settings are retained.
 - Configuration files carry settings, not fonts, icons or wallpaper images. Import those resources separately on another device. Settings-app colors and text scale are separate from module configuration.
-- Updating the APK does not update an installed Root companion. Update it separately under **About → Companion optimization module**. It is optional for ordinary appearance customization.
+- Updating the APK does not update an installed Root companion. Update it separately under **About â†’ Companion optimization module**. It is optional for ordinary appearance customization.
 - Status-bar ordering and shade wallpaper remain experimental. Intermittent movement, disappearing icons, collapse transitions and native-material differences still require scenario-specific device verification.
 
 ## Settings and maintenance
 
-Settings are grouped into status bar, notifications, Control Center, lock screen and other features, with global search and page-specific reset. Sliders offer recommended ranges. Valid manual values within the range save directly; values outside the range enter a 20-second confirmation trial and revert on cancellation or timeout. Unified corners have a hard limit of 0–30dp.
+Settings are grouped into status bar, notifications, Control Center, lock screen and other features, with global search and page-specific reset. Sliders offer recommended ranges. Valid manual values within the range save directly; values outside the range enter a 20-second confirmation trial and revert on cancellation or timeout. Unified corners have a hard limit of 0â€“30dp.
 
-Safety mode on the home page pauses modifications while retaining settings. **About → Configuration management** provides backup, sharing, import and confirmed deletion; **About → Diagnostics** provides logs and reports. Hide the launcher icon at the bottom of About, then reopen and restore it through a manager supporting the module-settings entry. The launcher name defaults to Status C17; the old name can be restored in appearance settings.
+Safety mode on the home page pauses modifications while retaining settings. **About â†’ Configuration management** provides backup, sharing, import and confirmed deletion; **About â†’ Diagnostics** provides logs and reports. Hide the launcher icon at the bottom of About, then reopen and restore it through a manager supporting the module-settings entry. The launcher name defaults to Status C17; the old name can be restored in appearance settings.
 
 ## Author and support
 
-**aiingjie** · GitHub [sanwu5](https://github.com/sanwu5) · Coolapk **konwo** · Feedback, collaboration and donations: **QQ 2726344450**.
+**aiingjie** Â· GitHub [sanwu5](https://github.com/sanwu5) Â· Coolapk **konwo** Â· Feedback, collaboration and donations: **QQ 2726344450**.
 
 The module and all features are free. Donations are voluntary and do not affect access. Please do not buy paid resales. Donation images appear in the app only after you choose to open them.
 
-[WeChat](docs/donation/wechat.png) · [Alipay](docs/donation/alipay.jpg)
+[WeChat](docs/donation/wechat.png) Â· [Alipay](docs/donation/alipay.jpg)
 
 ## Building and licensing
 

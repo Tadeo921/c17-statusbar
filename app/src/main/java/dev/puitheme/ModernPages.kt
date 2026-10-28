@@ -89,14 +89,14 @@ private fun C17Dialogs(app: ModernMainActivity) {
     if (app.marqueePickerOpen) MarqueePresetDialog(app)
     app.configScope?.let { ConfigScopeDialog(app, it) }
     app.fontRenameTarget?.let { entry ->
-        UiInputDialog("重命名字体", entry.name, "只修改字体列表中的名称，不改变字形、粗细或其他已导入字体。",
+        UiInputDialog("Cambiar nombre de fuente", entry.name, "Solo cambia el nombre que aparece en la lista; no modifica los glifos, el grosor ni otras fuentes importadas.",
             onDismiss = { app.fontRenameTarget = null; app.fontCatalogOpen = true }) { app.renameLibraryFont(entry, it) }
     }
     app.downloadingFont?.let { entry ->
-        C17OverlayDialog(show = true, title = "下载 ${entry.displayName}",
-            summary = "${app.fontDownloadPercent}% · ${if (app.fontDownloadPercent == 100) "正在校验与入库" else "官方 GitHub 字体文件"}\n下载后选择作用范围，统一应用前保留原字体。",
+        C17OverlayDialog(show = true, title = "Descargar ${entry.displayName}",
+            summary = "${app.fontDownloadPercent}% · ${if (app.fontDownloadPercent == 100) "Verificando e incorporando a la biblioteca" else "Archivo de fuente oficial de GitHub"}\nDespués de descargarla, elige el ámbito de aplicación. La fuente original se conserva hasta que apliques los cambios.",
             onDismissRequest = app::cancelFontDownload) {
-            C17TextButton(text = "取消下载", onClick = app::cancelFontDownload, modifier = Modifier.fillMaxWidth())
+            C17TextButton(text = "Cancelar descarga", onClick = app::cancelFontDownload, modifier = Modifier.fillMaxWidth())
         }
     }
     app.confirmation?.let { prompt ->
@@ -143,30 +143,30 @@ private fun ClockLaunchAppDialog(app: ModernMainActivity, key: String) {
     val compact = window.height < 500.dp
     val listState = key(key, query, category) { rememberLazyListState() }
     val defaultRow: @Composable () -> Unit = {
-        C17RadioButtonPreference(title = if (component) "不打开应用" else "系统默认", selected = selected.isEmpty(), enabled = allowed,
-            summary = if (component) "保留文字显示，不占用点击区域" else app.clockLaunchDefault?.let { "打开 ${it.label}" }
-                ?: if (app.clockLaunchLoading) "正在读取系统默认程序…" else "沿用系统原生${if (calendar) "日历" else "时钟"}入口",
+        C17RadioButtonPreference(title = if (component) "No abrir ninguna aplicación" else "Predeterminado del sistema", selected = selected.isEmpty(), enabled = allowed,
+            summary = if (component) "Mantener el texto visible sin ocupar la zona táctil" else app.clockLaunchDefault?.let { "Abrir ${it.label}" }
+                ?: if (app.clockLaunchLoading) "Leyendo la aplicación predeterminada del sistema…" else "Usar la aplicación nativa del sistema ${if (calendar) "calendario" else "reloj"} como destino",
             radioButtonLocation = RadioButtonLocation.End,
             insideMargin = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
             onClick = { error = app.saveClockLaunchApp(key, "") })
     }
     val controls: @Composable () -> Unit = {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            C17TextField(value = query, onValueChange = { query = it }, label = "搜索应用名称或包名", singleLine = true,
+            C17TextField(value = query, onValueChange = { query = it }, label = "Buscar por nombre de aplicación o nombre de paquete", singleLine = true,
                 useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth(), insideMargin = DpSize(12.dp, 10.dp))
-            UiContentTabs(tabs = listOf("全部", "非系统", "系统"), selectedTabIndex = category,
+            UiContentTabs(tabs = listOf("Todo", "No del sistema", "Sistema"), selectedTabIndex = category,
                 onTabSelected = { category = it }, modifier = Modifier.fillMaxWidth())
         }
     }
-    val dialogTitle = if (component) "${if (BigClockWidgetsSettings.textSide(key) == BigClockWidgetsSettings.LEFT) "左" else "右"}侧文字打开的应用"
-        else if (calendar) "日期打开的应用" else "时间打开的应用"
+    val dialogTitle = if (component) "Aplicación que se abre al tocar el texto ${if (BigClockWidgetsSettings.textSide(key) == BigClockWidgetsSettings.LEFT) "izquierdo" else "derecho"}"
+        else if (calendar) "Aplicación que se abre al tocar la fecha" else "Aplicación que se abre al tocar la hora"
     C17OverlayDialog(show = true, title = dialogTitle,
         modifier = Modifier.heightIn(max = (window.height * .82f).coerceAtMost(640.dp)),
         insideMargin = DpSize(18.dp, 18.dp), outsideMargin = DpSize(16.dp, 12.dp),
         onDismissRequest = app::dismissClockLaunchPicker) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!compact) {
-                Text("当前：$selectedLabel", fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                Text("Actual: $selectedLabel", fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 defaultRow()
                 controls()
@@ -176,12 +176,12 @@ private fun ClockLaunchAppDialog(app: ModernMainActivity, key: String) {
             LazyColumn(Modifier.weight(1f, fill = false).fillMaxWidth(), state = listState,
                 verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (compact) {
-                    item { Text("当前：$selectedLabel", fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    item { Text("Actual: $selectedLabel", fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary) }
                     item { defaultRow() }
                     item { controls() }
                 }
-                item { Text(if (app.clockLaunchLoading) "正在读取可启动应用…" else "可启动应用 · ${choices.size} 个",
+                item { Text(if (app.clockLaunchLoading) "Leyendo aplicaciones que se pueden abrir…" else "Aplicaciones que se pueden abrir · ${choices.size}",
                     fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     modifier = Modifier.padding(top = 2.dp, bottom = 2.dp)) }
                 items(choices, key = { it.packageName }) { choice ->
@@ -193,14 +193,14 @@ private fun ClockLaunchAppDialog(app: ModernMainActivity, key: String) {
                         onClick = { error = app.saveClockLaunchApp(key, choice.packageName) })
                 }
                 if (!app.clockLaunchLoading && choices.isEmpty()) item {
-                    Text("没有符合条件的可启动应用", fontSize = 13.sp,
+                    Text("No hay aplicaciones disponibles que cumplan los criterios.", fontSize = 13.sp,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary, modifier = Modifier.padding(vertical = 12.dp))
                 }
-                item { Text("所选应用卸载或停用后，自动回到系统默认。", fontSize = 12.sp,
+                item { Text("Si la aplicación seleccionada se desinstala o desactiva, se volverá automáticamente a la predeterminada del sistema.", fontSize = 12.sp,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary, modifier = Modifier.padding(top = 8.dp)) }
             }
             if (error.isNotBlank()) Text(error, fontSize = 13.sp, color = MiuixTheme.colorScheme.error)
-            C17TextButton(text = "关闭", onClick = app::dismissClockLaunchPicker, modifier = Modifier.fillMaxWidth())
+            C17TextButton(text = "Cerrar", onClick = app::dismissClockLaunchPicker, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -283,7 +283,7 @@ fun C17Pages(app: ModernMainActivity) {
     val detailTopBar = key(group?.id, activeDetail?.id) { rememberC17TopAppBarState(initialHeightOffsetLimit = 0f) }
     val topBarState = if (group != null) detailTopBar else listOf(homeTopBar, configTopBar, aboutTopBar)[app.page]
     val scroll = rememberC17ScrollBehavior(state = topBarState)
-    val title = group?.let { destinationTitle(it, app.category) } ?: listOf("主页", "配置", "关于")[app.page]
+    val title = group?.let { destinationTitle(it, app.category) } ?: listOf("Inicio", "Configuración", "Acerca de")[app.page]
     val homeScroll = rememberLazyListState()
     val configScroll = key(app.category, app.query.isNotBlank()) { rememberLazyListState() }
     val aboutScroll = rememberLazyListState()
@@ -321,7 +321,7 @@ fun C17Pages(app: ModernMainActivity) {
         topBar = {
             if (group == null) C17TopAppBar(title = title, scrollBehavior = scroll)
             else C17SmallTopAppBar(title = title, scrollBehavior = scroll, navigationIcon = {
-                C17IconButton(onClick = app::closeGroup) { Icon(MiuixIcons.Back, "返回") }
+                C17IconButton(onClick = app::closeGroup) { Icon(MiuixIcons.Back, "Volver") }
             })
         },
     ) { padding ->
@@ -343,11 +343,11 @@ fun C17Pages(app: ModernMainActivity) {
             if (group != null) {
                 item { DetailIntro(app, group, detailMaster?.takeIf { group.id != "clock" }, SettingsCatalog.detailModeReason(group, activeDetail, app.panelMode)) }
                 if (group.id == "status_hint_icons") item {
-                    UiGroupCard { UiRow("逐个位置与排序", "每个提示图标分别选左侧、右侧并排列，同状态栏排序一起保存", "进入",
+                    UiGroupCard { UiRow("Posición y orden por elemento", "Elige si cada icono indicador aparece a la izquierda o a la derecha y ordénalos. Se guardan junto con el orden de la barra de estado.", "Abrir",
                         enabled = !app.busy) { app.openHintIconOrder() } }
                 }
                 if (commonItems.isNotEmpty()) item(key = "${group.id}-common") {
-                    DetailSettingsSection(app, group, "共用设置", commonItems, revealedSetting)
+                    DetailSettingsSection(app, group, "Ajustes compartidos", commonItems, revealedSetting)
                 }
                 if (group.id == "clock" && detailMaster != null) item { ClockModeSwitch(app, detailMaster, activeDetail?.id == "dual") }
                 val iconFamily = detailIconFamily
@@ -355,7 +355,7 @@ fun C17Pages(app: ModernMainActivity) {
                     val state = app.iconManagementState()
                     val assigned = state.overrides.keys.count { IconRoleRegistry.scopeOfRole(it) == iconFamily }
                     UiGroupCard {
-                        UiRow("图案与颜色", "图标管理中统一选择，位置和大小沿用本页设置", if (assigned > 0) "$assigned 项" else "选择", Icons.Outlined.Collections,
+                        UiRow("Icono y color", "Elige el icono desde Administración de iconos; la posición y el tamaño siguen usando los ajustes de esta página.", if (assigned > 0) "$assigned elementos" else "Seleccionar", Icons.Outlined.Collections,
                             enabled = app.canEdit && !app.busy) { app.openIconAssignments(iconFamily) }
                     }
                 }
@@ -368,13 +368,13 @@ fun C17Pages(app: ModernMainActivity) {
                 if (group.id == "font") item { FontSettingsPanel(app) }
                 val resetItems = (if (group.id == "carrier" || detailPages.size > 1) activeDetail?.items ?: emptyList() else group.items).distinctBy { it.key }
                 val resetTitle = title + if (detailPages.size > 1) " · ${activeDetail?.title}" else ""
-                item { UiGroupCard { UiRow(if (detailPages.size > 1) "恢复当前标签默认设置" else "恢复本页默认设置",
-                    "只重置$resetTitle" + if (commonItems.isNotEmpty() && detailPages.size > 1) "，不包含共用设置" else "", icon = MiuixIcons.Reset,
+                item { UiGroupCard { UiRow(if (detailPages.size > 1) "Restaurar valores predeterminados de esta pestaña" else "Restaurar valores predeterminados de esta página",
+                    "Restablecer solo $resetTitle" + if (commonItems.isNotEmpty() && detailPages.size > 1) "; no incluye los ajustes compartidos" else "", icon = MiuixIcons.Reset,
                     enabled = app.canEdit && !app.busy) {
                     app.resetGroup(group, items = resetItems, title = resetTitle)
                 }
-                    if (commonItems.isNotEmpty() && detailPages.size > 1) UiRow("恢复共用设置默认值", "只重置共用设置，不包含当前标签", icon = MiuixIcons.Reset,
-                        enabled = app.canEdit && !app.busy) { app.resetGroup(group, items = commonItems, title = "$title · 共用设置") }
+                    if (commonItems.isNotEmpty() && detailPages.size > 1) UiRow("Restaurar valores predeterminados de los ajustes compartidos", "Solo restablece los ajustes compartidos; no incluye la pestaña actual.", icon = MiuixIcons.Reset,
+                        enabled = app.canEdit && !app.busy) { app.resetGroup(group, items = commonItems, title = "$title · Ajustes compartidos") }
                 } }
             } else when (app.page) {
                 0 -> {
@@ -387,29 +387,29 @@ fun C17Pages(app: ModernMainActivity) {
                         } }
                         ActivationHero(app, heroVisible && !modalVisible)
                     }
-                    item { SectionTitle("运行状态") }
+                    item { SectionTitle("Estado de ejecución") }
                     item { UiGroupCard {
                         UiRow("LSPosed", if (app.lspEnabled) "${app.framework.frameworkName} ${app.framework.frameworkVersion}" else app.framework.message.take(42),
-                            if (app.lspEnabled) "已启用" else "未连接", Icons.Outlined.Extension) {
-                            app.confirmation = UiConfirmation("LSPosed 状态", app.framework.message + if (app.lspEnabled) "\nAPI ${app.framework.apiVersion}" else "", "知道了") {}
+                            if (app.lspEnabled) "Activado" else "Sin conexión", Icons.Outlined.Extension) {
+                            app.confirmation = UiConfirmation("Estado de LSPosed", app.framework.message + if (app.lspEnabled) "\nAPI ${app.framework.apiVersion}" else "", "Entendido") {}
                         }
-                        UiRow("当前版本", if (app.runtimeActive) "已在系统界面生效" else "等待当前版本注入系统界面",
-                            if (app.runtimeActive) "已生效" else "待注入", Icons.Outlined.CheckCircle) {
-                            app.confirmation = UiConfirmation("当前版本", app.runtimeMessage, "知道了") {}
+                        UiRow("Versión actual", if (app.runtimeActive) "Activo en la interfaz del sistema" else "Esperando que esta versión se inyecte en la interfaz del sistema",
+                            if (app.runtimeActive) "Activo" else "Pendiente de inyección", Icons.Outlined.CheckCircle) {
+                            app.confirmation = UiConfirmation("Versión actual", app.runtimeMessage, "Entendido") {}
                         }
-                        UiRow("Root 权限", if (app.rootGranted) "允许未激活时独立保存配置" else app.rootMessage.take(36), if (app.rootGranted) "已授权" else if (app.checkingRoot) "检测中" else "授权", Icons.Outlined.VerifiedUser, enabled = !app.checkingRoot) { app.requestRoot() }
-                        UiRow("系统界面", "应用当前模块版本", if (app.busy) "处理中" else "重启", Icons.Outlined.RestartAlt, enabled = !app.busy) { app.restartSystemUi() }
+                        UiRow("Permiso Root", if (app.rootGranted) "Permitir guardar la configuración por separado aunque el módulo no esté activado" else app.rootMessage.take(36), if (app.rootGranted) "Autorizado" else if (app.checkingRoot) "Comprobando…" else "Autorizar", Icons.Outlined.VerifiedUser, enabled = !app.checkingRoot) { app.requestRoot() }
+                        UiRow("Interfaz del sistema", "Aplicar la versión actual del módulo", if (app.busy) "Procesando…" else "Reiniciar", Icons.Outlined.RestartAlt, enabled = !app.busy) { app.restartSystemUi() }
                     } }
-                    item { SectionTitle("模块控制") }
+                    item { SectionTitle("Control del módulo") }
                     item { UiGroupCard {
-                        UiSwitchRow("安全模式", "暂停所有修改，保留现有配置", app.bool(StatusBarSettings.SAFE_MODE), app.canEdit && !app.busy) { app.save(StatusBarSettings.SAFE_MODE, it) }
+                        UiSwitchRow("Modo seguro", "Pausa todas las modificaciones y conserva la configuración actual.", app.bool(StatusBarSettings.SAFE_MODE), app.canEdit && !app.busy) { app.save(StatusBarSettings.SAFE_MODE, it) }
                     } }
-                    item { Text(if (app.canEdit) "设置会实时保存。系统界面激活后即可应用修改。" else "在 LSPosed 中启用模块并勾选系统界面，或授予 Root 后独立保存配置。",
+                    item { Text(if (app.canEdit) "Los ajustes se guardan en tiempo real. Los cambios se aplicarán cuando el módulo esté activo en la interfaz del sistema." else "Activa el módulo en LSPosed y marca «Interfaz del sistema», o concede Root para guardar la configuración por separado.",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary) }
                 }
                 1 -> {
                     item { ConfigurationHeader(app) }
-                    if (!app.canEdit) item { UiGroupCard { UiRow("尚未获得配置权限", "前往主页激活模块或授予 Root", "前往", MiuixIcons.Unlock) { app.selectPage(0) } } }
+                    if (!app.canEdit) item { UiGroupCard { UiRow("Todavía no se han concedido permisos para modificar la configuración.", "Ve a Inicio para activar el módulo o conceder Root.", "Ir", MiuixIcons.Unlock) { app.selectPage(0) } } }
                     if (app.query.isBlank()) {
                         SettingsCatalog.navigationSections(app.category).forEach { section ->
                             item(key = "category-${app.category}-${section.title}") {
@@ -459,7 +459,7 @@ fun C17Pages(app: ModernMainActivity) {
                                 }
                             }
                         }
-                        if (matches.isEmpty()) item { Text("没有找到相关配置", Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 20.dp),
+                        if (matches.isEmpty()) item { Text("No se encontraron ajustes relacionados.", Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 20.dp),
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary) }
                     }
                 }
@@ -486,18 +486,18 @@ private fun FreeNoticeDialog(app: ModernMainActivity) {
         error = app.acceptFreeNotice(value)
         if (error == null) keyboard?.hide()
     }
-    C17OverlayDialog(show = true, title = "永久免费声明", onDismissRequest = app::finish) {
+    C17OverlayDialog(show = true, title = "Declaración de gratuidad permanente", onDismissRequest = app::finish) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(FreeNotice.DESCRIPTION, fontSize = 14.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                Text("鸣谢墙", Modifier.clip(RoundedCornerShape(8.dp))
+                Text("Muro de agradecimientos", Modifier.clip(RoundedCornerShape(8.dp))
                     .clickable { app.openThanks() }.padding(vertical = 4.dp), fontSize = 14.sp, color = MiuixTheme.colorScheme.primary)
-                Text("请手动输入以下短句（包含标点）：", fontSize = 14.sp)
+                Text("Escribe manualmente la siguiente frase, incluidos los signos de puntuación:", fontSize = 14.sp)
                 Text(FreeNotice.PHRASE, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 AndroidView(factory = { context ->
                     ManualConfirmationEditText(context).apply {
-                        hint = "请在这里手动输入"
+                        hint = "Escribe aquí manualmente"
                         setTextSize(15f)
                         setBackgroundColor(android.graphics.Color.TRANSPARENT)
                         setPadding(0, 0, 0, 0)
@@ -516,13 +516,13 @@ private fun FreeNoticeDialog(app: ModernMainActivity) {
                     if (view.text.toString() != value) { view.setText(value); view.setSelection(view.text.length) }
                 }, modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp)
                     .border(1.dp, MiuixTheme.colorScheme.outline, RoundedCornerShape(12.dp)).padding(12.dp))
-                Text("此输入框不提供复制、粘贴或拖入功能。", fontSize = 12.sp,
+                Text("Este campo no permite copiar, pegar ni arrastrar y soltar.", fontSize = 12.sp,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 error?.let { Text(it, color = Color(0xffd94a4a), fontSize = 13.sp) }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                C17TextButton(text = "退出", modifier = Modifier.weight(1f).heightIn(min = 48.dp), onClick = app::finish)
-                C17TextButton(text = "确认并继续", enabled = FreeNotice.matches(value),
+                C17TextButton(text = "Salir", modifier = Modifier.weight(1f).heightIn(min = 48.dp), onClick = app::finish)
+                C17TextButton(text = "Confirmar y continuar", enabled = FreeNotice.matches(value),
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp), onClick = { confirm() })
             }
         }
@@ -536,24 +536,24 @@ private fun performanceHomeStatus(app: ModernMainActivity): String = RootPerform
 private fun performanceRecordStatus(app: ModernMainActivity): String {
     val module = app.performanceReport
     return when {
-        app.performanceBusy && app.performanceAction != RootPerformanceModule.Action.RUN && app.performanceAction != RootPerformanceModule.Action.AUTOMATIC -> "处理中"
-        app.performanceError -> "状态待查询"
-        module == null || !module.root -> "状态待查询"
-        module.remove -> "待卸载"
-        module.disabled -> "已停用"
-        module.pending -> "待重启"
-        module.outdated -> "可更新"
-        !module.installed -> "未安装"
-        app.performanceBusy && app.performanceAction in listOf(RootPerformanceModule.Action.RUN, RootPerformanceModule.Action.AUTOMATIC) -> "优化中"
-        !module.currentBoot && module.lastState != "unknown" -> "历史记录"
-        module.recordVersionCode != module.moduleVersionCode && module.lastState != "unknown" -> "旧版记录"
-        module.lastState == "waiting" -> "等待适宜时机"
-        module.lastState == "running" -> if (module.homeStatus() == "优化中") "优化中" else "尚无有效运行记录"
-        module.lastState == "deferred" -> if (module.trigger == "run") "本次未执行" else "自动优化已延期"
-        module.lastState == "failed" -> "本次未完成"
-        module.lastState == "ok" -> if (module.verification == "verified") "优化完成" else "编译完成，待核验"
-        module.lastState == "current" -> if (module.verification == "verified") "沿用已核验结果" else "沿用上次记录"
-        else -> "尚无运行记录"
+        app.performanceBusy && app.performanceAction != RootPerformanceModule.Action.RUN && app.performanceAction != RootPerformanceModule.Action.AUTOMATIC -> "Procesando…"
+        app.performanceError -> "Estado pendiente de consulta"
+        module == null || !module.root -> "Estado pendiente de consulta"
+        module.remove -> "Pendiente de desinstalación"
+        module.disabled -> "Desactivado"
+        module.pending -> "Pendiente de reinicio"
+        module.outdated -> "Actualización disponible"
+        !module.installed -> "No instalado"
+        app.performanceBusy && app.performanceAction in listOf(RootPerformanceModule.Action.RUN, RootPerformanceModule.Action.AUTOMATIC) -> "Optimizando…"
+        !module.currentBoot && module.lastState != "unknown" -> "Historial"
+        module.recordVersionCode != module.moduleVersionCode && module.lastState != "unknown" -> "Registro antiguo"
+        module.lastState == "waiting" -> "Esperando el momento adecuado"
+        module.lastState == "running" -> if (module.homeStatus() == "Optimizando…") "Optimizando…" else "Todavía no hay registros válidos de ejecución."
+        module.lastState == "deferred" -> if (module.trigger == "run") "No se ejecutó esta vez." else "La optimización automática se ha pospuesto."
+        module.lastState == "failed" -> "Esta ejecución no se completó."
+        module.lastState == "ok" -> if (module.verification == "verified") "Optimización completada" else "Compilación completada; pendiente de verificación"
+        module.lastState == "current" -> if (module.verification == "verified") "Se reutiliza el resultado verificado" else "Se reutiliza el registro anterior"
+        else -> "Todavía no hay registros de ejecución."
     }
 }
 
@@ -570,7 +570,7 @@ private fun PerformanceSheet(app: ModernMainActivity) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 PerformanceModuleCard(app)
             }
-            C17TextButton(text = "关闭", onClick = { app.performanceOpen = false }, modifier = Modifier.fillMaxWidth())
+            C17TextButton(text = "Cerrar", onClick = { app.performanceOpen = false }, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -585,20 +585,20 @@ private fun DonationImage(app: ModernMainActivity, asset: String, ratio: Float, 
     val bitmap = remember(asset) {
         app.assets.open(asset).use { android.graphics.BitmapFactory.decodeStream(it) }.asImageBitmap()
     }
-    Image(bitmap, if (asset.endsWith("wechat.png")) "微信自愿捐赠收款码" else "支付宝自愿捐赠收款码",
+    Image(bitmap, if (asset.endsWith("wechat.png")) "Código QR de donación voluntaria de WeChat Pay" else "Código QR de donación voluntaria de Alipay",
         modifier = modifier.fillMaxWidth().aspectRatio(ratio), contentScale = ContentScale.Fit)
 }
 
 @Composable
 private fun DonationDialog(app: ModernMainActivity, asset: String) {
     val wechat = asset == "donation/wechat.png"
-    C17OverlayDialog(show = true, title = if (wechat) "微信 · 自愿捐赠" else "支付宝 · 自愿捐赠",
-        summary = "本模块永久免费，捐赠不会解锁或影响任何功能。" + ProjectContact.DONATION_NOTE, onDismissRequest = { app.donationImage = null }) {
+    C17OverlayDialog(show = true, title = if (wechat) "WeChat Pay · Donación voluntaria" else "Alipay · Donación voluntaria",
+        summary = "Este módulo es siempre gratuito. Las donaciones son voluntarias y no desbloquean ni afectan a ninguna función." + ProjectContact.DONATION_NOTE, onDismissRequest = { app.donationImage = null }) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
                 DonationImage(app, asset, if (wechat) 1490f / 2030f else 1440f / 2160f)
             }
-            C17TextButton(text = "关闭", modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), onClick = { app.donationImage = null })
+            C17TextButton(text = "Cerrar", modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), onClick = { app.donationImage = null })
         }
     }
 }
@@ -608,7 +608,7 @@ private fun ActivationHero(app: ModernMainActivity, motionVisible: Boolean) {
     val homeTime = rememberHomeCardTime(app, motionVisible)
     val companionStatus = performanceHomeStatus(app)
     val companionPalette = homeCardPalette(companionStatus, LocalC17Dark.current)
-    val thanksPalette = homeCardPalette("鸣谢墙", LocalC17Dark.current)
+    val thanksPalette = homeCardPalette("Muro de agradecimientos", LocalC17Dark.current)
     val safe = app.bool(StatusBarSettings.SAFE_MODE)
     val dark = LocalC17Dark.current
     val activated = app.runtimeActive || app.lspEnabled
@@ -624,13 +624,13 @@ private fun ActivationHero(app: ModernMainActivity, motionVisible: Boolean) {
         app.rootGranted -> MiuixTheme.colorScheme.primary
         else -> MiuixTheme.colorScheme.onSurfaceVariantSummary
     }
-    val mainPalette = homeCardPalette(if (safe) "已停用" else if (activated) "已激活" else "待查询", dark)
+    val mainPalette = homeCardPalette(if (safe) "Desactivado" else if (activated) "Activado" else "Pendiente de consulta", dark)
     val statusTitle = when {
-        safe -> "安全模式"
-        activated -> "已激活"
-        app.rootGranted -> "Root 已授权"
-        app.framework.state == AppFrameworkStatus.State.CHECKING -> "检测中"
-        else -> "待激活"
+        safe -> "Modo seguro"
+        activated -> "Activado"
+        app.rootGranted -> "Root autorizado"
+        app.framework.state == AppFrameworkStatus.State.CHECKING -> "Comprobando…"
+        else -> "Pendiente de activación"
     }
     val frameworkInfo = when {
         app.framework.connected -> buildString {
@@ -638,17 +638,17 @@ private fun ActivationHero(app: ModernMainActivity, motionVisible: Boolean) {
             if (app.framework.frameworkVersionCode > 0) append(" (${app.framework.frameworkVersionCode})")
             append(" · API ${app.framework.apiVersion}")
         }
-        activated -> "系统界面已加载"
-        app.rootGranted -> "可独立编辑配置"
-        app.framework.state == AppFrameworkStatus.State.CHECKING -> "正在连接框架"
-        else -> "点击检测状态"
+        activated -> "La interfaz del sistema ha cargado el módulo."
+        app.rootGranted -> "La configuración se puede editar de forma independiente."
+        app.framework.state == AppFrameworkStatus.State.CHECKING -> "Conectando con el framework…"
+        else -> "Toca para comprobar el estado."
     }
     // Measure the same label/title slots for both entrances, including the user's font scale.
     BoxWithConstraints(Modifier.fillMaxWidth()) {
     val density = LocalDensity.current
     val textMeasurer = rememberTextMeasurer()
     val textWidth = ((maxWidth - 12.dp) / 2 - 32.dp).coerceAtLeast(1.dp)
-    val thanksTitleWidth = with(density) { textMeasurer.measure("鸣谢墙", C17CardTypography.title).size.width.toDp() }
+    val thanksTitleWidth = with(density) { textMeasurer.measure("Muro de agradecimientos", C17CardTypography.title).size.width.toDp() }
     // Only the thanks title shares space with the medal. Other cards have no medal reserve.
     val badgeWidth = (textWidth - thanksTitleWidth + 2.dp).coerceIn(32.dp, 42.dp)
     val inlineBadge = textWidth >= thanksTitleWidth + badgeWidth - 2.dp
@@ -656,13 +656,13 @@ private fun ActivationHero(app: ModernMainActivity, motionVisible: Boolean) {
     val labelConstraints = Constraints(maxWidth = with(density) { textWidth.roundToPx().coerceAtLeast(1) })
     val titleConstraints = Constraints(maxWidth = with(density) { (textWidth - titleEnd).roundToPx().coerceAtLeast(1) })
     val labelHeight = with(density) { maxOf(
-        textMeasurer.measure("附属模块", C17CardTypography.label, constraints = labelConstraints).size.height,
-        textMeasurer.measure("快点一下看看！", C17CardTypography.label, constraints = labelConstraints).size.height).toDp() }
+        textMeasurer.measure("Módulo complementario", C17CardTypography.label, constraints = labelConstraints).size.height,
+        textMeasurer.measure("¡Toca aquí para echar un vistazo!", C17CardTypography.label, constraints = labelConstraints).size.height).toDp() }
     val titleHeight = with(density) { maxOf(
         textMeasurer.measure(statusTitle, C17CardTypography.title, constraints = labelConstraints).size.height,
         textMeasurer.measure(companionStatus, C17CardTypography.title, constraints = labelConstraints).size.height,
-        textMeasurer.measure("鸣谢墙", C17CardTypography.title, constraints = titleConstraints).size.height).toDp() }
-    val thanksLabelWidth = with(density) { textMeasurer.measure("快点一下看看！", C17CardTypography.label,
+        textMeasurer.measure("Muro de agradecimientos", C17CardTypography.title, constraints = titleConstraints).size.height).toDp() }
+    val thanksLabelWidth = with(density) { textMeasurer.measure("¡Toca aquí para echar un vistazo!", C17CardTypography.label,
         constraints = labelConstraints).size.width.toDp() }
     val badgeHeight = badgeWidth * (17f / 13f)
     val textHeight = 28.dp + labelHeight + 3.dp + titleHeight
@@ -703,7 +703,7 @@ private fun ActivationHero(app: ModernMainActivity, motionVisible: Boolean) {
                         null, Modifier.size(64.dp), tint = accent)
                 }
                 Column(Modifier.align(Alignment.TopStart).fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp)) {
-                    Text("主模块", Modifier.fillMaxWidth().heightIn(min = labelHeight),
+                    Text("Módulo principal", Modifier.fillMaxWidth().heightIn(min = labelHeight),
                         style = C17CardTypography.label, color = mainPalette.secondary)
                     Spacer(Modifier.height(3.dp))
                     Text(statusTitle, Modifier.fillMaxWidth().heightIn(min = titleHeight),
@@ -718,15 +718,15 @@ private fun ActivationHero(app: ModernMainActivity, motionVisible: Boolean) {
                 colors = CardDefaults.defaultColors(color = companionPalette.base), onClick = app::openPerformance) {
                 Box(Modifier.fillMaxSize()) {
                 HomeCardBackground(companionStatus, homeTime, Modifier.matchParentSize())
-                HomeHeroText("附属模块", companionStatus, labelHeight, titleHeight, 0.dp,
+                HomeHeroText("Módulo complementario", companionStatus, labelHeight, titleHeight, 0.dp,
                     companionPalette.secondary, companionPalette.foreground)
                 }
             }
             C17Card(modifier = Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(22.dp)), cornerRadius = 22.dp,
                 colors = CardDefaults.defaultColors(color = thanksPalette.base), onClick = app::openThanks) {
                 Box(Modifier.fillMaxSize()) {
-                HomeCardBackground("鸣谢墙", homeTime, Modifier.matchParentSize(), badgeWidth = badgeWidth)
-                HomeHeroText("快点一下看看！", "鸣谢墙", labelHeight, titleHeight, titleEnd,
+                HomeCardBackground("Muro de agradecimientos", homeTime, Modifier.matchParentSize(), badgeWidth = badgeWidth)
+                HomeHeroText("¡Toca aquí para echar un vistazo!", "Muro de agradecimientos", labelHeight, titleHeight, titleEnd,
                     thanksPalette.secondary, thanksPalette.foreground)
                 }
             }
@@ -750,7 +750,7 @@ private fun HomeHeroText(label: String, title: String, labelHeight: Dp, titleHei
 @Composable
 private fun ConfigurationHeader(app: ModernMainActivity) {
     val categories = listOf(SettingsCatalog.STATUSBAR, SettingsCatalog.NOTIFICATION, SettingsCatalog.CONTROL_CENTER, SettingsCatalog.LOCK_SCREEN, SettingsCatalog.OTHER)
-    val labels = listOf("状态栏", "通知栏", "控制中心", "锁屏", "其他")
+    val labels = listOf("Barra de estado", "Panel de notificaciones", "Centro de control", "Pantalla de bloqueo", "Otros")
     // The tab row takes the search field's real height, so both bars line up.
     val density = LocalDensity.current
     var searchHeight by remember { mutableStateOf<Dp?>(null) }
@@ -758,7 +758,7 @@ private fun ConfigurationHeader(app: ModernMainActivity) {
         UiContentTabs(tabs = labels, selectedTabIndex = categories.indexOf(app.category).coerceAtLeast(0),
             onTabSelected = { app.category = categories[it] }, modifier = Modifier.fillMaxWidth(), contour = true,
             height = searchHeight)
-        C17TextField(value = app.query, onValueChange = { app.query = it }, label = "搜索所有配置", singleLine = true,
+        C17TextField(value = app.query, onValueChange = { app.query = it }, label = "Buscar en todos los ajustes", singleLine = true,
             useLabelAsPlaceholder = true, insideMargin = DpSize(16.dp, 12.dp),
             leadingIcon = { Icon(MiuixIcons.Search, null, Modifier.padding(start = 16.dp, end = 12.dp).size(20.dp)) },
             modifier = Modifier.fillMaxWidth().onSizeChanged { size ->
@@ -802,7 +802,7 @@ private fun SearchResultRow(title: String, summary: String, term: String, icon: 
 @Composable
 private fun ClockModeSwitch(app: ModernMainActivity, key: String, dual: Boolean) {
     UiGroupCard {
-        UiSwitchRow(if (dual) "启用双排时钟" else "启用默认时钟", if (dual) "开启后自动关闭默认时钟" else "开启后自动关闭双排时钟",
+        UiSwitchRow(if (dual) "Activar reloj de dos filas" else "Activar reloj predeterminado", if (dual) "Al activarlo, se desactivará automáticamente el reloj predeterminado." else "Al activarlo, se desactivará automáticamente el reloj de dos filas.",
             app.bool(key), app.canEdit && !app.busy && PanelMode.freezeReason(key).isEmpty()) { app.save(key, it) }
     }
 }
@@ -822,22 +822,22 @@ private fun fullHelp(app: ModernMainActivity, group: SettingsCatalog.Group, desc
     if (conflicts.isNotBlank()) lines.add(conflicts)
     val items = group.items.filter { !it.master && it.description.isNotBlank() && SettingsCatalog.applicable(it, app.values) }
         .filter { it.description != brief(it.description) }
-    if (items.isNotEmpty()) lines.add("各项说明：\n" + items.joinToString("\n") { "· ${it.title.substringBefore(" ·")}：${it.description}" })
+    if (items.isNotEmpty()) lines.add("Descripción de las opciones:\n" + items.joinToString("\n") { "· ${it.title.substringBefore(" ·")}：${it.description}" })
     return lines.joinToString("\n\n")
 }
 
 @Composable
 private fun DetailIntro(app: ModernMainActivity, group: SettingsCatalog.Group, master: String?, modeReason: String) {
-    val description = if (group.id == "carrier") "只作用于${when (app.category) {
-        SettingsCatalog.LOCK_SCREEN -> "锁屏"
-        SettingsCatalog.CONTROL_CENTER -> "控制中心"
-        else -> "通知栏"
-    }}，可显示运营商、时间或自定义文本。" else if (group.id == "notification_icons" &&
+    val description = if (group.id == "carrier") "Solo se aplica a ${when (app.category) {
+        SettingsCatalog.LOCK_SCREEN -> "pantalla de bloqueo"
+        SettingsCatalog.CONTROL_CENTER -> "centro de control"
+        else -> "panel de notificaciones"
+    }}; puede mostrar el operador, la hora o un texto personalizado." else if (group.id == "notification_icons" &&
         app.value(NotificationIconArea.MODE) == "image" && (app.value(NotificationIconArea.IMAGE_REVISION) as? String).isNullOrBlank())
-        group.description + "\n尚未导入图片，当前会保留原生通知图标。" else group.description
+        group.description + "\nAún no se ha importado ninguna imagen; se conservará el icono de notificación nativo." else group.description
     val conflicts = SettingsCatalog.conflictDescription(group.id, app.category)
     val dependency = group.masterKey?.takeIf { it.isNotBlank() }?.let { SettingsCatalog.unavailableReason(it, app.values) }.orEmpty()
-    val modeLabel = when (app.panelMode) { PanelMode.CLASSIC -> "当前系统：经典模式"; PanelMode.SEPARATE -> "当前系统：分离模式"; else -> "当前系统：模式尚未确认" }
+    val modeLabel = when (app.panelMode) { PanelMode.CLASSIC -> "Modo actual del sistema: clásico"; PanelMode.SEPARATE -> "Modo actual del sistema: separado"; else -> "Modo actual del sistema: aún sin confirmar" }
     val short = brief(description, 56)
     val help = fullHelp(app, group, description, conflicts)
     val more = help.length > short.length + 2
@@ -848,12 +848,12 @@ private fun DetailIntro(app: ModernMainActivity, group: SettingsCatalog.Group, m
         Text(short, fontSize = 14.sp, lineHeight = 20.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         val guide = SettingsOrganization.guide(group.id)
         if (guide.isNotEmpty()) Text(guide, fontSize = 13.sp, lineHeight = 19.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-        if (app.bool(StatusBarSettings.SAFE_MODE)) Text("已暂停：安全模式已开启，以下显示保存的选择。", fontSize = 13.sp,
+        if (app.bool(StatusBarSettings.SAFE_MODE)) Text("Pausado: el modo seguro está activado. A continuación se muestran las opciones guardadas.", fontSize = 13.sp,
             lineHeight = 19.sp, color = MiuixTheme.colorScheme.primary)
         if (group.id.startsWith("shade_wallpaper"))
-            Text("功能未完成", fontSize = 13.sp, color = MiuixTheme.colorScheme.primary)
+            Text("Función aún no implementada", fontSize = 13.sp, color = MiuixTheme.colorScheme.primary)
         if (group.id == "fluid_cloud_capsule")
-            Text("外观开关仅控制外观；常驻流体云在共用设置中独立开关。", fontSize = 13.sp, lineHeight = 19.sp,
+            Text("El interruptor de apariencia solo controla el aspecto; Fluid Cloud permanente tiene un interruptor independiente en los ajustes compartidos.", fontSize = 13.sp, lineHeight = 19.sp,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         if (group.id == "classic_text" || group.id.startsWith("shade_wallpaper") || group.id.startsWith("notification_big_clock"))
             Text(modeLabel, fontSize = 13.sp, color = MiuixTheme.colorScheme.primary)
@@ -863,12 +863,12 @@ private fun DetailIntro(app: ModernMainActivity, group: SettingsCatalog.Group, m
         if (group.id == MINI_STACK_GROUP) Text("${NotificationMiniStackSource.INSIDE} · ${NotificationMiniStackSource.LINK}",
             Modifier.clip(RoundedCornerShape(8.dp)).clickable { app.openUrl(NotificationMiniStackSource.URL) }.padding(vertical = 4.dp),
             fontSize = 13.sp, lineHeight = 19.sp, color = MiuixTheme.colorScheme.primary)
-        if (more) Text("详细说明", Modifier.clip(RoundedCornerShape(8.dp))
-            .clickable { app.confirmation = UiConfirmation(group.title, help, "知道了") {} }.padding(vertical = 4.dp),
+        if (more) Text("Detalles", Modifier.clip(RoundedCornerShape(8.dp))
+            .clickable { app.confirmation = UiConfirmation(group.title, help, "Entendido") {} }.padding(vertical = 4.dp),
             fontSize = 13.sp, color = MiuixTheme.colorScheme.primary)
     }
     master?.let { key -> SettingsCatalog.item(key)?.let { item -> UiGroupCard { SettingsItem(app, item) } } }
-    if (!app.canEdit) UiGroupCard { UiRow("激活模块或授予 Root 后即可修改", "点击前往主页", icon = MiuixIcons.Unlock) { app.closeGroup(); app.selectPage(0) } }
+    if (!app.canEdit) UiGroupCard { UiRow("Activa el módulo o concede acceso Root para modificarlo.", "Toca para ir a Inicio.", icon = MiuixIcons.Unlock) { app.closeGroup(); app.selectPage(0) } }
     }
 }
 
@@ -887,7 +887,7 @@ private fun DetailSettingsSection(app: ModernMainActivity, group: SettingsCatalo
         SectionTitle(section.substringAfter(" · "))
         UiGroupCard {
             switches.forEach { item -> SettingsItem(app, item) }
-            if (folding) UiRow(if (advanced) "高级参数" else "参数设置", "$parameterCount 项 · 展开或收起不改变功能开关", if (expanded) "收起" else "展开") { expanded = !expanded }
+            if (folding) UiRow(if (advanced) "Parámetros avanzados" else "Ajustes de parámetros", "$parameterCount parámetros · expandir o contraer no cambia los interruptores de funciones", if (expanded) "Contraer" else "Expandir") { expanded = !expanded }
             if (!folding || expanded) parameters.forEach { item ->
                 val paired = item.type == "color" && item.pairedKey.isNotEmpty() && items.any { it.key == item.pairedKey }
                 if (paired && item.scene == "light") {
@@ -918,24 +918,24 @@ private fun SettingsItem(app: ModernMainActivity, item: SettingsCatalog.Item) {
     val value = if (item.type == "numeric") SettingEditor.storedValue(item, app.values) else app.value(item.key)
     val enabled = app.canEdit && !app.busy && PanelMode.freezeReason(item.key).isEmpty() && (unavailable.isEmpty() || value == true && item.type == SettingsCatalog.BOOLEAN)
     if (item.key == NativeStatusIcons.LAYOUT) {
-        UiRow(item.title, brief(item.description), "进入", enabled = !app.busy) { app.openHintIconOrder() }; return
+        UiRow(item.title, brief(item.description), "Abrir", enabled = !app.busy) { app.openHintIconOrder() }; return
     }
     if (item.key == NativeStatusIcons.PRIORITY) {
-        UiRow(item.title, brief(item.description), "拖拽排序", Icons.Outlined.SwapVert, enabled = enabled) { app.editing = item }
+        UiRow(item.title, brief(item.description), "Arrastra para ordenar", Icons.Outlined.SwapVert, enabled = enabled) { app.editing = item }
         return
     }
     if (StatusBarLayoutSettings.orderKey(item.key)) {
         if (item.key == StatusBarLayoutSettings.key(StatusBarLayoutSettings.LABEL, "order")) {
             if (app.bool(StatusBarLayoutSettings.WIFI_LABEL_SHARED)) {
-                UiRow(item.title, "在 Wi-Fi 所在区域调整共用顺序", "与 Wi-Fi 共用", enabled = false) {}
+                UiRow(item.title, "Ajusta el orden compartido en la misma zona que Wi-Fi.", "Compartir con Wi-Fi", enabled = false) {}
                 return
             }
             val order = (value as? Number)?.toInt() ?: 0
-            UiRow(item.title, "跟随蜂窝所在区域", listOf("跟随系统", "信号前", "信号后").getOrElse(order) { "跟随系统" },
+            UiRow(item.title, "Seguir la zona de la red móvil", listOf("Seguir al sistema", "Antes de la señal", "Después de la señal").getOrElse(order) { "Seguir al sistema" },
                 enabled = enabled) { app.editing = item }
         } else {
             val order = (value as? Number)?.toInt() ?: 0
-            UiRow(item.title, "同一侧按优先级排列，同级由系统决定", if (order == 0) "系统顺序" else "优先级 $order",
+            UiRow(item.title, "En cada lado, se ordena por prioridad; el sistema decide el orden entre elementos del mismo nivel.", if (order == 0) "Orden del sistema" else "Prioridad $order",
                 Icons.Outlined.SwapVert, enabled = enabled) { app.editing = item }
         }
         return
@@ -947,7 +947,7 @@ private fun SettingsItem(app: ModernMainActivity, item: SettingsCatalog.Item) {
         return
     }
     if (item.key == IconManagementSettings.KEY) {
-        UiRow("图标管理", "图标库、套装与独立外观", "进入", Icons.Outlined.Collections, enabled = !app.busy) { app.openIconManagement() }
+        UiRow("Gestión de iconos", "Biblioteca de iconos, paquetes y apariencia individual", "Abrir", Icons.Outlined.Collections, enabled = !app.busy) { app.openIconManagement() }
         return
     }
     ShadeWallpaperSettings.sceneOfRevisionKey(item.key)?.let { scene ->
@@ -955,7 +955,7 @@ private fun SettingsItem(app: ModernMainActivity, item: SettingsCatalog.Item) {
         return
     }
     if (item.key == NotificationIconOverrides.RULES) {
-        UiRow(item.title, "按应用替换为文字、表情或图标", "进入", Icons.Outlined.EmojiEmotions, enabled = enabled) { app.openNotificationOverrides() }
+        UiRow(item.title, "Sustituir el icono por texto, emoji o el icono de otra aplicación", "Abrir", Icons.Outlined.EmojiEmotions, enabled = enabled) { app.openNotificationOverrides() }
         return
     }
     if (item.key == FluidCloudCapsule.MARQUEE_PRESET) {
@@ -969,13 +969,13 @@ private fun SettingsItem(app: ModernMainActivity, item: SettingsCatalog.Item) {
     // 颜色 2 到 6 和颜色 1 合并成一排圆点，不再各占一行。
     if (FluidCloudCapsule.MARQUEE_COLOR_KEYS.drop(1).contains(item.key)) return
     if (item.key == StatusBarSettings.FONT_MODE) {
-        UiRow("文字来源", "", app.currentFontTitle(), Icons.Outlined.TextFields,
+        UiRow("Origen del texto", "", app.currentFontTitle(), Icons.Outlined.TextFields,
             enabled = !app.busy) { app.chooseOpenFont() }
         return
     }
     when (item.type) {
         "boolean" -> UiSwitchRow(item.title, if (unavailable.isNotEmpty() || paused.isNotEmpty())
-            (if (value == true) "已保存开启 · " else "") + unavailable.ifEmpty { paused } else brief(item.description), value == true, enabled) { app.save(item.key, it) }
+            (if (value == true) "Activado y guardado · " else "") + unavailable.ifEmpty { paused } else brief(item.description), value == true, enabled) { app.save(item.key, it) }
         "numeric" -> {
             val editingKey = StatusBarLayoutSettings.editingKey(item.key, app.values)
             var current by remember(item.key, editingKey, value) { mutableStateOf<Number>((value as? Number) ?: 0f) }
@@ -992,7 +992,7 @@ private fun SettingsItem(app: ModernMainActivity, item: SettingsCatalog.Item) {
                 })
                 val note = unavailable.ifEmpty { paused }.ifEmpty {
                     if (StatusBarLayoutSettings.marginKey(item.key) && item.groupId in listOf("wifi", "label") &&
-                        app.bool(StatusBarLayoutSettings.WIFI_LABEL_SHARED)) "与 Wi-Fi 和网络制式共用，修改后两页同步"
+                        app.bool(StatusBarLayoutSettings.WIFI_LABEL_SHARED)) "Se comparte con Wi-Fi y el tipo de red. Los cambios se sincronizan en ambas páginas."
                     else brief(item.description)
                 }
                 if (note.isNotEmpty()) Text(note, fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
@@ -1004,11 +1004,11 @@ private fun SettingsItem(app: ModernMainActivity, item: SettingsCatalog.Item) {
                     .border(0.75.dp, MiuixTheme.colorScheme.dividerLine, CircleShape))
             })
         "font" -> {
-            UiRow("导入字体", "TTF / OTF / TTC", "导入", Icons.Outlined.FileUpload,
+            UiRow("Importar fuente", "TTF / OTF / TTC", "Importar", Icons.Outlined.FileUpload,
                 enabled = app.canEdit && !app.busy) { app.chooseFont() }
         }
         "image" -> UiRow(item.title, brief(item.description), value?.toString()?.takeIf { it.isNotBlank() }
-            ?: if ((app.value(NotificationIconArea.IMAGE_REVISION) as? String).isNullOrBlank()) "选择图片" else "已导入图片",
+            ?: if ((app.value(NotificationIconArea.IMAGE_REVISION) as? String).isNullOrBlank()) "Seleccionar imagen" else "Imagen importada",
             icon = Icons.Outlined.Image, enabled = enabled) { app.chooseNotificationIcon() }
         else -> UiRow(item.title, unavailable.ifEmpty { paused }.ifEmpty { brief(item.description) }, displayValue(item, value), enabled = enabled) { app.editing = item }
     }
@@ -1023,9 +1023,9 @@ private fun EditSettingDialog(app: ModernMainActivity, item: SettingsCatalog.Ite
     if (StatusBarLayoutSettings.orderKey(item.key)) {
         if (item.key == StatusBarLayoutSettings.key(StatusBarLayoutSettings.LABEL, "order")) {
             val selected = (app.value(item.key) as? Number)?.toInt() ?: 0
-            UiChoiceDialog(title = "制式与信号顺序", values = listOf("0", "1", "2"),
-                labels = listOf("跟随系统", "在信号前", "在信号后"), selected = selected.toString(),
-                description = "网络制式跟随蜂窝区域；不会强制显示被系统隐藏的制式。",
+            UiChoiceDialog(title = "Orden del tipo de red y la señal", values = listOf("0", "1", "2"),
+                labels = listOf("Seguir al sistema", "Antes de la señal", "Después de la señal"), selected = selected.toString(),
+                description = "El tipo de red sigue la zona de la red móvil; no fuerza la visualización de un tipo de red oculto por el sistema.",
                 onDismiss = { app.editing = null }, onChoice = { app.save(item.key, it.toFloat()) })
         } else LaunchedEffect(item.key) { app.editing = null; app.openGroup(StatusBarLayoutSettings.GROUP) }
         return
@@ -1039,7 +1039,7 @@ private fun EditSettingDialog(app: ModernMainActivity, item: SettingsCatalog.Ite
             onDismiss = { app.editing = null }) {
             if (it == "custom" && (item.key == StatusBarSettings.FONT_MODE || NativeNetworkBadgeSettings.STRINGS.containsKey(item.key) || item.key == NotificationBigClockSettings.FONT || item.key == NotificationBigClockSettings.landscapeKey(NotificationBigClockSettings.FONT))
                 && !ConfigTransfer.customFontAvailable(app)) {
-                app.toast("请先在文字字体页面导入自选字体")
+                app.toast("Primero importa una fuente personalizada desde la página Fuentes de texto.")
             } else app.save(item.key, it)
             app.editing = null
         }
@@ -1049,14 +1049,14 @@ private fun EditSettingDialog(app: ModernMainActivity, item: SettingsCatalog.Ite
         confirmLabelForValue = { input ->
             if (editor.numeric) {
                 val proposed = runCatching { SettingsCatalog.customNumber(item, input) }.getOrNull()
-                if (proposed != null && SettingsCatalog.requiresNumericTrial(item, proposed)) "试用 20 秒" else "确定"
-            } else "确定"
+                if (proposed != null && SettingsCatalog.requiresNumericTrial(item, proposed)) "Probar durante 20 segundos" else "Aceptar"
+            } else "Aceptar"
         },
         pattern = editor.pattern, preview = if (editor.previewable) { input -> SettingEditor.preview(item, input) } else null,
         presets = remember(item.key) { SettingEditor.presets(item).map { it[0] to it[1] } },
         onDismiss = { app.editing = null }) { input ->
         val result: Any = if (item.type == "numeric") {
-            try { SettingsCatalog.customNumber(item, input) } catch (error: IllegalArgumentException) { return@UiInputDialog error.message ?: "请输入有效的有限数值" }
+            try { SettingsCatalog.customNumber(item, input) } catch (error: IllegalArgumentException) { return@UiInputDialog error.message ?: "Introduce un número finito válido." }
         } else input
         val error = SettingsCatalog.validationError(item, result)
         if (error != null) error else {
@@ -1072,7 +1072,7 @@ private fun AboutHero(app: ModernMainActivity) {
     val version = remember(app) { app.packageManager.getPackageInfo(app.packageName, 0).versionName ?: "" }
     val versionLabel = remember(version) {
         val suffix = version.substringBefore('+').substringAfter('-', "").lowercase(Locale.ROOT)
-        if (suffix.split('.', '-').any { it.startsWith("alpha") || it.startsWith("beta") || it.startsWith("rc") }) "测试版" else "正式版"
+        if (suffix.split('.', '-').any { it.startsWith("alpha") || it.startsWith("beta") || it.startsWith("rc") }) "Versión beta" else "Versión estable"
     }
     UiGroupCard {
         Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1084,9 +1084,9 @@ private fun AboutHero(app: ModernMainActivity) {
             Spacer(Modifier.height(4.dp))
             Text("$version · $versionLabel", fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
             Spacer(Modifier.height(6.dp))
-            Text("作者 ${ProjectContact.AUTHOR}", fontSize = 14.sp, color = MiuixTheme.colorScheme.onSurface)
+            Text("Autor: ${ProjectContact.AUTHOR}", fontSize = 14.sp, color = MiuixTheme.colorScheme.onSurface)
             Spacer(Modifier.height(12.dp))
-            Text("永久免费 · 捐赠自愿", fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+            Text("Siempre gratis · donaciones voluntarias", fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         }
     }
 }
@@ -1095,65 +1095,65 @@ private fun AboutHero(app: ModernMainActivity) {
 private fun AboutActions(app: ModernMainActivity) {
     var section by rememberSaveable { mutableStateOf<String?>(null) }
     fun toggle(name: String) { section = if (section == name) null else name }
-    fun fold(name: String) = if (section == name) "收起" else "展开"
+    fun fold(name: String) = if (section == name) "Contraer" else "Expandir"
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         UiGroupCard {
-            UiRow("鸣谢墙", "感谢每一位伙伴", "查看", Icons.Outlined.FavoriteBorder) { app.openThanks() }
+            UiRow("Muro de agradecimientos", "Gracias a todas las personas que colaboran", "Ver", Icons.Outlined.FavoriteBorder) { app.openThanks() }
         }
         UiGroupCard {
-            UiRow("检查更新", app.updateMessage, if (app.checkingUpdates) "检查中" else "检查", Icons.Outlined.SystemUpdate,
+            UiRow("Buscar actualizaciones", app.updateMessage, if (app.checkingUpdates) "Comprobando…" else "Comprobar", Icons.Outlined.SystemUpdate,
                 enabled = !app.checkingUpdates && !app.busy) { app.checkUpdates() }
         }
         UiGroupCard {
-            UiRow("联系与捐赠", value = fold("contact"), icon = Icons.Outlined.FavoriteBorder) { toggle("contact") }
+            UiRow("Contacto y donaciones", value = fold("contact"), icon = Icons.Outlined.FavoriteBorder) { toggle("contact") }
             if (section == "contact") {
-                UiRow("联系作者", "QQ ${ProjectContact.QQ}", "复制", Icons.Outlined.ContentCopy) { app.toast(if (ProjectContact.copyQq(app)) "QQ号已复制" else "复制失败") }
-                UiRow("酷安", "作者主页 @${ProjectContact.COOLAPK}", "打开", Icons.Outlined.OpenInNew) { app.openUrl(ProjectContact.COOLAPK_URL) }
-                UiRow("捐赠说明", ProjectContact.DONATION_NOTE, icon = Icons.Outlined.Info) {
-                    app.confirmation = UiConfirmation("捐赠说明", ProjectContact.DONATION_NOTE + "\n\n联系作者：QQ ${ProjectContact.QQ}", "知道了") {}
+                UiRow("Contactar con el autor", "QQ ${ProjectContact.QQ}", "Copiar", Icons.Outlined.ContentCopy) { app.toast(if (ProjectContact.copyQq(app)) "Número de QQ copiado." else "No se pudo copiar.") }
+                UiRow("CoolAPK", "Perfil del autor: @${ProjectContact.COOLAPK}", "Abrir", Icons.Outlined.OpenInNew) { app.openUrl(ProjectContact.COOLAPK_URL) }
+                UiRow("Información sobre donaciones", ProjectContact.DONATION_NOTE, icon = Icons.Outlined.Info) {
+                    app.confirmation = UiConfirmation("Información sobre donaciones", ProjectContact.DONATION_NOTE + "\n\nContacto del autor: QQ ${ProjectContact.QQ}", "Entendido") {}
                 }
-                UiRow("微信捐赠", value = "查看", icon = Icons.Outlined.FavoriteBorder) { app.donationImage = "donation/wechat.png" }
-                UiRow("支付宝捐赠", value = "查看", icon = Icons.Outlined.FavoriteBorder) { app.donationImage = "donation/alipay.jpg" }
-                UiRow("免费声明", "永久免费，捐赠完全自愿", icon = Icons.Outlined.Info) { app.confirmation = UiConfirmation("免费声明", FreeNotice.DESCRIPTION, "知道了") {} }
+                UiRow("Donar con WeChat Pay", value = "Ver", icon = Icons.Outlined.FavoriteBorder) { app.donationImage = "donation/wechat.png" }
+                UiRow("Donar con Alipay", value = "Ver", icon = Icons.Outlined.FavoriteBorder) { app.donationImage = "donation/alipay.jpg" }
+                UiRow("Declaración de gratuidad", "Siempre gratis; las donaciones son completamente voluntarias.", icon = Icons.Outlined.Info) { app.confirmation = UiConfirmation("Declaración de gratuidad", FreeNotice.DESCRIPTION, "Entendido") {} }
             }
         }
         UiGroupCard {
-            UiRow("界面设置", "界面风格、配色、字号、名称", app.ui.uiStyleTitle, Icons.Outlined.Palette) { app.openUiSettings() }
+            UiRow("Ajustes de interfaz", "Estilo de interfaz, colores, tamaño de texto y nombre", app.ui.uiStyleTitle, Icons.Outlined.Palette) { app.openUiSettings() }
         }
         UiGroupCard {
-            UiRow("附属优化模块", "安装与自动优化", performanceHomeStatus(app), Icons.Outlined.Speed) { app.openPerformance() }
+            UiRow("Módulo complementario de optimización", "Instalación y optimización automática", performanceHomeStatus(app), Icons.Outlined.Speed) { app.openPerformance() }
         }
         UiGroupCard {
-            UiRow("配置管理", "备份、分享、导入", value = fold("config"), icon = Icons.Outlined.Settings) { toggle("config") }
+            UiRow("Administrar configuración", "Copia de seguridad, compartir e importar", value = fold("config"), icon = Icons.Outlined.Settings) { toggle("config") }
             if (section == "config") {
-                UiRow("导出配置", "保存为文件，可选择只导出部分页面", icon = Icons.Outlined.FileUpload, enabled = app.canEdit && !app.busy) { app.chooseExport() }
-                UiRow("分享配置", "发给朋友或其他应用，可选择只分享部分页面", icon = Icons.Outlined.Share, enabled = app.canEdit && !app.busy) { app.shareConfig() }
-                UiRow("导入配置", "读取文件后可选择只导入部分页面", icon = Icons.Outlined.FileDownload, enabled = app.canEdit && !app.busy) { app.chooseImport() }
-                UiRow("删除所有配置", "不可恢复，建议先导出备份", icon = Icons.Outlined.DeleteOutline, enabled = app.canEdit && !app.busy) { app.deleteAllSettings() }
+                UiRow("Exportar configuración", "Guardar en un archivo; puedes exportar solo algunas páginas.", icon = Icons.Outlined.FileUpload, enabled = app.canEdit && !app.busy) { app.chooseExport() }
+                UiRow("Compartir configuración", "Enviar a amigos u otras aplicaciones; puedes compartir solo algunas páginas.", icon = Icons.Outlined.Share, enabled = app.canEdit && !app.busy) { app.shareConfig() }
+                UiRow("Importar configuración", "Tras leer un archivo, puedes importar solo algunas páginas.", icon = Icons.Outlined.FileDownload, enabled = app.canEdit && !app.busy) { app.chooseImport() }
+                UiRow("Eliminar toda la configuración", "No se puede deshacer. Se recomienda exportar una copia de seguridad primero.", icon = Icons.Outlined.DeleteOutline, enabled = app.canEdit && !app.busy) { app.deleteAllSettings() }
             }
         }
         UiGroupCard {
-            UiRow("问题诊断", "日志与挂钩状态", "查看", Icons.Outlined.Description) { app.openDiagnostics() }
+            UiRow("Diagnóstico de problemas", "Registros y estado de los hooks", "Ver", Icons.Outlined.Description) { app.openDiagnostics() }
         }
         UiGroupCard {
-            UiRow("项目与开源", value = fold("project"), icon = Icons.Outlined.Code) { toggle("project") }
+            UiRow("Proyecto y código abierto", value = fold("project"), icon = Icons.Outlined.Code) { toggle("project") }
             if (section == "project") {
-                UiRow("项目源码", "SANWU5/c17-statusbar", icon = Icons.Outlined.Code) { app.openUrl("https://github.com/SANWU5/c17-statusbar") }
-                UiRow("正式发布", icon = Icons.Outlined.OpenInNew) { app.openLatestRelease() }
-                UiRow("开源许可", icon = Icons.Outlined.Article) {
-                    app.confirmation = UiConfirmation("开源许可", "C17 Statusbar：GPL-3.0-only\nMiuix：Apache-2.0\nCOUI：suqi8/coui · Apache-2.0（基于 Miuix）\n液态玻璃底栏：改编自 Miuix 示例与 Kyant0/AndroidLiquidGlass · Apache-2.0\n字体：SIL Open Font License 1.1\n圆角技术参考：MCGA · Zhuangzhi Meng (Gustate XiaoMeng) · GPL-3.0-or-later\n完整许可与版权声明随应用保留。", "知道了") {}
+                UiRow("Código fuente del proyecto", "SANWU5/c17-statusbar", icon = Icons.Outlined.Code) { app.openUrl("https://github.com/SANWU5/c17-statusbar") }
+                UiRow("Versiones estables", icon = Icons.Outlined.OpenInNew) { app.openLatestRelease() }
+                UiRow("Licencias de código abierto", icon = Icons.Outlined.Article) {
+                    app.confirmation = UiConfirmation("Licencias de código abierto", "C17 Statusbar: GPL-3.0-only\nMiuix: Apache-2.0\nCOUI: suqi8/coui · Apache-2.0 (basado en Miuix)\nBarra inferior de vidrio líquido: adaptación de los ejemplos de Miuix y Kyant0/AndroidLiquidGlass · Apache-2.0\nFuentes: SIL Open Font License 1.1\nReferencia técnica de esquinas redondeadas: MCGA · Zhuangzhi Meng (Gustate XiaoMeng) · GPL-3.0-or-later\nLa aplicación conserva las licencias y los avisos de copyright completos.", "Entendido") {}
                 }
                 UiRow("Miuix", value = "0.9.4", icon = Icons.Outlined.Palette) { app.openUrl("https://github.com/compose-miuix-ui/miuix") }
-                UiRow("COUI", "ColorOS 风格组件", value = "1.1.0", icon = Icons.Outlined.Palette) { app.openUrl("https://github.com/suqi8/coui") }
-                UiRow("功能鸣谢", NotificationMiniStackSource.SHORT, "酷安", Icons.Outlined.OpenInNew) {
-                    app.confirmation = UiConfirmation("功能鸣谢", NotificationMiniStackSource.DECLARATION + "\n\n" + NotificationMiniStackSource.TECHNICAL_ORIGIN
-                        + "鸣谢不代表许可声明。", "知道了", linkLabel = "${NotificationMiniStackSource.LINK}（酷安 @${NotificationMiniStackSource.AUTHOR}）",
+                UiRow("COUI", "Componentes con estilo ColorOS", value = "1.1.0", icon = Icons.Outlined.Palette) { app.openUrl("https://github.com/suqi8/coui") }
+                UiRow("Agradecimientos por las funciones", NotificationMiniStackSource.SHORT, "CoolAPK", Icons.Outlined.OpenInNew) {
+                    app.confirmation = UiConfirmation("Agradecimientos por las funciones", NotificationMiniStackSource.DECLARATION + "\n\n" + NotificationMiniStackSource.TECHNICAL_ORIGIN
+                        + "Los agradecimientos no sustituyen los avisos de licencia.", "Entendido", linkLabel = "${NotificationMiniStackSource.LINK} (CoolAPK: @${NotificationMiniStackSource.AUTHOR})",
                         linkUrl = NotificationMiniStackSource.URL) {}
                 }
             }
         }
         UiGroupCard {
-            UiSwitchRow("隐藏桌面图标", "可从 LSPosed 模块设置进入并恢复", app.desktopIconHidden,
+            UiSwitchRow("Ocultar icono de la aplicación", "Puedes acceder y restaurarlo desde los ajustes del módulo en LSPosed.", app.desktopIconHidden,
                 enabled = app.desktopIconAvailable && !app.freeNoticeRequired && !app.busy && !app.maintenanceRunning,
                 onChecked = app::requestDesktopIconHidden)
         }
@@ -1175,16 +1175,16 @@ private fun HintPriorityDialog(app: ModernMainActivity) {
             true
         }
     }
-    C17OverlayDialog(show = true, title = "显示优先级", onDismissRequest = { app.editing = null }) {
+    C17OverlayDialog(show = true, title = "Prioridad de visualización", onDismissRequest = { app.editing = null }) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("长按图标名称后上下拖动，靠前的优先显示。系统当前未启用的提示不会被强制显示。", fontSize = 14.sp,
+            Text("Mantén pulsado el nombre del icono y arrástralo hacia arriba o abajo; los que estén más arriba tendrán prioridad. No se forzará la visualización de indicadores que el sistema no tenga activos.", fontSize = 14.sp,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
             Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState(), enabled = dragging == null)) {
                 ordered.forEach { slot -> key(slot) {
                     var distance by remember { mutableFloatStateOf(0f) }
                     Row(Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(12.dp))
                         .background(if (dragging == slot) MiuixTheme.colorScheme.primary.copy(alpha = .12f) else Color.Transparent)
-                        .semantics { customActions = listOf(CustomAccessibilityAction("上移") { move(slot, -1) }, CustomAccessibilityAction("下移") { move(slot, 1) }) }
+                        .semantics { customActions = listOf(CustomAccessibilityAction("Mover arriba") { move(slot, -1) }, CustomAccessibilityAction("Mover abajo") { move(slot, 1) }) }
                         .pointerInput(slot) {
                             detectDragGesturesAfterLongPress(onDragStart = { dragging = slot; distance = 0f },
                                 onDragEnd = { dragging = null }, onDragCancel = { dragging = null }) { change, amount ->
@@ -1194,13 +1194,13 @@ private fun HintPriorityDialog(app: ModernMainActivity) {
                             }
                         }.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(NativeStatusIcons.priorityLabel(slot), Modifier.weight(1f), fontSize = 16.sp)
-                        Icon(Icons.Outlined.DragHandle, "长按拖动", Modifier.size(22.dp), tint = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                        Icon(Icons.Outlined.DragHandle, "Mantener pulsado y arrastrar", Modifier.size(22.dp), tint = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                     }
                 } }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                C17TextButton(text = "跟随系统", modifier = Modifier.weight(1f), onClick = { app.save(NativeStatusIcons.PRIORITY, ""); app.editing = null })
-                C17TextButton(text = "确定", modifier = Modifier.weight(1f), onClick = { app.save(NativeStatusIcons.PRIORITY, ordered.joinToString(",")); app.editing = null })
+                C17TextButton(text = "Seguir al sistema", modifier = Modifier.weight(1f), onClick = { app.save(NativeStatusIcons.PRIORITY, ""); app.editing = null })
+                C17TextButton(text = "Aceptar", modifier = Modifier.weight(1f), onClick = { app.save(NativeStatusIcons.PRIORITY, ordered.joinToString(",")); app.editing = null })
             }
         }
     }
@@ -1220,15 +1220,15 @@ private fun carrierPrefix(category: String) = when (category) {
 }
 private fun destinationTitle(group: SettingsCatalog.Group, category: String): String =
     if (group.id != "carrier") group.title else when (category) {
-        SettingsCatalog.LOCK_SCREEN -> "锁屏运营商文字自定义"
-        SettingsCatalog.CONTROL_CENTER -> "控制中心运营商文字自定义"
-        else -> "通知栏运营商文字自定义"
+        SettingsCatalog.LOCK_SCREEN -> "Personalizar el texto del operador en la pantalla de bloqueo"
+        SettingsCatalog.CONTROL_CENTER -> "Personalizar el texto del operador en el centro de control"
+        else -> "Personalizar el texto del operador en el panel de notificaciones"
     }
 private fun destinationStatus(app: ModernMainActivity, group: SettingsCatalog.Group, category: String): String = when {
-    app.bool(StatusBarSettings.SAFE_MODE) && destinationEnabled(app, group, category) -> "安全模式暂停"
-    group.id == "status_icon_library" -> if (destinationEnabled(app, group, category)) "已配置" else "跟随系统"
-    destinationEnabled(app, group, category) -> "已开启"
-    else -> "已关闭"
+    app.bool(StatusBarSettings.SAFE_MODE) && destinationEnabled(app, group, category) -> "Pausado por el modo seguro"
+    group.id == "status_icon_library" -> if (destinationEnabled(app, group, category)) "Configurado" else "Seguir al sistema"
+    destinationEnabled(app, group, category) -> "Activado"
+    else -> "Desactivado"
 }
 private fun destinationEnabled(app: ModernMainActivity, group: SettingsCatalog.Group, category: String? = null): Boolean =
     when (group.id) {
@@ -1248,7 +1248,7 @@ private fun formatNumber(value: Float): String = if (kotlin.math.abs(value) >= 1
 private fun roundToStep(value: Float, step: Float): Float = NumericInput.parse(value.toString(), if (step >= 1f) 0 else 2)
 private fun displayValue(item: SettingsCatalog.Item, value: Any?): String {
     val index = item.values.indexOf(value?.toString())
-    return if (index >= 0) item.labels[index] else value?.toString()?.take(24) ?: "默认"
+    return if (index >= 0) item.labels[index] else value?.toString()?.take(24) ?: "Predeterminado"
 }
 private fun groupIcon(id: String): ImageVector = when (id) {
     "speed" -> Icons.Outlined.Speed

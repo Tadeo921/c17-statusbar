@@ -72,9 +72,9 @@ fun C17MainContent(app: ModernMainActivity) {
     val powerSave = rememberC17PowerSave()
     val items = remember {
         listOf(
-            NavigationItem("主页", MiuixIcons.Home),
-            NavigationItem("配置", MiuixIcons.Settings),
-            NavigationItem("关于", MiuixIcons.Info),
+            NavigationItem("Inicio", MiuixIcons.Home),
+            NavigationItem("Configuración", MiuixIcons.Settings),
+            NavigationItem("Acerca de", MiuixIcons.Info),
         )
     }
     Box(Modifier.fillMaxSize()) {

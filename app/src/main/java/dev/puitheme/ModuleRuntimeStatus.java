@@ -208,7 +208,7 @@ public final class ModuleRuntimeStatus {
             accepted = accepts(challenge, nonce, pid, Binder.getCallingPid(), uptime,
                     SystemClock.elapsedRealtime(), SystemClock.uptimeMillis(), extras.getString(KEY_BUILD),
                     api, framework, version);
-            if (accepted) challenge.result = new Snapshot(State.ACTIVE, "模块已在 SystemUI 中激活", pid,
+            if (accepted) challenge.result = new Snapshot(State.ACTIVE, "El módulo está activo en SystemUI.", pid,
                     uptime, api, framework, version, residentCopy(extras.getBundle(ResidentCache.KEY)), HookHealth.copy(extras.getBundle(HookHealth.KEY)));
         }
         Bundle response = new Bundle();
@@ -401,7 +401,7 @@ public final class ModuleRuntimeStatus {
                 if (!live()) { cleanup(); return; }
                 context.sendBroadcast(new Intent(ACTION_PING).setPackage(SYSTEM_UI).putExtra(KEY_NONCE, nonce));
             } catch (RuntimeException error) {
-                finish(unavailable(State.ERROR, "无法检测模块激活状态，请重新检测。"));
+                finish(unavailable(State.ERROR, "No se pudo comprobar si el módulo está activo. Vuelve a comprobarlo."));
             }
         }
 
@@ -415,14 +415,14 @@ public final class ModuleRuntimeStatus {
                     int api = reply.getInt(KEY_API, 0), pid = reply.getInt(KEY_PID, -1);
                     String framework = reply.getString(KEY_FRAMEWORK), version = reply.getString(KEY_FRAMEWORK_VERSION);
                     if (api >= 101 && pid > 0 && validLspName(framework) && validFramework(version)) {
-                        finish(new Snapshot(State.ACTIVE, "模块已在 SystemUI 中激活", pid,
+                        finish(new Snapshot(State.ACTIVE, "El módulo está activo en SystemUI.", pid,
                                 reply.getLong(KEY_UPTIME), api, framework, version, residentCopy(reply.getBundle(ResidentCache.KEY)), HookHealth.copy(reply.getBundle(HookHealth.KEY))));
                         return;
                     }
                 }
                 finish(notDetected());
             } catch (RuntimeException error) {
-                finish(unavailable(State.ERROR, "无法检测模块激活状态，请重新检测。"));
+                finish(unavailable(State.ERROR, "No se pudo comprobar si el módulo está activo. Vuelve a comprobarlo."));
             }
         }
 
@@ -457,14 +457,14 @@ public final class ModuleRuntimeStatus {
             if (currentProbe != null) currentProbe.cancel();
             currentProbe = handle;
         }
-        deliver(handle.main, handle, callback, unavailable(State.CHECKING, "正在检测模块激活状态…"));
+        deliver(handle.main, handle, callback, unavailable(State.CHECKING, "Comprobando la activación del módulo…"));
         WORK.execute(handle::start);
         return handle;
     }
 
     private static Snapshot notDetected() {
         return unavailable(State.NOT_DETECTED,
-                "未检测到模块激活。请在 LSP 中启用本模块并勾选 SystemUI，再重启系统 UI 后重新检测。");
+                "No se detectó el módulo activo. Actívalo en LSPosed, marca SystemUI, reinicia la interfaz del sistema y vuelve a comprobarlo.");
     }
 
     private static Snapshot unavailable(State state, String message) {
@@ -475,7 +475,7 @@ public final class ModuleRuntimeStatus {
         main.post(() -> {
             if (!handle.current()) return;
             if (result.active && SystemClock.elapsedRealtime() >= handle.deadlineElapsed)
-                callback.onStatus(unavailable(State.NOT_DETECTED, "本次检测已过期，请重新检测模块激活状态。"));
+                callback.onStatus(unavailable(State.NOT_DETECTED, "Esta comprobación ha caducado. Comprueba de nuevo la activación del módulo."));
             else callback.onStatus(result);
         });
     }

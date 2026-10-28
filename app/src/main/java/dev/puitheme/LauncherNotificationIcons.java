@@ -20,7 +20,7 @@ final class LauncherNotificationIcons {
     static final String LAUNCHER="com.android.launcher";
     private LauncherNotificationIcons() { }
     static Bitmap load(Context owner,String packageName)throws Exception {
-        NotificationIconOverrides.validatePackage(packageName,"应用包名格式不正确");
+        NotificationIconOverrides.validatePackage(packageName,"El formato del nombre de paquete de la aplicación no es válido");
         if(owner==null)return null;
         Context launcher=owner.createPackageContext(LAUNCHER,0);
         PackageManager manager=launcher.getPackageManager();

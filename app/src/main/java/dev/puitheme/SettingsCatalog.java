@@ -20,22 +20,22 @@ public final class SettingsCatalog {
     public static final String BOOLEAN = "boolean", NUMERIC = "numeric", STRING = "string";
     public static final String COLOR = "color", FONT = "font", IMAGE = "image", OPTIONS = "options";
     private static final String[] CLOCK_VALUES = {"HH:mm", "HH:mm:ss", "{上午下午} hh:mm", "{时段} HH:mm", "M月d日 {周} HH:mm", "yyyy年MM月dd日 {星期} HH:mm", "MM/dd HH:mm"};
-    private static final String[] CLOCK_LABELS = {"时分 · 24 小时", "时分秒 · 24 小时", "上午／下午 · 12 小时", "时段与时间", "月日、星期与时间", "完整日期、星期与时间", "短日期与时间"};
+    private static final String[] CLOCK_LABELS = {"Hora y minutos · 24 horas", "Hora, minutos y segundos · 24 horas", "AM/PM · 12 horas", "Franja horaria y hora", "Día, mes y hora", "Fecha completa, día de la semana y hora", "Fecha corta y hora"};
     private static final String[] DUAL_VALUES = {"HH:mm", "HH:mm:ss", "M月d日 {周}", "M月d日 EEEE", "{周}", "{时段}", "yyyy年M月d日", "{农历日期}", "MM/dd"};
-    private static final String[] DUAL_LABELS = {"时分", "时分秒", "月日与星期", "月日与完整星期", "星期", "时段", "完整日期", "农历日期", "短日期"};
+    private static final String[] DUAL_LABELS = {"Hora y minutos", "Hora, minutos y segundos", "Día, mes y día de la semana", "Día, mes y nombre completo del día", "Día de la semana", "Franja horaria", "Fecha completa", "Fecha lunar", "Fecha corta"};
     private static final String[] DATE_VALUES = {NotificationBigClockSettings.DATE_DEFAULT, "M月d日 EEEE", "yyyy年M月d日 {星期}", "M月d日 {周} {农历}", "{干支} {农历日期}"};
-    private static final String[] DATE_LABELS = {"月日、星期、干支与农历", "月日与星期", "完整日期与星期", "月日、星期与农历", "干支年与农历日期"};
+    private static final String[] DATE_LABELS = {"Día, mes, día de la semana, ciclo sexagenario y calendario lunar", "Día, mes y día de la semana", "Fecha completa y día de la semana", "Día, mes, día de la semana y calendario lunar", "Año del ciclo sexagenario y fecha lunar"};
     private static final String[] FOOTER_VALUES = {"{text}", "HH:mm {text}", "yyyy年M月d日 {周} {text}", "{农历} {text}", "'C17' HH:mm {text}", "✨ {text}"};
-    private static final String[] FOOTER_LABELS = {"纯文本", "时间与文字", "日期、星期与文字", "农历与文字", "C17、时间与文字", "星光与文字"};
+    private static final String[] FOOTER_LABELS = {"Solo texto", "Hora y texto", "Fecha, día de la semana y texto", "Fecha lunar y texto", "C17, hora y texto", "Brillo de estrellas y texto"};
     private static final List<Group> GROUPS;
     private static final Map<String, Group> GROUP_BY_ID;
     private static final Map<String, Item> ITEM_BY_KEY;
     private static final Set<String> HIDDEN;
     /** One wording for every "过渡范围": a gradient between two colours, and a colour that fades out. */
-    static final String RANGE_BETWEEN = "两种颜色之间过渡所占的长度：100% 为从一端均匀过渡到另一端（原来的样子）；越小，过渡越集中在中间，两端保留纯色。";
-    static final String RANGE_FADE = "颜色从起点开始，到这个位置完全淡出：100% 为一直淡到底（原来的样子），越小过渡越短、颜色越集中在起点。";
+    static final String RANGE_BETWEEN = "Longitud de la transición entre dos colores: 100 % crea una transición uniforme de un extremo al otro (valor original); cuanto menor sea el valor, más concentrada queda en el centro y más sólidos se mantienen los extremos.";
+    static final String RANGE_FADE = "El color se desvanece desde el inicio hasta esta posición: 100 % lo desvanece por completo a lo largo de todo el recorrido (valor original); cuanto menor sea el valor, más corta será la transición y más concentrado quedará el color al principio.";
     /** The same for a fade measured in dp (a glow, an edge): the distance over which it goes from full to nothing. */
-    static final String RANGE_DISTANCE = "从起点开始，在这段距离内完全淡出：越大过渡越长、越柔和，越小越集中在起点。";
+    static final String RANGE_DISTANCE = "Distancia desde el inicio hasta que el efecto se desvanece por completo: cuanto mayor sea, más larga y suave será la transición; cuanto menor, más concentrada quedará al principio.";
 
     public static final class Group {
         public final String id, key, title, description, category, masterKey;
@@ -106,42 +106,42 @@ public final class SettingsCatalog {
         String big = "notification_big_clock_";
         if (k.startsWith(big)) {
             switch (k.substring(big.length())) {
-                case "max_size": return "展开时时间的字体高度；原生字体会随上滑收起";
-                case "compact_max_size": return "上滑收起后时间的字体高度";
-                case "screen_padding": return "原生字体铺满屏幕宽度时，左右各留出的距离";
-                case "letter_spacing": return "时间的字距，正值拉开，负值收紧";
-                case "alignment": return "时间在屏幕里的对齐方式";
-                case "glass_border_enabled": return "给数字、日期和附加文字统一加一圈玻璃质感的细边框";
-                case "glass_border_width": return "玻璃边框的粗细";
-                case "entry_travel": return "下拉时，时间和日期从上方移入的距离";
-                case "entry_blur_radius": return "刚进入时的模糊程度，随下拉逐渐变清晰";
-                case "entry_fade_strength": return "刚进入时的透明程度，数值越大越透明";
-                case "entry_completion": return "下拉到这个进度时，时间和日期完全清晰";
-                case "date_enabled": return "在大时钟区域显示日期；竖屏可与左右组件整行互换位置";
-                case "date_size": return "日期的字号";
-                case "date_gap": return "日期与时间之间的距离";
-                case "date_alignment": return "日期在屏幕里的对齐方式";
-                case "notification_gap_enabled": return "自动在时钟和第一张通知之间留出距离";
-                case "notification_gap": return "时间或日期底部与第一张通知之间的距离";
-                case "notification_edge_safe_distance": return "通知上滑靠近时钟时，开始淡出之前保留的距离";
-                case "notification_edge_range": return "通知在时钟下方逐渐淡出的范围";
-                case "notification_edge_blur_radius": return "淡出区域的模糊程度";
-                case "footer_enabled": return "在通知列表底部显示一行自定义内容";
-                case "footer_size": return "底部内容的字号";
-                case "footer_margin": return "底部内容与屏幕底边之间的安全距离";
-                case "footer_alignment": return "底部内容的对齐方式";
+                case "max_size": return "Altura del texto de la hora cuando está expandida; con la fuente nativa se reduce al deslizar hacia arriba.";
+                case "compact_max_size": return "Altura del texto de la hora después de contraerlo al deslizar hacia arriba.";
+                case "screen_padding": return "Margen a cada lado cuando la fuente nativa ocupa todo el ancho de la pantalla.";
+                case "letter_spacing": return "Espaciado de los caracteres de la hora: los valores positivos separan y los negativos juntan.";
+                case "alignment": return "Alineación de la hora en la pantalla.";
+                case "glass_border_enabled": return "Añade un borde fino con aspecto de vidrio a los números, la fecha y el texto adicional.";
+                case "glass_border_width": return "Grosor del borde de vidrio.";
+                case "entry_travel": return "Distancia que recorren la hora y la fecha desde arriba al desplegar el panel.";
+                case "entry_blur_radius": return "Desenfoque al aparecer; se vuelve más nítido a medida que se despliega.";
+                case "entry_fade_strength": return "Transparencia inicial; cuanto mayor sea el valor, más transparente se verá.";
+                case "entry_completion": return "Progreso del despliegue a partir del cual la hora y la fecha se ven completamente nítidas.";
+                case "date_enabled": return "Muestra la fecha en el área del reloj grande; en vertical puede intercambiarse de fila con los componentes laterales.";
+                case "date_size": return "Tamaño de fuente de la fecha.";
+                case "date_gap": return "Separación entre la fecha y la hora.";
+                case "date_alignment": return "Alineación de la fecha en la pantalla.";
+                case "notification_gap_enabled": return "Deja automáticamente espacio entre el reloj y la primera notificación.";
+                case "notification_gap": return "Distancia entre la parte inferior de la hora o la fecha y la primera notificación.";
+                case "notification_edge_safe_distance": return "Distancia que se conserva antes de empezar a desvanecer una notificación al deslizarla hacia el reloj.";
+                case "notification_edge_range": return "Zona en la que las notificaciones se desvanecen gradualmente debajo del reloj.";
+                case "notification_edge_blur_radius": return "Desenfoque de la zona de desvanecimiento.";
+                case "footer_enabled": return "Muestra una línea de contenido personalizado al final de la lista de notificaciones.";
+                case "footer_size": return "Tamaño de fuente del contenido inferior.";
+                case "footer_margin": return "Distancia de seguridad entre el contenido inferior y el borde de la pantalla.";
+                case "footer_alignment": return "Alineación del contenido inferior.";
                 default: return "";
             }
         }
         boolean clockLike = k.startsWith("clock_") || k.startsWith("shade_clock_") || k.startsWith("classic_clock_");
         if (clockLike || k.startsWith("carrier_")) {
-            if (k.endsWith("_digit_spacing")) return "每个数字格额外增加的宽度，正值更松，负值更紧";
-            if (k.endsWith("_dual_upper_scale") || k.endsWith("_dual_lower_scale")) return "这一排的字号，相对原生时钟的百分比";
-            if (k.endsWith("_dual_line_gap")) return "两排之间的额外距离，可以为负";
-            if (k.endsWith("_margin_start")) return "时钟左侧额外留白，相邻图标随之让开";
-            if (k.endsWith("_margin_end")) return "时钟右侧额外留白，相邻图标随之让开";
-            if (k.endsWith("_spacing")) return "字符之间的距离，正值拉开，负值收紧";
-            if (k.endsWith("_scale")) return "文字大小，相对原生的百分比，100 为原样";
+            if (k.endsWith("_digit_spacing")) return "Ancho adicional de cada celda numérica: los valores positivos separan y los negativos juntan.";
+            if (k.endsWith("_dual_upper_scale") || k.endsWith("_dual_lower_scale")) return "Tamaño de fuente de esta fila, como porcentaje del reloj nativo.";
+            if (k.endsWith("_dual_line_gap")) return "Separación adicional entre las dos filas; puede ser negativa.";
+            if (k.endsWith("_margin_start")) return "Espacio adicional a la izquierda del reloj; los iconos adyacentes se desplazan para dejar sitio.";
+            if (k.endsWith("_margin_end")) return "Espacio adicional a la derecha del reloj; los iconos adyacentes se desplazan para dejar sitio.";
+            if (k.endsWith("_spacing")) return "Espaciado entre caracteres: los valores positivos separan y los negativos juntan.";
+            if (k.endsWith("_scale")) return "Tamaño del texto respecto al original del sistema; 100 conserva el tamaño original.";
         }
         return "";
     }
@@ -151,20 +151,20 @@ public final class SettingsCatalog {
         boolean independentSwitches;
         final List<Item> items = new ArrayList<>();
         Builder(String id, String title, String description, String category, String master) {
-            this(id, title, description, category, master, false, "启用" + title, description);
+            this(id, title, description, category, master, false, "Activar" + title, description);
         }
         /** labelled: the page's own switch is a named, searchable row instead of the unlabelled top-bar switch. */
         Builder(String id, String title, String description, String category, String master,
                 boolean labelled, String masterTitle, String masterDescription) {
             this.id = id; this.title = title; this.description = description;
             this.category = category; this.master = master; independentSwitches = labelled;
-            if (master != null) toggle(master, masterTitle, masterDescription, "功能开关");
+            if (master != null) toggle(master, masterTitle, masterDescription, "Interruptor de la función");
         }
         void toggle(String key, String title, String description, String section) {
             add(key, title, description.isEmpty() ? fieldNote(key) : description, BOOLEAN, section, "", 0, 1, 1, null, null, null, null);
         }
         void number(String key, String title, String section, String unit, float min, float max, float step) {
-            String description = key.contains("offset_") ? "相对于系统默认位置" : key.endsWith("_weight") || key.equals(StatusBarSettings.FONT_WEIGHT) ? "100 最细，900 最粗" : fieldNote(key);
+            String description = key.contains("offset_") ? "Respecto a la posición predeterminada del sistema" : key.endsWith("_weight") || key.equals(StatusBarSettings.FONT_WEIGHT) ? "100 es el grosor más fino; 900, el más grueso." : fieldNote(key);
             add(key, title, description, NUMERIC, section, unit, min, max, step, null, null, null, null);
         }
         void choice(String key, String title, String description, String section, String[] values, String[] labels) {
@@ -174,8 +174,8 @@ public final class SettingsCatalog {
             add(key, title, description, STRING, section, "", 0, 0, 0, values, labels, null, null);
         }
         void colorPair(String light, String dark, String title, String section) {
-            add(light, title + " · 浅色背景", "用于浅色背景，可独立设置颜色与透明度", COLOR, section, "", 0, 0, 0, null, null, dark, "light");
-            add(dark, title + " · 深色背景", "用于深色背景，可独立设置颜色与透明度", COLOR, section, "", 0, 0, 0, null, null, light, "dark");
+            add(light, title + " · Fondo claro", "Se usa sobre fondos claros; el color y la transparencia se pueden configurar por separado.", COLOR, section, "", 0, 0, 0, null, null, dark, "light");
+            add(dark, title + " · Fondo oscuro", "Se usa sobre fondos oscuros; el color y la transparencia se pueden configurar por separado.", COLOR, section, "", 0, 0, 0, null, null, light, "dark");
         }
         void add(String key, String title, String description, String type, String section, String unit,
                 float min, float max, float step, String[] values, String[] labels, String pairedKey, String scene) {
@@ -297,296 +297,296 @@ public final class SettingsCatalog {
         // The camera-area capsule names its own sections; the key-suffix rules below pulled "调整音乐封面大小" out into a lone "大小" section.
         if ("fluid_cloud_capsule".equals(groupId)) return section;
         if (StatusBarLayoutSettings.GROUP.equals(groupId)) return section;
-        if ("battery".equals(groupId) && (BatteryTextStyle.MASTER.equals(key) || BatteryTextStyle.NUMBERS.containsKey(key))) return "电池内文字";
-        String theme = key.contains("_light_") ? "浅色界面 · " : key.contains("_dark_") ? "深色界面 · " : "";
-        if (!theme.isEmpty() && "qs_appearance".equals(groupId)) return theme + (key.contains("gradient") ? "渐变" : "底色");
-        if (!theme.isEmpty() && "qs_media".equals(groupId)) return theme + (key.contains("background") ? "背景" : "外发光");
+        if ("battery".equals(groupId) && (BatteryTextStyle.MASTER.equals(key) || BatteryTextStyle.NUMBERS.containsKey(key))) return "Texto dentro de la batería";
+        String theme = key.contains("_light_") ? "Interfaz clara · " : key.contains("_dark_") ? "Interfaz oscura · " : "";
+        if (!theme.isEmpty() && "qs_appearance".equals(groupId)) return theme + (key.contains("gradient") ? "Degradado" : "Color de fondo");
+        if (!theme.isEmpty() && "qs_media".equals(groupId)) return theme + (key.contains("background") ? "Fondo" : "Resplandor exterior");
         if (groupId.startsWith("notification_big_clock")) {
             key = NotificationBigClockSettings.portraitKey(key);
-            if (ClockBackdropSettings.DATE_MASK_OPACITY.equals(key)) return "日期背景样式";
-            if (ClockBackdropSettings.FOOTER_MASK_OPACITY.equals(key)) return "底部背景样式";
+            if (ClockBackdropSettings.DATE_MASK_OPACITY.equals(key)) return "Estilo del fondo de la fecha";
+            if (ClockBackdropSettings.FOOTER_MASK_OPACITY.equals(key)) return "Estilo del fondo del contenido inferior";
             if (ClockBackdropSettings.EDGE_ENABLED.equals(key) || ClockBackdropSettings.EDGE_WIDTH.equals(key)
                     || ClockBackdropSettings.EDGE_COLOR.equals(key) || ClockBackdropSettings.EDGE_OPACITY.equals(key)
                     || ClockBackdropSettings.HIGHLIGHT_ANGLE.equals(key) || ClockBackdropSettings.HIGHLIGHT_STRENGTH.equals(key)
-                    || ClockBackdropSettings.SHADE_STRENGTH.equals(key) || ClockBackdropSettings.DEPTH_WIDTH.equals(key)) return "主时间立体边缘";
-            if (NotificationBigClockSettings.COMPACT_MAX_SIZE.equals(key)) return "收起样式";
-            if (NotificationBigClockSettings.COMPACT_OFFSET_X.equals(key) || NotificationBigClockSettings.COMPACT_OFFSET_Y.equals(key)) return "收起位置";
+                    || ClockBackdropSettings.SHADE_STRENGTH.equals(key) || ClockBackdropSettings.DEPTH_WIDTH.equals(key)) return "Borde con relieve de la hora principal";
+            if (NotificationBigClockSettings.COMPACT_MAX_SIZE.equals(key)) return "Estilo contraído";
+            if (NotificationBigClockSettings.COMPACT_OFFSET_X.equals(key) || NotificationBigClockSettings.COMPACT_OFFSET_Y.equals(key)) return "Posición contraída";
             if (NotificationBigClockSettings.DATE_OFFSET_X.equals(key) || NotificationBigClockSettings.DATE_OFFSET_Y.equals(key)
-                    || NotificationBigClockSettings.DATE_GAP.equals(key) || NotificationBigClockSettings.DATE_ALIGNMENT.equals(key)) return "日期位置";
+                    || NotificationBigClockSettings.DATE_GAP.equals(key) || NotificationBigClockSettings.DATE_ALIGNMENT.equals(key)) return "Posición de la fecha";
             if (NotificationBigClockSettings.FOOTER_OFFSET_X.equals(key) || NotificationBigClockSettings.FOOTER_OFFSET_Y.equals(key)
-                    || NotificationBigClockSettings.FOOTER_MARGIN.equals(key) || NotificationBigClockSettings.FOOTER_ALIGNMENT.equals(key)) return "底部位置";
+                    || NotificationBigClockSettings.FOOTER_MARGIN.equals(key) || NotificationBigClockSettings.FOOTER_ALIGNMENT.equals(key)) return "Posición inferior";
             // 时间页：内容与字体 → 大小与字重 → 位置与对齐 → 点击操作。
-            if (NotificationBigClockSettings.PATTERN.equals(key) || NotificationBigClockSettings.FONT.equals(key)) return "内容与字体";
+            if (NotificationBigClockSettings.PATTERN.equals(key) || NotificationBigClockSettings.FONT.equals(key)) return "Contenido y fuente";
             if (NotificationBigClockSettings.MAX_SIZE.equals(key) || NotificationBigClockSettings.COMPACT_MAX_SIZE.equals(key)
                     || NotificationBigClockSettings.WEIGHT.equals(key) || NotificationBigClockSettings.LETTER_SPACING.equals(key)
-                    || NotificationBigClockSettings.PROPORTIONAL_DIGITS.equals(key)) return "大小与字重";
+                    || NotificationBigClockSettings.PROPORTIONAL_DIGITS.equals(key)) return "Tamaño y grosor";
             if (NotificationBigClockSettings.ALIGNMENT.equals(key) || NotificationBigClockSettings.SCREEN_PADDING.equals(key)
                     || NotificationBigClockSettings.OFFSET_X.equals(key) || NotificationBigClockSettings.OFFSET_Y.equals(key)
-                    || NotificationBigClockSettings.COMPACT_OFFSET_X.equals(key) || NotificationBigClockSettings.COMPACT_OFFSET_Y.equals(key)) return "位置与对齐";
+                    || NotificationBigClockSettings.COMPACT_OFFSET_X.equals(key) || NotificationBigClockSettings.COMPACT_OFFSET_Y.equals(key)) return "Posición y alineación";
         }
         String scene = section.contains(" · ") ? section.substring(0, section.indexOf(" · ")) + " · " : "";
         if (Arrays.asList("clock", "shade_clock", "carrier", "classic_text").contains(groupId)) {
-            if (key.endsWith("_size_enabled") || key.endsWith("_scale")) return scene + "大小";
+            if (key.endsWith("_size_enabled") || key.endsWith("_scale")) return scene + "Tamaño";
             // Numeric digit alignment remains a common setting, separate from typographic fine tuning.
             if (!key.endsWith("_digit_spacing") && (key.endsWith("_weight") || key.endsWith("_spacing")
-                    || key.endsWith("_text_style_enabled"))) return scene + "文字样式";
+                    || key.endsWith("_text_style_enabled"))) return scene + "Estilo del texto";
         }
-        if (key.endsWith("_position_enabled")) return scene + "位置";
-        if (key.endsWith("_size_enabled")) return scene + "大小";
-        if (key.endsWith("_color_enabled") && (section.endsWith("独立开关") || "独立开关".equals(section))) return scene + "颜色与透明度";
-        if (key.endsWith("_text_style_enabled")) return scene + ("speed".equals(groupId) || "label".equals(groupId) ? "文字与间距" : "文字样式");
-        if ("speed_lines_enabled".equals(key)) return "文字与间距";
-        if ("独立开关".equals(section)) return "显示样式";
+        if (key.endsWith("_position_enabled")) return scene + "Posición";
+        if (key.endsWith("_size_enabled")) return scene + "Tamaño";
+        if (key.endsWith("_color_enabled") && (section.endsWith("Interruptor independiente") || "Interruptor independiente".equals(section))) return scene + "Color y transparencia";
+        if (key.endsWith("_text_style_enabled")) return scene + ("speed".equals(groupId) || "label".equals(groupId) ? "Texto y espaciado" : "Estilo del texto");
+        if ("speed_lines_enabled".equals(key)) return "Texto y espaciado";
+        if ("Interruptor independiente".equals(section)) return "Estilo de visualización";
         return section;
     }
     private static void controls(Builder b, String prefix, String section, boolean text) {
         boolean outer = outerPosition(prefix);
-        b.toggle(prefix + "_position_enabled", outer ? "垂直位置调整" : "位置调整",
-                outer ? "调整上下位置；左右间距在本页独立设置" : "应用所设置的水平与垂直位置", section);
-        b.toggle(prefix + "_size_enabled", "大小调整", "应用所设置的大小比例", section);
-        b.toggle(prefix + "_color_enabled", "颜色调整", "浅色与深色背景分别设置", section);
-        if (text) b.toggle(prefix + "_text_style_enabled", "文字粗细与字距", "应用所设置的文字样式", section);
+        b.toggle(prefix + "_position_enabled", outer ? "Ajustar posición vertical" : "Ajustar posición",
+                outer ? "Ajusta la posición vertical; el espaciado horizontal se configura por separado en esta página." : "Aplica las posiciones horizontal y vertical configuradas.", section);
+        b.toggle(prefix + "_size_enabled", "Ajustar tamaño", "Aplica la escala configurada.", section);
+        b.toggle(prefix + "_color_enabled", "Ajustar color", "Permite configurar por separado los fondos claros y oscuros.", section);
+        if (text) b.toggle(prefix + "_text_style_enabled", "Grosor y espaciado del texto", "Aplica el estilo de texto configurado.", section);
     }
     private static void position(Builder b, String prefix, String section) {
-        if (!outerPosition(prefix)) b.number(prefix + "_offset_x", "水平位置", section, "dp", -80, 80, .01f);
-        b.number(prefix + "_offset_y", "垂直位置", section, "dp", -24, 24, .01f);
+        if (!outerPosition(prefix)) b.number(prefix + "_offset_x", "Posición horizontal", section, "dp", -80, 80, .01f);
+        b.number(prefix + "_offset_y", "Posición vertical", section, "dp", -24, 24, .01f);
     }
     private static boolean outerPosition(String prefix) {
         return Arrays.asList("clock", "speed", "data", "wifi", "label", "battery").contains(prefix);
     }
     private static Group statusBarLayout() {
-        Builder b = builder(StatusBarLayoutSettings.GROUP, "状态栏排序（实验性）",
-                "选择元素所在区域与排列顺序。关闭后跟随系统区域和顺序；各元素页面的左右间距仍独立生效。未显示的元素不会被强制显示。",
+        Builder b = builder(StatusBarLayoutSettings.GROUP, "Orden de la barra de estado (experimental)",
+                "Elige la zona y el orden de cada elemento. Si se desactiva, se usa la zona y el orden del sistema; el margen lateral de cada página sigue aplicándose por separado. Los elementos ocultos no se mostrarán a la fuerza.",
                 STATUSBAR, StatusBarLayoutSettings.MASTER);
         for (String token : StatusBarLayoutSettings.TOKENS) {
             String name = StatusBarLayoutSettings.label(token);
-            b.choice(StatusBarLayoutSettings.key(token, "side"), "所在区域",
-                    StatusBarLayoutSettings.CARRIER.equals(token) ? "运营商只在下拉栏顶部和锁屏显示，普通状态栏没有运营商；系统或模块隐藏运营商时不生效，也不会创造新文字"
-                            : "左侧、右侧或跟随系统所在区域；跟随当前容器移动", name,
+            b.choice(StatusBarLayoutSettings.key(token, "side"), "Zona",
+                    StatusBarLayoutSettings.CARRIER.equals(token) ? "El operador solo aparece en la parte superior del panel desplegado y en la pantalla de bloqueo; no aparece en la barra de estado normal. No funciona si el sistema o el módulo lo ocultan y no crea texto nuevo."
+                            : "Zona izquierda, derecha o la definida por el sistema; sigue al contenedor actual.", name,
                     new String[]{StatusBarLayoutSettings.NATIVE, StatusBarLayoutSettings.LEFT, StatusBarLayoutSettings.RIGHT},
-                    new String[]{"跟随系统", "左侧", "右侧"});
-            b.add(StatusBarLayoutSettings.key(token, "order"), "排列顺序", "0 跟随系统；1 起按物理从左到右排列，同号保留原生先后。也可打开顺序列表调整。",
+                    new String[]{"Seguir al sistema", "Izquierda", "Derecha"});
+            b.add(StatusBarLayoutSettings.key(token, "order"), "Orden", "0 sigue al sistema; desde 1 se ordena físicamente de izquierda a derecha. Los elementos con el mismo número conservan su orden nativo. También puedes organizarlos desde la lista de orden.",
                     NUMERIC, name, "", 0, 16, 1, null, null, null, null);
         }
-        String label = "网络制式 · 跟随蜂窝";
-        b.add(StatusBarLayoutSettings.key(StatusBarLayoutSettings.LABEL, "order"), "制式与信号顺序",
-                "跟随蜂窝所在区域；0 跟随系统，1 在信号前，2 在信号后。Wi-Fi 显示与制式隐藏仍由系统和原有设置决定。",
+        String label = "Tipo de red · seguir a la red móvil";
+        b.add(StatusBarLayoutSettings.key(StatusBarLayoutSettings.LABEL, "order"), "Orden del tipo de red y la señal",
+                "Sigue la zona de la red móvil; 0 sigue al sistema, 1 delante de la señal y 2 detrás. La visibilidad de Wi-Fi y la ocultación del tipo de red siguen dependiendo del sistema y de los ajustes existentes.",
                 NUMERIC, label, "", 0, 2, 1, null, null, null, null);
-        b.text(NativeStatusIcons.LAYOUT,"系统提示图标逐个排序","分别选择蓝牙、定位、闹钟等提示图标所在的一侧，并调整同侧提示图标的先后；整组位置仍由系统提示图标锚点决定。","系统提示图标",null,null);
+        b.text(NativeStatusIcons.LAYOUT,"Ordenar los iconos de estado del sistema individualmente","Elige en qué lado aparecen los iconos de Bluetooth, ubicación, alarma y otros avisos, y ajusta el orden dentro de cada lado. La posición del grupo sigue anclada al sistema.","Iconos de aviso del sistema",null,null);
         return new Group(b);
     }
     private static void layoutMargins(Builder b, String token, String section) {
-        String scope = StatusBarLayoutSettings.LABEL.equals(token) ? "网络制式跟随蜂窝。" : "";
-        b.add(StatusBarLayoutSettings.key(token, "margin_left"), "左侧间距", scope + "相对原生边界调整左侧留白：正数增加、负数收紧，0 保留原生留白。元素在右侧且最靠中间时（如网速），左侧间距会直接把它向右（正数）或向左（负数）移动。保存后独立生效，无需开启状态栏排序。",
+        String scope = StatusBarLayoutSettings.LABEL.equals(token) ? "El tipo de red sigue a la red móvil." : "";
+        b.add(StatusBarLayoutSettings.key(token, "margin_left"), "Margen izquierdo", scope + "Ajusta el espacio izquierdo respecto al límite nativo: un valor positivo lo aumenta, uno negativo lo reduce y 0 conserva el margen original. Si el elemento está a la derecha y es el más cercano al centro (por ejemplo, la velocidad de red), este margen lo mueve directamente a la derecha o a la izquierda. Se aplica de forma independiente, sin activar el orden de la barra de estado.",
                 NUMERIC, section, "dp", -40, 40, .1f, null, null, null, null);
-        b.add(StatusBarLayoutSettings.key(token, "margin_right"), "右侧间距", scope + "相对原生边界调整右侧留白：正数增加、负数收紧，0 保留原生留白。元素在左侧且最靠中间时，右侧间距会直接把它向左（正数）或向右（负数）移动。保存后独立生效，无需开启状态栏排序。",
+        b.add(StatusBarLayoutSettings.key(token, "margin_right"), "Margen derecho", scope + "Ajusta el espacio derecho respecto al límite nativo: un valor positivo lo aumenta, uno negativo lo reduce y 0 conserva el margen original. Si el elemento está a la izquierda y es el más cercano al centro, este margen lo mueve directamente a la izquierda o a la derecha. Se aplica de forma independiente, sin activar el orden de la barra de estado.",
                 NUMERIC, section, "dp", -40, 40, .1f, null, null, null, null);
     }
     private static void scale(Builder b, String key, String title, String section) {
         b.number(key, title, section, "%", 25, 250, .01f);
     }
     private static void textSize(Builder b, String prefix, String section) {
-        scale(b, prefix + "_scale", "文字大小", section);
-        b.number(prefix + "_weight", "文字粗细", section, "", 100, 900, 1);
-        b.number(prefix + "_spacing", "字距微调", section, "dp", -2, 8, .01f);
+        scale(b, prefix + "_scale", "Tamaño del texto", section);
+        b.number(prefix + "_weight", "Grosor del texto", section, "", 100, 900, 1);
+        b.number(prefix + "_spacing", "Ajuste del espaciado", section, "dp", -2, 8, .01f);
     }
     private static void normalColors(Builder b, String prefix, String title) {
-        b.colorPair(prefix + "_color_light", prefix + "_color_dark", title, "颜色与透明度");
+        b.colorPair(prefix + "_color_light", prefix + "_color_dark", title, "Color y transparencia");
     }
     private static void alignment(Builder b, String key, String title, String section) {
-        b.choice(key, title, "", section, new String[]{"left", "center", "right"}, new String[]{"靠左", "居中", "靠右"});
+        b.choice(key, title, "", section, new String[]{"left", "center", "right"}, new String[]{"Alinear a la izquierda", "Centrar", "Alinear a la derecha"});
     }
     private static Group speed() {
-        Builder b = builder("speed", "实时网速", "保留系统实时数值与 KB/s 单位。", STATUSBAR, "speed_enabled");
-        controls(b, "speed", "独立开关", true);
-        b.toggle(NetworkSpeedControls.INTERVAL_ENABLED, "调整刷新间隔", "关闭时跟随系统；较短间隔更新更快", "刷新速度");
-        b.add(NetworkSpeedControls.INTERVAL_MILLIS, "刷新间隔", "单位为毫秒，建议 1–500 ms。间隔越短，采样和界面更新越频繁，请按需要调节。", NUMERIC,
-                "刷新速度", "ms", 1f, 500f, 1f, null, null, null, null);
-        b.toggle("speed_lines_enabled", "数字与单位间距", "分别安排数字与单位的间距", "独立开关");
-        position(b, "speed", "位置");
-        layoutMargins(b, StatusBarLayoutSettings.SPEED, "左右间距");
-        scale(b, StatusBarSettings.SPEED_SCALE, "整体大小", "大小");
-        scale(b, StatusBarSettings.SPEED_NUMBER_SCALE, "数字大小", "大小");
-        scale(b, StatusBarSettings.SPEED_UNIT_SCALE, "单位大小", "大小");
-        b.number(StatusBarSettings.SPEED_LINE_GAP, "数字与单位间距", "文字与间距", "dp", -8, 8, .01f);
-        b.number(StatusBarSettings.SPEED_WEIGHT, "文字粗细", "文字与间距", "", 100, 900, 1);
-        normalColors(b, "speed", "网速文字");
+        Builder b = builder("speed", "Velocidad de red en tiempo real", "Conserva el valor en tiempo real del sistema y la unidad KB/s.", STATUSBAR, "speed_enabled");
+        controls(b, "speed", "Interruptor independiente", true);
+        b.toggle(NetworkSpeedControls.INTERVAL_ENABLED, "Ajustar intervalo de actualización", "Si está desactivado, sigue al sistema; un intervalo más corto actualiza más rápido.", "Velocidad de actualización");
+        b.add(NetworkSpeedControls.INTERVAL_MILLIS, "Intervalo de actualización", "La unidad son milisegundos; se recomiendan 1–500 ms. Cuanto menor sea el intervalo, más frecuentes serán el muestreo y las actualizaciones de la interfaz. Ajústalo según tus necesidades.", NUMERIC,
+                "Velocidad de actualización", "ms", 1f, 500f, 1f, null, null, null, null);
+        b.toggle("speed_lines_enabled", "Espacio entre el número y la unidad", "Ajusta por separado el espacio entre el número y la unidad.", "Interruptor independiente");
+        position(b, "speed", "Posición");
+        layoutMargins(b, StatusBarLayoutSettings.SPEED, "Espaciado lateral");
+        scale(b, StatusBarSettings.SPEED_SCALE, "Tamaño general", "Tamaño");
+        scale(b, StatusBarSettings.SPEED_NUMBER_SCALE, "Tamaño de los números", "Tamaño");
+        scale(b, StatusBarSettings.SPEED_UNIT_SCALE, "Tamaño de la unidad", "Tamaño");
+        b.number(StatusBarSettings.SPEED_LINE_GAP, "Espacio entre el número y la unidad", "Texto y espaciado", "dp", -8, 8, .01f);
+        b.number(StatusBarSettings.SPEED_WEIGHT, "Grosor del texto", "Texto y espaciado", "", 100, 900, 1);
+        normalColors(b, "speed", "Texto de velocidad de red");
         return new Group(b);
     }
     private static Group data() {
-        Builder b = builder("data", "蜂窝信号", "信号格数跟随真实系统信号。数据小箭头默认隐藏，可在原生角标调整中独立开启和调节。", STATUSBAR, "data_enabled");
-        controls(b, "data", "独立开关", false);
-        b.toggle("data_icon_enabled", "仿 iOS 信号样式", "保留真实信号强度", "独立开关");
-        b.toggle("data_badge_hidden", "隐藏系统网络角标", "减少重复网络标识", "独立开关");
-        b.toggle(DataBatterySpacing.ENABLED, "无网络标识间距", "系统确认 Wi-Fi 图标和网络制式文字均不显示、蜂窝直接邻接电池时生效；状态未知时保留原生间距。", "电池边界间距");
-        b.add(DataBatterySpacing.SPACING, "蜂窝与电池间距微调", "相对原生边界增加或减少，0 保留原生；仅改变蜂窝与电池边界，不改变其他图标间距与偏移。", NUMERIC,
-                "电池边界间距", "dp", -12, 24, .01f, null, null, null, null);
-        b.choice(StatusBarSettings.SIGNAL_LAYOUT, "信号布局", "双卡次信号仍由系统维护", "信号布局", new String[]{"system", "single"}, new String[]{"跟随系统单双排", "只显示主信号单排"});
-        position(b, "data", "位置"); layoutMargins(b, StatusBarLayoutSettings.MOBILE, "左右间距");
-        scale(b, StatusBarSettings.DATA_ICON_SCALE, "图标大小", "大小");
-        normalColors(b, "data", "蜂窝信号");
+        Builder b = builder("data", "Señal móvil", "Las barras reflejan la señal real del sistema. La flecha de actividad de datos está oculta de forma predeterminada; puedes activarla y ajustarla por separado en los ajustes de los indicadores nativos.", STATUSBAR, "data_enabled");
+        controls(b, "data", "Interruptor independiente", false);
+        b.toggle("data_icon_enabled", "Estilo de señal similar a iOS", "Conservar la intensidad real de la señal", "Interruptor independiente");
+        b.toggle("data_badge_hidden", "Ocultar los indicadores de red del sistema", "Reducir los indicadores de red duplicados", "Interruptor independiente");
+        b.toggle(DataBatterySpacing.ENABLED, "Espacio sin indicador de red", "Se aplica cuando el sistema confirma que no se muestran ni el icono Wi-Fi ni el texto del tipo de red, y la señal móvil queda junto a la batería. Si el estado es desconocido, se conserva el espaciado nativo.", "Espacio junto al borde de la batería");
+        b.add(DataBatterySpacing.SPACING, "Ajuste del espacio entre la red móvil y la batería", "Aumenta o reduce el espacio respecto al límite nativo; 0 conserva el original. Solo cambia el espacio entre la señal móvil y la batería, sin alterar los demás iconos.", NUMERIC,
+                "Espacio junto al borde de la batería", "dp", -12, 24, .01f, null, null, null, null);
+        b.choice(StatusBarSettings.SIGNAL_LAYOUT, "Distribución de la señal", "La señal secundaria de la segunda SIM sigue siendo administrada por el sistema.", "Distribución de la señal", new String[]{"system", "single"}, new String[]{"Filas de señal según el sistema", "Mostrar solo la señal principal en una fila"});
+        position(b, "data", "Posición"); layoutMargins(b, StatusBarLayoutSettings.MOBILE, "Espaciado lateral");
+        scale(b, StatusBarSettings.DATA_ICON_SCALE, "Tamaño del icono", "Tamaño");
+        normalColors(b, "data", "Señal móvil");
         return new Group(b);
     }
     private static Group nativeNetworkBadge() {
-        Builder b=builder("native_network_badge", "原生角标调整",
-                "角标1与角标2可独立设置位置、大小、字体、字重和隐藏。独立信号布局对应主流量卡、副卡；双排布局保留原生前、后段设置。只显示主信号单排时自动隐藏副卡角标。须先关闭网络制式文字；数据小箭头独立设置，默认隐藏。",
+        Builder b=builder("native_network_badge", "Ajustes de indicadores nativos",
+                "Los indicadores 1 y 2 permiten configurar por separado la posición, el tamaño, la fuente, el grosor y la ocultación. En el diseño de señal independiente corresponden a la SIM principal y a la secundaria; en el diseño de dos filas se conservan los segmentos anterior y posterior nativos. Si solo se muestra una fila, el indicador de la SIM secundaria se oculta automáticamente. Primero debes desactivar el texto del tipo de red. La flecha de datos se configura por separado y está oculta de forma predeterminada.",
                 STATUSBAR,NativeNetworkBadgeControls.MASTER);
         for(int part=1;part<=2;part++) {
-            String p=NativeNetworkBadgeSettings.group(part),s="角标"+part;
-            b.toggle(p+"_enabled","调整"+s,part==1?"主流量卡角标；双排布局对应前段文字":"副卡角标；双排布局对应后段文字",s+" · 开关");
-            b.toggle(p+"_hidden","隐藏"+s,"仅隐藏这一段文字，另一段保持原有设置。",s+" · 开关");
-            b.number(p+"_offset_x","水平位置",s+" · 位置","dp",-32,32,.01f);
-            b.number(p+"_offset_y","垂直位置",s+" · 位置","dp",-16,16,.01f);
-            scale(b,p+"_scale","角标大小",s+" · 大小");
-            b.number(p+"_weight","字体粗细",s+" · 文字","",100,900,1);
-            b.choice(p+"_font","角标字体","自选字体在“其他 → 字体配置”中导入。",s+" · 文字",
-                    new String[]{"native","global","system","pingfang","custom"},new String[]{"原生角标字体","跟随文字字体","系统字体","苹方","自选字体"});
+            String p=NativeNetworkBadgeSettings.group(part),s="Indicador"+part;
+            b.toggle(p+"_enabled","Ajustar"+s,part==1?"Indicador de la SIM principal; en el diseño de dos filas corresponde al texto anterior.":"Indicador de la SIM secundaria; en el diseño de dos filas corresponde al texto posterior.",s+" · Interruptor");
+            b.toggle(p+"_hidden","Ocultar"+s,"Oculta solo este segmento de texto; el otro conserva su configuración.",s+" · Interruptor");
+            b.number(p+"_offset_x","Posición horizontal",s+" · Posición","dp",-32,32,.01f);
+            b.number(p+"_offset_y","Posición vertical",s+" · Posición","dp",-16,16,.01f);
+            scale(b,p+"_scale","Tamaño del indicador",s+" · Tamaño");
+            b.number(p+"_weight","Grosor de fuente",s+" · Texto","",100,900,1);
+            b.choice(p+"_font","Fuente del indicador","Importa fuentes personalizadas en «Otros → Configuración de fuentes».",s+" · Texto",
+                    new String[]{"native","global","system","pingfang","custom"},new String[]{"Fuente nativa del indicador","Usar la fuente del texto","Fuente del sistema","PingFang","Fuente personalizada"});
         }
-        b.toggle(NativeDataActivity.MASTER,"显示数据小箭头","开启后恢复原生蜂窝上传/下载活动提示，独立于本页角标主开关。","数据小箭头");
-        b.number(NativeDataActivity.X,"箭头水平位置","数据小箭头","dp",-32,32,.01f);
-        b.number(NativeDataActivity.Y,"箭头垂直位置","数据小箭头","dp",-16,16,.01f);
-        scale(b,NativeDataActivity.SCALE,"箭头大小","数据小箭头");
-        b.toggle(NativeDataActivity.COLOR_ENABLED,"自定义箭头颜色","关闭使用系统随背景变化的原生颜色。","数据小箭头");
-        b.colorPair(NativeDataActivity.COLOR_LIGHT,NativeDataActivity.COLOR_DARK,"箭头颜色","数据小箭头");
+        b.toggle(NativeDataActivity.MASTER,"Mostrar la flecha de actividad de datos","Al activarla, vuelve a mostrar la indicación nativa de actividad de subida y descarga móvil, independientemente del interruptor principal de los indicadores de esta página.","Flecha de datos");
+        b.number(NativeDataActivity.X,"Posición horizontal de la flecha","Flecha de datos","dp",-32,32,.01f);
+        b.number(NativeDataActivity.Y,"Posición vertical de la flecha","Flecha de datos","dp",-16,16,.01f);
+        scale(b,NativeDataActivity.SCALE,"Tamaño de la flecha","Flecha de datos");
+        b.toggle(NativeDataActivity.COLOR_ENABLED,"Color personalizado de la flecha","Si está desactivado, se usa el color nativo, que cambia según el fondo del sistema.","Flecha de datos");
+        b.colorPair(NativeDataActivity.COLOR_LIGHT,NativeDataActivity.COLOR_DARK,"Color de la flecha","Flecha de datos");
         return new Group(b);
     }
 
     private static Group wifi() {
-        Builder b = builder("wifi", "Wi-Fi 图标", "位置、大小与颜色分别设置，透明度跟随原生状态。", STATUSBAR, "wifi_enabled");
-        controls(b, "wifi", "独立开关", false);
-        b.toggle("wifi_icon_enabled", "仿 iOS Wi-Fi 样式", "保留真实 Wi-Fi 信号强度", "独立开关");
-        b.toggle("wifi_activity_hidden", "隐藏 Wi-Fi 上传下载箭头", "保留 Wi-Fi 图标与连接状态", "独立开关");
-        b.toggle("wifi_badge_hidden", "隐藏 Wi-Fi 角标", "减少重复网络标识", "独立开关");
-        b.toggle(StatusBarLayoutSettings.WIFI_LABEL_SHARED, "Wi-Fi 与网络制式共用位置",
-                "Wi-Fi 与网络制式使用同一相对位置、排序和左右边距。", "共用位置");
-        position(b, "wifi", "位置"); layoutMargins(b, StatusBarLayoutSettings.WIFI, "左右间距");
-        scale(b, StatusBarSettings.WIFI_ICON_SCALE, "图标大小", "大小");
-        normalColors(b, "wifi", "Wi-Fi 图标");
+        Builder b = builder("wifi", "Icono de Wi-Fi", "Configura por separado la posición, el tamaño y el color; la transparencia sigue al estado nativo.", STATUSBAR, "wifi_enabled");
+        controls(b, "wifi", "Interruptor independiente", false);
+        b.toggle("wifi_icon_enabled", "Estilo de Wi-Fi similar a iOS", "Conservar la intensidad real de la señal Wi-Fi", "Interruptor independiente");
+        b.toggle("wifi_activity_hidden", "Ocultar las flechas de subida y descarga de Wi-Fi", "Conservar el icono Wi-Fi y el estado de conexión", "Interruptor independiente");
+        b.toggle("wifi_badge_hidden", "Ocultar el indicador de Wi-Fi", "Reducir los indicadores de red duplicados", "Interruptor independiente");
+        b.toggle(StatusBarLayoutSettings.WIFI_LABEL_SHARED, "Compartir posición entre Wi-Fi y el tipo de red",
+                "Wi-Fi y el tipo de red usan la misma posición relativa, orden y márgenes laterales.", "Posición compartida");
+        position(b, "wifi", "Posición"); layoutMargins(b, StatusBarLayoutSettings.WIFI, "Espaciado lateral");
+        scale(b, StatusBarSettings.WIFI_ICON_SCALE, "Tamaño del icono", "Tamaño");
+        normalColors(b, "wifi", "Icono de Wi-Fi");
         return new Group(b);
     }
     private static Group label() {
-        Builder b = builder("label", "网络制式文字", "跟随主流量卡。“统一”与“自定义”二选一：开统一，5G 系列都显示 5G、4G 系列都显示 4G；开自定义，每种制式显示你写的文字。Wi-Fi 接通后隐藏，Wi-Fi 与移动数据都关闭时也自动隐藏。", STATUSBAR, "label_enabled");
-        controls(b, "label", "独立开关", true);
-        b.toggle(StatusBarSettings.LABEL_HIDDEN, "隐藏网络制式文字", "隐藏 5G、4G 等文字标识", "独立开关");
-        b.toggle("label_normalize_enabled", "统一网络制式名称", "5G、5G+、5GA 等都显示 5G；4G、4G+、4.5G 等都显示 4G；H、H+ 显示 3G。与“自定义制式显示内容”互斥：开启它会关闭自定义。", "独立开关");
-        b.toggle(NetworkLabelFormats.ENABLED, "自定义制式显示内容", "每种制式分别设置文字或表情，例如 5G 显示“XX”、5GA 显示“5Ga”。留空则隐藏这种制式；未识别的运营商标识保留系统原文。与“统一网络制式名称”互斥：开启它会关闭统一。", "显示内容");
+        Builder b = builder("label", "Texto del tipo de red", "Sigue a la SIM principal. Elige entre «Uniforme» y «Personalizado»: el modo uniforme muestra 5G para las variantes de 5G y 4G para las variantes de 4G; el personalizado muestra el texto que escribas para cada tipo. Se oculta cuando hay Wi-Fi conectado y también cuando tanto el Wi-Fi como los datos móviles están desactivados.", STATUSBAR, "label_enabled");
+        controls(b, "label", "Interruptor independiente", true);
+        b.toggle(StatusBarSettings.LABEL_HIDDEN, "Ocultar el texto del tipo de red", "Ocultar las etiquetas de texto como 5G y 4G", "Interruptor independiente");
+        b.toggle("label_normalize_enabled", "Unificar el nombre del tipo de red", "5G, 5G+ y 5GA se muestran como 5G; 4G, 4G+ y 4.5G como 4G; H y H+ como 3G. Es incompatible con «Contenido personalizado del tipo de red»: al activar esta opción se desactiva la personalización.", "Interruptor independiente");
+        b.toggle(NetworkLabelFormats.ENABLED, "Contenido personalizado del tipo de red", "Configura un texto o emoji para cada tipo de red; por ejemplo, mostrar «XX» para 5G y «5Ga» para 5GA. Déjalo vacío para ocultar ese tipo. Las etiquetas del operador que no se reconozcan conservan el texto original del sistema. Es incompatible con «Unificar el nombre del tipo de red»: al activarlo, se desactiva el modo uniforme.", "Contenido mostrado");
         for (NetworkLabel.Level level : NetworkLabel.Level.values())
-            b.text(NetworkLabelFormats.key(level), level.text + " 显示内容",
-                    "默认 " + level.text + "；只替换显示的文字，不改变实际网络。留空隐藏这种制式。",
-                    level.family + " · 自定义显示内容", null, null);
-        position(b, "label", "位置"); layoutMargins(b, StatusBarLayoutSettings.LABEL, "左右间距");
-        scale(b, StatusBarSettings.LABEL_SCALE, "文字大小", "大小");
-        b.number(StatusBarSettings.SLOT_WIDTH, "预留宽度", "文字与间距", "dp", 0, 80, .01f);
-        b.number(StatusBarSettings.FONT_WEIGHT, "文字粗细", "文字与间距", "", 100, 900, 1);
-        normalColors(b, "label", "网络制式文字");
+            b.text(NetworkLabelFormats.key(level), level.text + " Contenido mostrado",
+                    "Predeterminado " + level.text + "; solo sustituye el texto visible, no cambia la red real. Déjalo vacío para ocultar este tipo de red.",
+                    level.family + " · Contenido personalizado", null, null);
+        position(b, "label", "Posición"); layoutMargins(b, StatusBarLayoutSettings.LABEL, "Espaciado lateral");
+        scale(b, StatusBarSettings.LABEL_SCALE, "Tamaño del texto", "Tamaño");
+        b.number(StatusBarSettings.SLOT_WIDTH, "Ancho reservado", "Texto y espaciado", "dp", 0, 80, .01f);
+        b.number(StatusBarSettings.FONT_WEIGHT, "Grosor del texto", "Texto y espaciado", "", 100, 900, 1);
+        normalColors(b, "label", "Texto del tipo de red");
         return new Group(b);
     }
     private static Group clock(String id, String category) {
         boolean shade = "shade_clock".equals(id);
-        Builder b = builder(id, shade ? "通知栏与控制中心时钟" : "状态栏时间", shade ? "独立设置下拉时钟；关闭后跟随状态栏时间格式与文字样式。竖屏通知页的大时钟优先显示。" : "默认时钟与双排时钟二选一，开关在各自标签的顶部。等宽数字、数字间距、冒号对齐和左右间距在“通用设置”中调整，两种模式共用。", category, id + "_controls_enabled");
-        controls(b, id, "独立开关", true);
-        b.toggle(id + "_enabled", "自定义时间格式", "支持时分秒、日期、星期与中文时段", "时间格式");
-        b.text(id + "_pattern", "时间格式", "时间显示的内容，可选常用格式或自定义", "时间格式", CLOCK_VALUES, CLOCK_LABELS);
-        position(b, id, "位置"); textSize(b, id, "文字样式"); normalColors(b, id, "时间文字");
-        digitCells(b, id, "数字对齐");
-        if (!shade) { layoutMargins(b, StatusBarLayoutSettings.CLOCK, "左右间距"); clockLayout(b); }
+        Builder b = builder(id, shade ? "Reloj del panel de notificaciones y del centro de control" : "Hora de la barra de estado", shade ? "Configura el reloj del panel desplegado por separado; si se desactiva, sigue el formato horario y el estilo de texto de la barra de estado. El reloj grande de la página de notificaciones en vertical tiene prioridad." : "El reloj estándar y el reloj de dos filas son excluyentes; sus interruptores están en la parte superior de cada pestaña. El ancho uniforme de los números, su espaciado, la alineación de los dos puntos y los márgenes se ajustan en «Ajustes generales» y se comparten entre ambos modos.", category, id + "_controls_enabled");
+        controls(b, id, "Interruptor independiente", true);
+        b.toggle(id + "_enabled", "Formato de hora personalizado", "Admite horas, minutos, segundos, fecha, día de la semana y franjas horarias en chino.", "Formato de hora");
+        b.text(id + "_pattern", "Formato de hora", "Contenido de la hora; puedes elegir un formato habitual o crear uno personalizado.", "Formato de hora", CLOCK_VALUES, CLOCK_LABELS);
+        position(b, id, "Posición"); textSize(b, id, "Estilo del texto"); normalColors(b, id, "Texto de la hora");
+        digitCells(b, id, "Alineación de los números");
+        if (!shade) { layoutMargins(b, StatusBarLayoutSettings.CLOCK, "Espaciado lateral"); clockLayout(b); }
         return new Group(b);
     }
     /** Fixed-width digit cells stop a seconds display from moving as proportional digits change. */
     private static void digitCells(Builder b, String group, String section) {
-        b.toggle(ClockLayoutSettings.digitKey(group), "等宽数字（防秒数跳动）",
-                "每个数字占用相同宽度，秒数变化时间距不再左右跳动。只在时间格式含秒时生效；开启后数字间距在下面单独调整。", section);
-        b.number(ClockLayoutSettings.digitSpacingKey(group), "数字间距", section, "dp", -2, 8, .01f);
-        b.toggle(ClockLayoutSettings.colonKey(group), "冒号居中",
-                "冒号按数字的视觉中线绘制，不再比数字偏低。时间格式里的冒号都生效，含秒或不含秒都一样，与等宽数字互不影响。", section);
+        b.toggle(ClockLayoutSettings.digitKey(group), "Números de ancho uniforme (evita saltos al cambiar los segundos)",
+                "Todos los números ocupan el mismo ancho, por lo que el texto no salta lateralmente cuando cambian los segundos. Solo funciona con formatos que incluyen segundos. Al activarlo, el espaciado se ajusta por separado abajo.", section);
+        b.number(ClockLayoutSettings.digitSpacingKey(group), "Espaciado entre números", section, "dp", -2, 8, .01f);
+        b.toggle(ClockLayoutSettings.colonKey(group), "Centrar los dos puntos",
+                "Dibuja los dos puntos en el centro visual de los números para evitar que queden demasiado bajos. Se aplica a todos los dos puntos del formato, con o sin segundos, y no depende del ancho uniforme.", section);
     }
     /** The two-row clock is a separate mode of the status-bar time with its own master switch (shown on its own tab). */
     private static void clockLayout(Builder b) {
-        b.toggle(ClockLayoutSettings.DUAL_ENABLED, "双排时钟",
-                "时间分上下两排显示。双排独立于“默认时钟”：不需要打开默认时钟的开关，开启后它接管状态栏时间；内容、大小、位置、颜色都在本页设置。", "内容");
-        b.text(ClockLayoutSettings.DUAL_UPPER_PATTERN, "上排内容", "第一排显示的内容，可选常用格式或自定义", "内容", DUAL_VALUES, DUAL_LABELS);
-        b.text(ClockLayoutSettings.DUAL_LOWER_PATTERN, "下排内容", "第二排显示的内容，格式规则与上排相同", "内容", DUAL_VALUES, DUAL_LABELS);
-        b.number(ClockLayoutSettings.DUAL_UPPER_SCALE, "上排大小", "大小", "%", 25, 250, .01f);
-        b.number(ClockLayoutSettings.DUAL_LOWER_SCALE, "下排大小", "大小", "%", 25, 250, .01f);
-        b.number(ClockLayoutSettings.DUAL_UPPER_WEIGHT, "上排文字粗细", "文字样式", "", 100, 900, 1);
-        b.number(ClockLayoutSettings.DUAL_LOWER_WEIGHT, "下排文字粗细", "文字样式", "", 100, 900, 1);
-        b.number(ClockLayoutSettings.DUAL_SPACING, "字距微调", "文字样式", "dp", -2, 8, .01f);
-        b.number(ClockLayoutSettings.DUAL_OFFSET_Y, "垂直位置", "位置", "dp", -24, 24, .01f);
-        b.number(ClockLayoutSettings.DUAL_LINE_GAP, "两排间距", "位置", "dp", -8, 16, .01f);
-        b.choice(ClockLayoutSettings.DUAL_ALIGN, "两排对齐", "以较宽的一排为准", "位置",
+        b.toggle(ClockLayoutSettings.DUAL_ENABLED, "Reloj de dos filas",
+                "Divide la hora en dos filas. Este modo es independiente del reloj estándar: no hace falta activar su interruptor; al habilitarlo, sustituye la hora de la barra de estado. El contenido, tamaño, posición y color se configuran aquí.", "Contenido");
+        b.text(ClockLayoutSettings.DUAL_UPPER_PATTERN, "Contenido de la fila superior", "Contenido de la primera fila; puedes elegir un formato habitual o uno personalizado.", "Contenido", DUAL_VALUES, DUAL_LABELS);
+        b.text(ClockLayoutSettings.DUAL_LOWER_PATTERN, "Contenido de la fila inferior", "Contenido de la segunda fila; usa las mismas reglas de formato que la superior.", "Contenido", DUAL_VALUES, DUAL_LABELS);
+        b.number(ClockLayoutSettings.DUAL_UPPER_SCALE, "Tamaño de la fila superior", "Tamaño", "%", 25, 250, .01f);
+        b.number(ClockLayoutSettings.DUAL_LOWER_SCALE, "Tamaño de la fila inferior", "Tamaño", "%", 25, 250, .01f);
+        b.number(ClockLayoutSettings.DUAL_UPPER_WEIGHT, "Grosor de texto de la fila superior", "Estilo del texto", "", 100, 900, 1);
+        b.number(ClockLayoutSettings.DUAL_LOWER_WEIGHT, "Grosor de texto de la fila inferior", "Estilo del texto", "", 100, 900, 1);
+        b.number(ClockLayoutSettings.DUAL_SPACING, "Ajuste del espaciado", "Estilo del texto", "dp", -2, 8, .01f);
+        b.number(ClockLayoutSettings.DUAL_OFFSET_Y, "Posición vertical", "Posición", "dp", -24, 24, .01f);
+        b.number(ClockLayoutSettings.DUAL_LINE_GAP, "Separación entre filas", "Posición", "dp", -8, 16, .01f);
+        b.choice(ClockLayoutSettings.DUAL_ALIGN, "Alineación de las dos filas", "Tomar como referencia la fila más ancha", "Posición",
                 new String[]{ClockLayoutSettings.ALIGN_CENTER, ClockLayoutSettings.ALIGN_LEFT, ClockLayoutSettings.ALIGN_RIGHT},
-                new String[]{"居中", "靠左", "靠右"});
-        b.toggle(ClockLayoutSettings.DUAL_COLOR_ENABLED, "自定义颜色", "关闭时双排沿用系统随背景变化的原生颜色；开启后按浅色、深色背景分别设置。", "颜色与透明度");
-        b.colorPair(ClockLayoutSettings.DUAL_COLOR_LIGHT, ClockLayoutSettings.DUAL_COLOR_DARK, "时间文字", "颜色与透明度");
+                new String[]{"Centrar", "Alinear a la izquierda", "Alinear a la derecha"});
+        b.toggle(ClockLayoutSettings.DUAL_COLOR_ENABLED, "Color personalizado", "Si está desactivado, las dos filas usan el color nativo que cambia según el fondo; al activarlo, puedes definir colores distintos para fondos claros y oscuros.", "Color y transparencia");
+        b.colorPair(ClockLayoutSettings.DUAL_COLOR_LIGHT, ClockLayoutSettings.DUAL_COLOR_DARK, "Texto de la hora", "Color y transparencia");
     }
     private static Group notificationIcons() {
-        Builder b = builder("notification_icons", "通知图标区域", "调整状态栏左侧通知图标，可选择原生图标、单个爱心、文字或图片。", STATUSBAR, NotificationIconArea.MASTER);
-        b.choice(NotificationIconArea.MODE, "显示方式", "只在存在可显示的通知时出现", "显示样式",
+        Builder b = builder("notification_icons", "Área de iconos de notificación", "Ajusta los iconos de notificación de la izquierda de la barra de estado. Puedes usar los iconos nativos, un corazón, texto o una imagen.", STATUSBAR, NotificationIconArea.MASTER);
+        b.choice(NotificationIconArea.MODE, "Modo de visualización", "Mostrar solo cuando haya notificaciones visibles", "Estilo de visualización",
                 new String[]{"native", "heart", "text", "image"},
-                new String[]{"原生通知图标", "单个爱心", "自定义符号或文字", "自定义图片"});
-        b.toggle(NotificationIconArea.FOLLOW_LAUNCHER, "跟随桌面当前图标包", "覆盖状态栏与通知消息卡片的应用标识；仅作用于原生显示方式。指定应用替换优先，头像和消息大图保持原样，无法读取时保留系统图标。", "显示样式");
-        b.text(NotificationIconArea.TEXT, "符号或文字", "最多12个字符，可输入符号或短文字", "显示样式", null, null);
-        b.add(NotificationIconArea.IMAGE_NAME, "自定义图片", "选择 PNG、JPEG 或 WebP，不超过2MB", IMAGE,
-                "显示样式", "", 0, 0, 0, null, null, null, null);
-        b.toggle(NotificationIconArea.POSITION, "垂直位置调整", "调整上下位置；左右间距在本页独立设置", "位置");
-        b.number(NotificationIconArea.Y, "垂直位置", "位置", "dp", -160, 160, .01f);
-        layoutMargins(b, StatusBarLayoutSettings.NOTIFICATION, "左右间距");
-        b.toggle(NotificationIconArea.SPACING_ENABLED,"调整图标间距","用于多个通知图标，单个符号、文字或图片不受影响","图标间距");
-        b.number(NotificationIconArea.SPACING,"图标间距增减","图标间距","dp",-10,20,.1f);
-        b.toggle(NotificationIconArea.SIZE_ENABLED, "大小调整", "应用图标或内容的大小", "大小");
-        b.number(NotificationIconArea.SIZE, "显示大小", "大小", "dp", 8, 40, .01f);
-        b.toggle("notification_icons_count_enabled", "限制原生图标数量", "只作用于原生显示方式，保留所有实际通知", "图标数量");
-        b.number("notification_icons_max_count", "最多显示图标数量", "图标数量", "个", 0, 10, 1);
-        b.toggle(NotificationIconArea.COLOR_ENABLED, "颜色调整", "关闭后跟随系统图标颜色", "颜色与透明度");
-        b.colorPair("notification_icons_color_light", "notification_icons_color_dark", "图标颜色", "颜色与透明度");
+                new String[]{"Iconos de notificación nativos", "Un solo corazón", "Símbolo o texto personalizado", "Imagen personalizada"});
+        b.toggle(NotificationIconArea.FOLLOW_LAUNCHER, "Usar el paquete de iconos actual del lanzador", "Sustituye los iconos de las aplicaciones en la barra de estado y en las tarjetas de mensajes de notificación; solo afecta al modo nativo. Las sustituciones específicas por aplicación tienen prioridad. Los avatares y las imágenes grandes de los mensajes no cambian; si no se pueden leer, se conserva el icono del sistema.", "Estilo de visualización");
+        b.text(NotificationIconArea.TEXT, "Símbolo o texto", "Hasta 12 caracteres; se admiten símbolos o textos cortos.", "Estilo de visualización", null, null);
+        b.add(NotificationIconArea.IMAGE_NAME, "Imagen personalizada", "Selecciona PNG, JPEG o WebP de hasta 2 MB.", IMAGE,
+                "Estilo de visualización", "", 0, 0, 0, null, null, null, null);
+        b.toggle(NotificationIconArea.POSITION, "Ajustar posición vertical", "Ajusta la posición vertical; el espaciado horizontal se configura por separado en esta página.", "Posición");
+        b.number(NotificationIconArea.Y, "Posición vertical", "Posición", "dp", -160, 160, .01f);
+        layoutMargins(b, StatusBarLayoutSettings.NOTIFICATION, "Espaciado lateral");
+        b.toggle(NotificationIconArea.SPACING_ENABLED,"Ajustar el espaciado de los iconos","Se aplica a varios iconos de notificación; no afecta a un solo símbolo, texto o imagen.","Espaciado de iconos");
+        b.number(NotificationIconArea.SPACING,"Ajuste del espaciado entre iconos","Espaciado de iconos","dp",-10,20,.1f);
+        b.toggle(NotificationIconArea.SIZE_ENABLED, "Ajustar tamaño", "Tamaño del icono de la aplicación o del contenido", "Tamaño");
+        b.number(NotificationIconArea.SIZE, "Tamaño visible", "Tamaño", "dp", 8, 40, .01f);
+        b.toggle("notification_icons_count_enabled", "Limitar la cantidad de iconos nativos", "Solo afecta al modo de visualización nativo; todas las notificaciones reales se conservan.", "Cantidad de iconos");
+        b.number("notification_icons_max_count", "Cantidad máxima de iconos visibles", "Cantidad de iconos", "unidades", 0, 10, 1);
+        b.toggle(NotificationIconArea.COLOR_ENABLED, "Ajustar color", "Si está desactivado, se usa el color de iconos del sistema.", "Color y transparencia");
+        b.colorPair("notification_icons_color_light", "notification_icons_color_dark", "Color de iconos", "Color y transparencia");
         return new Group(b);
     }
     private static Group notificationOverrides() {
-        Builder b = builder("notification_icon_overrides", "指定应用通知图标", "从系统或非系统应用中选择，将其状态栏通知图标替换为文字、表情或其他应用的图标。每个应用独立设置，不修改通知内容。来源应用缺失时保留原生图标。", STATUSBAR, NotificationIconOverrides.MASTER);
-        b.text(NotificationIconOverrides.RULES, "管理应用替换", "选择应用与替换内容，可分别启用、编辑或删除", "应用规则", null, null);
+        Builder b = builder("notification_icon_overrides", "Icono de notificación por aplicación", "Elige una aplicación del sistema o de terceros y sustituye su icono de notificación en la barra de estado por texto, emoji o el icono de otra aplicación. Cada aplicación se configura por separado y el contenido de la notificación no se modifica. Si la aplicación de origen no está disponible, se conserva el icono original.", STATUSBAR, NotificationIconOverrides.MASTER);
+        b.text(NotificationIconOverrides.RULES, "Gestionar sustituciones por aplicación", "Elige la aplicación y el contenido sustituto; puedes activarlo, editarlo o eliminarlo por separado.", "Reglas de aplicaciones", null, null);
         return new Group(b);
     }
     private static Group iconLibrary() {
-        Builder b = builder("status_icon_library", "图标管理", "导入图标库后选择套装范围，或按功能单独设置图案、状态、颜色与透明度。关闭总开关暂停全部图标管理效果，保留配置与图标库；重新开启后恢复。", OTHER, IconManagementSettings.ENABLED);
-        b.text(IconManagementSettings.KEY, "管理图标", "图标库、套装应用、各功能图案与颜色", "图标管理", null, null);
+        Builder b = builder("status_icon_library", "Gestión de iconos", "Importa una biblioteca de iconos y elige los conjuntos a los que aplicarla, o configura iconos, estados, colores y transparencia por función. Al desactivar el interruptor principal se pausan todos los cambios, pero se conservan la configuración y las bibliotecas. Al volver a activarlo, se restauran.", OTHER, IconManagementSettings.ENABLED);
+        b.text(IconManagementSettings.KEY, "Gestionar iconos", "Bibliotecas de iconos, aplicación de conjuntos, iconos por función y colores.", "Gestión de iconos", null, null);
         return new Group(b);
     }
     private static Group carrier() {
-        Builder b = builder("carrier", "运营商文字自定义", "通知栏、控制中心与锁屏分别设置运营商、时间或纯文本。", NOTIFICATION, "carrier_enabled");
-        layoutMargins(b, StatusBarLayoutSettings.CARRIER, "左右间距");
-        String[] titles = {"通知页", "控制中心", "锁屏"};
+        Builder b = builder("carrier", "Personalización del texto del operador", "Configura por separado el operador, la hora o el texto simple en el panel de notificaciones, el centro de control y la pantalla de bloqueo.", NOTIFICATION, "carrier_enabled");
+        layoutMargins(b, StatusBarLayoutSettings.CARRIER, "Espaciado lateral");
+        String[] titles = {"Panel de notificaciones", "Centro de control", "Pantalla de bloqueo"};
         for (int i = 0; i < CarrierPanels.GROUPS.length; i++) {
             String p = CarrierPanels.GROUPS[i], s = titles[i];
-            b.toggle(p + "_enabled", "启用" + s + "独立设置", i == 2 ? "关闭时恢复系统运营商内容" : "只作用于此界面", s);
-            controls(b, p, s + " · 独立开关", true);
-            b.toggle(p + "_replace_enabled", "运营商替换", "应用下面所选的显示内容", s + " · 显示内容");
-            b.choice(p + "_mode", "显示内容", "运营商位置显示什么：系统运营商、自定义时间或纯文本", s + " · 显示内容", new String[]{"original", "time", "text"}, new String[]{"运营商", "自定义时间", "纯文本"});
-            b.text(p + "_pattern", "时间格式", "“显示内容”选自定义时间时显示的内容", s + " · 显示内容", CLOCK_VALUES, CLOCK_LABELS);
-            b.text(p + "_text", "自定义文本", "“显示内容”选纯文本时显示的文字，中文、英文、emoji 均可", s + " · 显示内容", null, null);
-            position(b, p, s + " · 位置"); textSize(b, p, s + " · 文字样式");
-            b.colorPair(p + "_color_light", p + "_color_dark", "运营商文字", s + " · 颜色与透明度");
+            b.toggle(p + "_enabled", "Activar" + s + "Configuración independiente", i == 2 ? "Al desactivarlo, restaura el texto del operador del sistema." : "Solo se aplica a esta interfaz", s);
+            controls(b, p, s + " · Interruptor independiente", true);
+            b.toggle(p + "_replace_enabled", "Sustitución del operador", "Aplica el contenido mostrado seleccionado abajo.", s + " · Contenido mostrado");
+            b.choice(p + "_mode", "Contenido mostrado", "Qué se muestra en la posición del operador: el operador del sistema, una hora personalizada o texto simple.", s + " · Contenido mostrado", new String[]{"original", "time", "text"}, new String[]{"Operador", "Hora personalizada", "Solo texto"});
+            b.text(p + "_pattern", "Formato de hora", "Contenido que se muestra cuando «Contenido mostrado» está configurado como hora personalizada.", s + " · Contenido mostrado", CLOCK_VALUES, CLOCK_LABELS);
+            b.text(p + "_text", "Texto personalizado", "Texto que se muestra cuando «Contenido mostrado» está configurado como texto simple; admite chino, inglés y emoji.", s + " · Contenido mostrado", null, null);
+            position(b, p, s + " · Posición"); textSize(b, p, s + " · Estilo del texto");
+            b.colorPair(p + "_color_light", p + "_color_dark", "Texto del operador", s + " · Color y transparencia");
         }
         return new Group(b);
     }
     private static Group classicText() {
         String carrier = CarrierPanels.CLASSIC, clock = ClassicTextSettings.CLOCK;
-        Builder b = builder("classic_text", "经典模式文字自定义",
-                "只作用于系统经典下拉面板。运营商与时间日期分别设置，各标签中的具名开关控制对应功能；格式、位置、大小、颜色和透明度分别保存。切到分离模式暂停使用，原配置保留。",
+        Builder b = builder("classic_text", "Personalización de texto en modo clásico",
+                "Solo se aplica al panel desplegable clásico del sistema. El operador y la fecha/hora se configuran por separado, y los interruptores de cada pestaña controlan sus respectivas funciones. El formato, la posición, el tamaño, el color y la transparencia se guardan de forma independiente. Al cambiar al modo separado, esta función queda en pausa y se conserva la configuración.",
                 NOTIFICATION, carrier + "_enabled");
-        controls(b, carrier, "运营商 · 独立开关", true);
-        b.toggle(carrier + "_replace_enabled", "运营商替换", "选择原生运营商、自定义时间日期或纯文本", "运营商 · 显示内容");
-        b.choice(carrier + "_mode", "显示内容", "运营商位置显示什么：系统运营商、自定义时间日期或纯文本", "运营商 · 显示内容", new String[]{"original", "time", "text"}, new String[]{"运营商", "自定义时间与日期", "纯文本"});
-        b.text(carrier + "_pattern", "时间与日期格式", "“显示内容”选自定义时间与日期时显示的内容", "运营商 · 显示内容", CLOCK_VALUES, CLOCK_LABELS);
-        b.text(carrier + "_text", "自定义运营商文字", "“显示内容”选纯文本时显示的文字，中文、英文、emoji 均可", "运营商 · 显示内容", null, null);
-        position(b, carrier, "运营商 · 位置"); textSize(b, carrier, "运营商 · 文字样式");
-        b.colorPair(carrier + "_color_light", carrier + "_color_dark", "运营商颜色", "运营商 · 颜色与透明度");
-        b.toggle(ClassicTextSettings.CLOCK_MASTER, "独立调整经典模式时间", "与本页运营商开关独立，关闭恢复经典面板原生时间", "时间 · 功能开关");
-        controls(b, clock, "时间 · 独立开关", true);
-        b.toggle(clock + "_enabled", "自定义时间格式", "支持时间、日期和星期", "时间 · 时间格式");
-        b.text(clock + "_pattern", "时间与日期格式", "经典面板时间显示的内容，可选常用格式或自定义", "时间 · 时间格式", CLOCK_VALUES, CLOCK_LABELS);
-        position(b, clock, "时间 · 位置"); textSize(b, clock, "时间 · 文字样式");
-        b.colorPair(clock + "_color_light", clock + "_color_dark", "时间颜色", "时间 · 颜色与透明度");
-        digitCells(b, clock, "时间 · 数字对齐");
+        controls(b, carrier, "Operador · Interruptor independiente", true);
+        b.toggle(carrier + "_replace_enabled", "Sustitución del operador", "Elige el operador nativo, fecha y hora personalizadas o texto simple.", "Operador · Contenido mostrado");
+        b.choice(carrier + "_mode", "Contenido mostrado", "Qué se muestra en la posición del operador: el operador del sistema, fecha y hora personalizadas o texto simple.", "Operador · Contenido mostrado", new String[]{"original", "time", "text"}, new String[]{"Operador", "Fecha y hora personalizadas", "Solo texto"});
+        b.text(carrier + "_pattern", "Formato de fecha y hora", "Contenido que se muestra cuando «Contenido mostrado» está configurado como fecha y hora personalizadas.", "Operador · Contenido mostrado", CLOCK_VALUES, CLOCK_LABELS);
+        b.text(carrier + "_text", "Texto personalizado del operador", "Texto que se muestra cuando «Contenido mostrado» está configurado como texto simple; admite chino, inglés y emoji.", "Operador · Contenido mostrado", null, null);
+        position(b, carrier, "Operador · Posición"); textSize(b, carrier, "Operador · Estilo del texto");
+        b.colorPair(carrier + "_color_light", carrier + "_color_dark", "Color del operador", "Operador · Color y transparencia");
+        b.toggle(ClassicTextSettings.CLOCK_MASTER, "Ajustar por separado la hora del modo clásico", "Es independiente del interruptor del operador de esta página; si se desactiva, se restaura la hora nativa del panel clásico.", "Hora · Interruptor de función");
+        controls(b, clock, "Hora · Interruptor independiente", true);
+        b.toggle(clock + "_enabled", "Formato de hora personalizado", "Admite hora, fecha y día de la semana.", "Hora · Formato de hora");
+        b.text(clock + "_pattern", "Formato de fecha y hora", "Contenido de la hora del panel clásico; puedes elegir un formato habitual o uno personalizado.", "Hora · Formato de hora", CLOCK_VALUES, CLOCK_LABELS);
+        position(b, clock, "Hora · Posición"); textSize(b, clock, "Hora · Estilo del texto");
+        b.colorPair(clock + "_color_light", clock + "_color_dark", "Color de la hora", "Hora · Color y transparencia");
+        digitCells(b, clock, "Hora · Alineación de los números");
         return new Group(b);
     }
     /**
@@ -595,253 +595,253 @@ public final class SettingsCatalog {
      * cropper and the rest), whether it is used, its brightness and blur, and for the notification centre the clock zone.
      */
     private static Group shadeWallpaperPage(boolean landscape) {
-        String name = landscape ? "横屏" : "竖屏";
-        Builder b = builder(landscape ? "shade_wallpaper_landscape" : "shade_wallpaper_portrait", name + "下拉壁纸",
-                "功能未完成。" + name + "时下拉面板的壁纸。通知中心和控制中心各有一页：从相册选图、缩放裁剪，再调亮度和模糊；通知中心还能给大时钟所在的区域单独设置。"
-                        + "壁纸随下拉进度出现、随左右切页混合；只设了一个面板时，另一个面板沿用同一张。大时钟的“锁屏质感”透出的就是这里的壁纸。",
+        String name = landscape ? "Horizontal" : "Vertical";
+        Builder b = builder(landscape ? "shade_wallpaper_landscape" : "shade_wallpaper_portrait", name + "Fondo de pantalla del panel desplegable",
+                "Función aún no terminada." + name + "Fondo de pantalla del panel desplegable. El centro de notificaciones y el centro de control tienen páginas independientes: elige una imagen de la galería, recórtala y ajusta el brillo y el desenfoque. En el centro de notificaciones también puedes configurar por separado el área del reloj grande."
+                        + "El fondo aparece según el progreso del despliegue y se mezcla al cambiar de página lateralmente. Si solo configuras un panel, el otro usa la misma imagen. La textura de bloqueo del reloj grande deja ver este fondo.",
                 OTHER, ShadeWallpaperSettings.masterKey(landscape));
-        b.toggle(ShadeWallpaperSettings.blurWithPullKey(landscape), "随下拉渐变模糊",
-                "壁纸在刚拉下时是清晰的，随下拉逐渐变成设定的模糊程度，和系统自己的下拉模糊一致；关闭则一开始就是设定的模糊。两个面板共用。", "下拉过程");
-        b.toggle(ShadeWallpaperSettings.swipeSlideKey(landscape), "左右切换时壁纸跟着滑动",
-                "在通知中心和控制中心之间左右滑动时：关闭是两张壁纸随手势淡入淡出（背景不动），开启是两张壁纸跟着页面一起平移。只有两个面板的图片不同才有区别；同一张图始终不动。", "下拉过程");
+        b.toggle(ShadeWallpaperSettings.blurWithPullKey(landscape), "Desenfoque gradual al desplegar",
+                "El fondo empieza nítido y se desenfoca progresivamente al desplegarse, igual que el desenfoque nativo del sistema. Si se desactiva, empieza directamente con el nivel de desenfoque configurado. Se comparte entre ambos paneles.", "Progreso del despliegue");
+        b.toggle(ShadeWallpaperSettings.swipeSlideKey(landscape), "Desplazar el fondo al cambiar de página lateralmente",
+                "Al deslizar horizontalmente entre el centro de notificaciones y el centro de control, desactivado hace que los dos fondos aparezcan y desaparezcan gradualmente sin moverse; activado hace que se desplacen junto con las páginas. Solo se nota si las imágenes son distintas; si son iguales, la imagen permanece fija.", "Progreso del despliegue");
         String[] scenes = {landscape ? ShadeWallpaperSettings.NOTIFICATION_LANDSCAPE : ShadeWallpaperSettings.NOTIFICATION_PORTRAIT,
                 landscape ? ShadeWallpaperSettings.CONTROL_LANDSCAPE : ShadeWallpaperSettings.CONTROL_PORTRAIT,
                 landscape ? ShadeWallpaperSettings.CLASSIC_LANDSCAPE : ShadeWallpaperSettings.CLASSIC_PORTRAIT};
-        String[] panels = {"通知中心", "控制中心", "经典下拉"};
+        String[] panels = {"Centro de notificaciones", "Centro de control", "Panel desplegable clásico"};
         for (int i = 0; i < scenes.length; i++) {
             String scene = scenes[i], panel = panels[i];
-            b.text(ShadeWallpaperSettings.revisionKey(scene), "壁纸图片", "从相册选择图片，缩放、拖动、旋转来裁剪；没有图片时使用原生背景。", "壁纸图片", null, null);
-            b.toggle(ShadeWallpaperSettings.enabledKey(scene), "使用" + panel + "壁纸",
-                    i == 2 ? "系统是经典下拉（通知与控制中心在同一个面板）时使用这张图片；分离模式不用这一页。"
-                            : "启用后，" + name + "下拉的" + panel + "使用这张图片；没有图片或关闭时使用原生背景。", "显示");
-            b.number(ShadeWallpaperSettings.brightnessKey(scene), "图片明暗", "显示", "%", 0, 200, 1f);
-            b.number(ShadeWallpaperSettings.blurKey(scene), "壁纸模糊", "显示", "dp", 0, ShadeWallpaperSettings.MAX_BLUR_DP, .5f);
+            b.text(ShadeWallpaperSettings.revisionKey(scene), "Imagen de fondo", "Selecciona una imagen de la galería y recórtala con zoom, desplazamiento y rotación. Si no hay imagen, se usa el fondo nativo.", "Imagen de fondo", null, null);
+            b.toggle(ShadeWallpaperSettings.enabledKey(scene), "Usar" + panel + "Fondo de pantalla",
+                    i == 2 ? "Esta imagen se usa cuando el sistema tiene el panel desplegable clásico (notificaciones y centro de control en el mismo panel). No se usa en el modo separado."
+                            : "Al activarlo, el panel de" + name + " desplegado usa" + panel + "esta imagen; si no hay imagen o está desactivado, se usa el fondo nativo.", "Mostrar");
+            b.number(ShadeWallpaperSettings.brightnessKey(scene), "Brillo de la imagen", "Mostrar", "%", 0, 200, 1f);
+            b.number(ShadeWallpaperSettings.blurKey(scene), "Desenfoque del fondo de pantalla", "Mostrar", "dp", 0, ShadeWallpaperSettings.MAX_BLUR_DP, .5f);
             if (!ShadeWallpaperSettings.hasZone(scene)) continue;
-            b.toggle(ShadeWallpaperSettings.zoneEnabledKey(scene), "大时钟区域单独设置", "大时钟所在的顶部区域用自己的一套：字下背景模糊、提亮、饱和度、叠加色，向下平滑过渡到上面的设置。大时钟的玻璃质感透出的就是这块区域的画面。", "大时钟区域");
-            b.number(ShadeWallpaperSettings.zoneBlurKey(scene), "字下背景模糊", "大时钟区域", "dp", 0, ShadeWallpaperSettings.MAX_BLUR_DP, .5f);
-            b.add(ShadeWallpaperSettings.zoneLiftKey(scene), "字下背景提亮", "正数向白色提亮、负数向黑色压暗，0 不改变。只作用于大时钟区域的背景。", NUMERIC, "大时钟区域", "%", -100, 100, 1f, null, null, null, null);
-            b.add(ShadeWallpaperSettings.zoneSaturationKey(scene), "字下背景饱和度", "100% 保持原色，0% 变成灰色，200% 加倍鲜艳。", NUMERIC, "大时钟区域", "%", 0, 200, 1f, null, null, null, null);
-            b.add(ShadeWallpaperSettings.zoneTintKey(scene), "字下背景叠加色", "盖在大时钟区域背景上的一层颜色，浓淡由下面的“叠加强度”决定。", COLOR, "大时钟区域", "", 0, 0, 0, null, null, null, null);
-            b.add(ShadeWallpaperSettings.zoneTintStrengthKey(scene), "叠加强度", "0% 不叠加，100% 完全是叠加色。", NUMERIC, "大时钟区域", "%", 0, 100, 1f, null, null, null, null);
-            b.toggle(ShadeWallpaperSettings.zoneFollowKey(scene), "区域高度跟随大时钟", "区域的下沿取大时钟（含日期）的下沿，随字号和位置变化；关闭后用下面的固定高度。", "大时钟区域");
-            b.number(ShadeWallpaperSettings.zoneHeightKey(scene), "区域高度", "大时钟区域", "dp", 0, ShadeWallpaperSettings.MAX_ZONE_HEIGHT_DP, 1f);
-            b.number(ShadeWallpaperSettings.zoneFeatherKey(scene), "过渡高度", "大时钟区域", "dp", 0, ShadeWallpaperSettings.MAX_ZONE_FEATHER_DP, 1f);
+            b.toggle(ShadeWallpaperSettings.zoneEnabledKey(scene), "Configuración independiente del área del reloj grande", "La zona superior del reloj grande tiene sus propios ajustes: desenfoque del fondo bajo el texto, brillo, saturación y color superpuesto. Se funde suavemente con los ajustes de abajo. La textura de vidrio del reloj grande deja ver la imagen de esta zona.", "Área del reloj grande");
+            b.number(ShadeWallpaperSettings.zoneBlurKey(scene), "Desenfoque del fondo bajo el texto", "Área del reloj grande", "dp", 0, ShadeWallpaperSettings.MAX_BLUR_DP, .5f);
+            b.add(ShadeWallpaperSettings.zoneLiftKey(scene), "Aclarar el fondo bajo el texto", "Los valores positivos aclaran hacia el blanco, los negativos oscurecen hacia el negro y 0 no cambia nada. Solo afecta al fondo del área del reloj grande.", NUMERIC, "Área del reloj grande", "%", -100, 100, 1f, null, null, null, null);
+            b.add(ShadeWallpaperSettings.zoneSaturationKey(scene), "Saturación del fondo bajo el texto", "100 % conserva los colores originales, 0 % los convierte en gris y 200 % duplica la intensidad.", NUMERIC, "Área del reloj grande", "%", 0, 200, 1f, null, null, null, null);
+            b.add(ShadeWallpaperSettings.zoneTintKey(scene), "Color superpuesto al fondo bajo el texto", "Capa de color sobre el fondo del área del reloj grande; su intensidad se define con «Intensidad de superposición».", COLOR, "Área del reloj grande", "", 0, 0, 0, null, null, null, null);
+            b.add(ShadeWallpaperSettings.zoneTintStrengthKey(scene), "Intensidad de superposición", "0 % no aplica superposición; 100 % usa por completo el color superpuesto.", NUMERIC, "Área del reloj grande", "%", 0, 100, 1f, null, null, null, null);
+            b.toggle(ShadeWallpaperSettings.zoneFollowKey(scene), "Altura del área según el reloj grande", "El borde inferior del área sigue al borde inferior del reloj grande, incluida la fecha, y cambia con el tamaño y la posición del texto. Si se desactiva, se usa la altura fija indicada abajo.", "Área del reloj grande");
+            b.number(ShadeWallpaperSettings.zoneHeightKey(scene), "Altura del área", "Área del reloj grande", "dp", 0, ShadeWallpaperSettings.MAX_ZONE_HEIGHT_DP, 1f);
+            b.number(ShadeWallpaperSettings.zoneFeatherKey(scene), "Altura de la transición", "Área del reloj grande", "dp", 0, ShadeWallpaperSettings.MAX_ZONE_FEATHER_DP, 1f);
         }
         return new Group(b);
     }
     private static Group font() {
-        Builder b = builder("font", "字体配置", "先选字体，再选择作用范围；字号、粗细与颜色仍在各功能页设置。", OTHER, "font_enabled");
-        b.choice(StatusBarSettings.FONT_MODE, "文字来源", "统一选择系统、苹方、已导入和需下载的字体；支持导入、重命名和删除", "文字来源", new String[]{"system", "pingfang", "custom"}, new String[]{"跟随系统", "苹方", "自选字体"});
+        Builder b = builder("font", "Configuración de fuentes", "Primero elige la fuente y después su ámbito de aplicación; el tamaño, grosor y color siguen configurándose en cada función.", OTHER, "font_enabled");
+        b.choice(StatusBarSettings.FONT_MODE, "Origen del texto", "Elige de forma unificada fuentes del sistema, PingFang, fuentes importadas o descargables. Puedes importarlas, cambiarles el nombre y eliminarlas.", "Origen del texto", new String[]{"system", "pingfang", "custom"}, new String[]{"Seguir al sistema", "PingFang", "Fuente personalizada"});
         return new Group(b);
     }
     private static Group battery() {
-        Builder b = builder("battery", "电池", "跟随真实电量，电池外形、数字与闪电分别设置。", STATUSBAR, "battery_enabled");
-        controls(b, "battery", "独立开关", false);
-        b.toggle("battery_style_enabled", "应用所选电池样式", "关闭时恢复系统原生样式", "电池样式");
-        b.choice(StatusBarSettings.BATTERY_STYLE, "电池样式", "PUI 跟随系统的电池百分比设置：百分比显示在电池里面时显示数字，显示在外面时保留电量条。需要系统开启百分比（内部或外部），关闭时恢复系统原生样式；低电量、省电和充电颜色跟随系统。", "电池样式", new String[]{"pui", "native"}, new String[]{"PUI 默认样式", "系统原生样式"});
-        b.toggle(BatteryControls.HIDE_CHARGE, "隐藏充电图标", "隐藏电池内外的充电闪电；优先于数字与闪电切换，不改变充电状态与充电填充颜色", "充电显示");
-        b.toggle(StatusBarSettings.BATTERY_CHARGE_INSIDE, "电池内数字与闪电切换", "充电时平滑切换，停止充电后显示电量", "充电切换");
-        b.number(StatusBarSettings.BATTERY_HOLD, "每项停留时间", "充电切换", "秒", 1, 10, .01f);
-        b.number(StatusBarSettings.BATTERY_FADE, "淡入淡出时长", "充电切换", "秒", .15f, 3, .01f);
-        position(b, "battery", "位置");
-        layoutMargins(b, StatusBarLayoutSettings.BATTERY, "左右间距");
-        scale(b, StatusBarSettings.BATTERY_SCALE, "整体大小", "大小");
-        scale(b, StatusBarSettings.BATTERY_WIDTH_SCALE, "宽度微调", "大小");
-        scale(b, StatusBarSettings.BATTERY_HEIGHT_SCALE, "高度微调", "大小");
-        b.toggle(BatteryTextStyle.MASTER, "电池内文字调整", "独立调整电量数字，关闭后恢复原生文字", "电池内文字");
-        b.number(BatteryTextStyle.X, "数字水平位置", "电池内文字", "dp", -20, 20, .01f);
-        b.number(BatteryTextStyle.Y, "数字垂直位置", "电池内文字", "dp", -20, 20, .01f);
-        b.number(BatteryTextStyle.SIZE, "数字字号", "电池内文字", "sp", 4, 24, .01f);
-        b.number(BatteryTextStyle.WEIGHT, "数字字体粗细", "电池内文字", "", 100, 900, 1);
-        b.number(BatteryTextStyle.SPACING, "数字字距", "电池内文字", "dp", -2, 4, .01f);
-        normalColors(b, "battery", "电池外形与普通填充");
+        Builder b = builder("battery", "Batería", "Sigue la carga real. La carcasa de la batería, los números y el rayo se configuran por separado.", STATUSBAR, "battery_enabled");
+        controls(b, "battery", "Interruptor independiente", false);
+        b.toggle("battery_style_enabled", "Aplicar el estilo de batería seleccionado", "Si se desactiva, se restaura el estilo nativo del sistema.", "Estilo de batería");
+        b.choice(StatusBarSettings.BATTERY_STYLE, "Estilo de batería", "PUI sigue los ajustes de porcentaje de batería del sistema: si el porcentaje aparece dentro de la batería, muestra el número; si aparece fuera, conserva la barra de carga. El sistema debe tener activado el porcentaje (dentro o fuera). Al desactivarlo, se restaura el estilo nativo; los colores de batería baja, ahorro de energía y carga siguen al sistema.", "Estilo de batería", new String[]{"pui", "native"}, new String[]{"Estilo PUI predeterminado", "Estilo nativo del sistema"});
+        b.toggle(BatteryControls.HIDE_CHARGE, "Ocultar el icono de carga", "Oculta el rayo de carga dentro y fuera de la batería. Tiene prioridad sobre la alternancia entre números y rayo, y no cambia el estado de carga ni el color del relleno durante la carga.", "Indicador de carga");
+        b.toggle(StatusBarSettings.BATTERY_CHARGE_INSIDE, "Alternar entre el número y el rayo dentro de la batería", "Alterna suavemente mientras carga y muestra el nivel de batería al dejar de cargar.", "Alternancia durante la carga");
+        b.number(StatusBarSettings.BATTERY_HOLD, "Tiempo visible de cada elemento", "Alternancia durante la carga", "segundos", 1, 10, .01f);
+        b.number(StatusBarSettings.BATTERY_FADE, "Duración del fundido de entrada y salida", "Alternancia durante la carga", "segundos", .15f, 3, .01f);
+        position(b, "battery", "Posición");
+        layoutMargins(b, StatusBarLayoutSettings.BATTERY, "Espaciado lateral");
+        scale(b, StatusBarSettings.BATTERY_SCALE, "Tamaño general", "Tamaño");
+        scale(b, StatusBarSettings.BATTERY_WIDTH_SCALE, "Ajuste fino del ancho", "Tamaño");
+        scale(b, StatusBarSettings.BATTERY_HEIGHT_SCALE, "Ajuste fino de la altura", "Tamaño");
+        b.toggle(BatteryTextStyle.MASTER, "Ajustes del texto dentro de la batería", "Ajusta de forma independiente los números del nivel de batería; al desactivar, se restaura el texto nativo.", "Texto dentro de la batería");
+        b.number(BatteryTextStyle.X, "Posición horizontal de los números", "Texto dentro de la batería", "dp", -20, 20, .01f);
+        b.number(BatteryTextStyle.Y, "Posición vertical de los números", "Texto dentro de la batería", "dp", -20, 20, .01f);
+        b.number(BatteryTextStyle.SIZE, "Tamaño de los números", "Texto dentro de la batería", "sp", 4, 24, .01f);
+        b.number(BatteryTextStyle.WEIGHT, "Grosor de los números", "Texto dentro de la batería", "", 100, 900, 1);
+        b.number(BatteryTextStyle.SPACING, "Espaciado de los números", "Texto dentro de la batería", "dp", -2, 4, .01f);
+        normalColors(b, "battery", "Carcasa de la batería y relleno normal");
         String[] parts = {"text", "bolt", "charge", "alert"};
-        String[] titles = {"电量数字", "充电闪电", "充电填充", "低电量／省电填充"};
+        String[] titles = {"Número del nivel de batería", "Rayo de carga", "Relleno durante la carga", "Relleno de batería baja o ahorro de energía"};
         for (int i = 0; i < parts.length; i++) {
             String p = "battery_" + parts[i];
-            b.toggle(p + "_color_enabled", "独立" + titles[i] + "颜色", "关闭时跟随系统颜色", titles[i]);
+            b.toggle(p + "_color_enabled", "Independiente" + titles[i] + "Color", "Si está desactivado, sigue el color del sistema.", titles[i]);
             b.colorPair(p + "_color_light", p + "_color_dark", titles[i], titles[i]);
         }
         return new Group(b);
     }
     private static Group tiles() {
-        Builder b = builder("tiles", "翻页动效", "控制中心磁贴左右翻页时，离开和进入的两页各自做动效：随手指连续变化，松手后跟随系统回弹。只在翻页时绘制，静止时没有额外开销。", CONTROL_CENTER, "tiles_enabled");
-        b.choice(TilePageEffects.STYLE, "动效风格", "iOS：两页轻微缩小并渐隐；立体：两页像立方体的两个面绕接缝转动；缩放：只缩小不渐隐；渐隐：只改变透明度；经典边缘：保留原来的边缘渐隐与模糊（下方“经典边缘”参数只对它生效）。", "风格",
-                TilePageEffects.STYLES, new String[]{"iOS 渐隐缩放", "立体旋转", "缩放", "仅渐隐", "经典边缘渐隐"});
-        b.add(StatusBarSettings.TILES_STRENGTH, "效果强度", "所有风格共用：0% 没有效果，100% 为完整效果。", NUMERIC, "风格", "%", 0, 100, .01f, null, null, null, null);
-        b.toggle("tiles_portrait_enabled", "竖屏启用", "", "独立开关");
-        b.toggle("tiles_landscape_enabled", "横屏启用", "", "独立开关");
-        b.toggle("tiles_fade_enabled", "滑动边缘渐隐", "仅“经典边缘”风格", "经典边缘");
-        b.toggle("tiles_blur_enabled", "高级模糊", "仅“经典边缘”风格；默认关闭，随滑动逐渐虚化边缘", "经典边缘");
-        b.number(StatusBarSettings.TILES_LEFT_RANGE, "左侧渐隐范围", "经典边缘 · 范围与位置", "dp", 0, 192, .01f);
-        b.number(StatusBarSettings.TILES_RIGHT_RANGE, "右侧渐隐范围", "经典边缘 · 范围与位置", "dp", 0, 192, .01f);
-        b.number(StatusBarSettings.TILES_LEFT_OFFSET_X, "左侧水平位置", "经典边缘 · 范围与位置", "dp", -160, 160, .01f);
-        b.number(StatusBarSettings.TILES_RIGHT_OFFSET_X, "右侧水平位置", "经典边缘 · 范围与位置", "dp", -160, 160, .01f);
-        b.number(StatusBarSettings.TILES_OFFSET_Y, "渐隐区域垂直位置", "经典边缘 · 范围与位置", "dp", -240, 240, .01f);
-        b.number(StatusBarSettings.TILES_REGION_HEIGHT, "渐隐区域高度", "经典边缘 · 范围与位置", "dp", 0, 1000, .01f);
-        b.number(StatusBarSettings.TILES_VERTICAL_FEATHER, "上下柔和过渡范围", "经典边缘 · 范围与位置", "dp", 0, 192, .01f);
-        b.number(StatusBarSettings.TILES_BLUR_RADIUS, "模糊半径", "经典边缘", "dp", 0, 48, .01f);
+        Builder b = builder("tiles", "Animación al pasar páginas", "Al cambiar de página entre las tarjetas del centro de control, ambas páginas tienen animaciones que siguen continuamente el movimiento del dedo y vuelven con el rebote del sistema al soltarlo. Solo se dibujan durante el cambio de página, sin coste adicional cuando está quieto.", CONTROL_CENTER, "tiles_enabled");
+        b.choice(TilePageEffects.STYLE, "Estilo de animación", "iOS: ambas páginas se encogen ligeramente y se desvanecen; 3D: giran como dos caras de un cubo alrededor de la unión; zoom: solo se encogen; fundido: solo cambia la transparencia; borde clásico: conserva el desvanecimiento y desenfoque de los bordes originales (los ajustes de «Borde clásico» solo se aplican a este estilo).", "Estilo",
+                TilePageEffects.STYLES, new String[]{"Zoom y fundido estilo iOS", "Giro 3D", "Zoom", "Solo fundido", "Fundido del borde clásico"});
+        b.add(StatusBarSettings.TILES_STRENGTH, "Intensidad del efecto", "Se comparte entre todos los estilos: 0 % no aplica efectos y 100 % usa el efecto completo.", NUMERIC, "Estilo", "%", 0, 100, .01f, null, null, null, null);
+        b.toggle("tiles_portrait_enabled", "Activar en vertical", "", "Interruptor independiente");
+        b.toggle("tiles_landscape_enabled", "Activar en horizontal", "", "Interruptor independiente");
+        b.toggle("tiles_fade_enabled", "Fundido de los bordes durante el deslizamiento", "Solo para el estilo «Borde clásico»", "Borde clásico");
+        b.toggle("tiles_blur_enabled", "Desenfoque avanzado", "Solo para el estilo «Borde clásico». Desactivado de forma predeterminada; desenfoca gradualmente los bordes durante el deslizamiento.", "Borde clásico");
+        b.number(StatusBarSettings.TILES_LEFT_RANGE, "Rango de fundido del lado izquierdo", "Borde clásico · Rango y posición", "dp", 0, 192, .01f);
+        b.number(StatusBarSettings.TILES_RIGHT_RANGE, "Rango de fundido del lado derecho", "Borde clásico · Rango y posición", "dp", 0, 192, .01f);
+        b.number(StatusBarSettings.TILES_LEFT_OFFSET_X, "Posición horizontal izquierda", "Borde clásico · Rango y posición", "dp", -160, 160, .01f);
+        b.number(StatusBarSettings.TILES_RIGHT_OFFSET_X, "Posición horizontal derecha", "Borde clásico · Rango y posición", "dp", -160, 160, .01f);
+        b.number(StatusBarSettings.TILES_OFFSET_Y, "Posición vertical del área de fundido", "Borde clásico · Rango y posición", "dp", -240, 240, .01f);
+        b.number(StatusBarSettings.TILES_REGION_HEIGHT, "Altura del área de fundido", "Borde clásico · Rango y posición", "dp", 0, 1000, .01f);
+        b.number(StatusBarSettings.TILES_VERTICAL_FEATHER, "Rango de transición suave vertical", "Borde clásico · Rango y posición", "dp", 0, 192, .01f);
+        b.number(StatusBarSettings.TILES_BLUR_RADIUS, "Radio de desenfoque", "Borde clásico", "dp", 0, 48, .01f);
         return new Group(b);
     }
     private static Group tileFullFill() {
-        return new Group(builder("tile_2x1_fill", "2×1 磁贴铺满",
-                "开启的 2×1 磁贴铺满整张卡片，类似已连接的耳机卡片。关闭的磁贴保留系统玻璃；开启和关闭时都不显示图标后面的小圆框。颜色可在“磁贴颜色”中调整。关闭本功能恢复原生效果。",
+        return new Group(builder("tile_2x1_fill", "Expandir las tarjetas 2×1 para llenar el área",
+                "Las tarjetas 2×1 activadas ocupan toda la tarjeta, como la tarjeta de auriculares conectados. Las tarjetas desactivadas conservan el vidrio del sistema; en ambos estados se elimina el pequeño círculo detrás del icono. Puedes ajustar los colores en «Color de las tarjetas». Al desactivar esta función se restaura el aspecto original.",
                 CONTROL_CENTER, QsTileFullFill.ENABLED));
     }
 
     private static Group tileCorners() {
-        Builder b = builder("tile_corners", "统一圆角", "统一调整磁贴、亮度与音量滑块、音乐和设备卡片。关闭后恢复系统圆角。为避免原生绘制异常，半径仅支持 0–" + (int) QsTileCorners.MAX_RADIUS + " dp。", CONTROL_CENTER, "qs_tile_corners_enabled");
-        b.number(QsTileCorners.RADIUS, "圆角半径", "圆角", "dp", 0, QsTileCorners.MAX_RADIUS, .5f);
+        Builder b = builder("tile_corners", "Radio de esquina uniforme", "Ajusta conjuntamente las esquinas de las tarjetas, los controles deslizantes de brillo y volumen y las tarjetas de música y dispositivos. Al desactivarlo, se restauran las esquinas del sistema. Para evitar errores de dibujo nativo, el radio solo admite valores de 0 a" + (int) QsTileCorners.MAX_RADIUS + " dp。", CONTROL_CENTER, "qs_tile_corners_enabled");
+        b.number(QsTileCorners.RADIUS, "Radio de esquina", "Esquinas redondeadas", "dp", 0, QsTileCorners.MAX_RADIUS, .5f);
         return new Group(b);
     }
     private static Group tileIconSize() {
-        Builder b = builder("tile_icon_size", "1×1 磁贴与设备图标", "调整 1×1 磁贴及耳机、设备空间卡片内的图标大小，保留原生居中、卡片外形、设备电量环和点击区域。", CONTROL_CENTER, QsTileIconSize.MASTER);
-        b.number(QsTileIconSize.SIZE, "图标大小", "图标大小", "dp", 0, 64, .01f);
+        Builder b = builder("tile_icon_size", "Iconos de tarjetas y dispositivos 1×1", "Ajusta el tamaño de los iconos dentro de las tarjetas 1×1 y de las tarjetas de auriculares y espacio para dispositivos, conservando el centrado, la forma, el anillo de batería y las zonas táctiles nativos.", CONTROL_CENTER, QsTileIconSize.MASTER);
+        b.number(QsTileIconSize.SIZE, "Tamaño del icono", "Tamaño del icono", "dp", 0, 64, .01f);
         return new Group(b);
     }
     private static Group qsEntrances() {
-        Builder b = builder(QsEntrances.GROUP, "顶部按钮", "控制中心顶部左边的“编辑”和右边的“设置”按钮。隐藏后按钮不显示，也点不到（开启“使隐藏可点击”则看不见但原位置仍可点）；其余按钮和磁贴保持原生位置。关闭本页或下面的开关即恢复。", CONTROL_CENTER, QsEntrances.MASTER);
-        b.toggle(QsEntrances.EDIT_HIDDEN, "隐藏“编辑”", "控制中心左上角编辑磁贴的按钮（连同它的小红点）。隐藏后可在系统设置里调整磁贴，或临时关掉这个开关再编辑。", "按钮");
-        b.toggle(QsEntrances.SETTINGS_HIDDEN, "隐藏“设置”", "控制中心右上角打开系统设置的齿轮按钮。", "按钮");
-        b.toggle(QsEntrances.HIDDEN_CLICKABLE, "使隐藏可点击", "已隐藏的“编辑”“设置”按钮仍留在原来的位置，只是完全透明：点按原来的位置照常打开编辑或系统设置。关闭时隐藏的按钮不占位置、也点不到。只作用于上面已开启隐藏的按钮。", "按钮");
+        Builder b = builder(QsEntrances.GROUP, "Botones superiores", "Botones «Editar» (arriba a la izquierda) y «Ajustes» (arriba a la derecha) del centro de control. Al ocultarlos no se ven ni se pueden tocar; si activas «Permitir tocar elementos ocultos», quedan invisibles pero se puede tocar su posición original. Los demás botones y tarjetas conservan su posición nativa. Desactivar esta página o el interruptor restaura el comportamiento.", CONTROL_CENTER, QsEntrances.MASTER);
+        b.toggle(QsEntrances.EDIT_HIDDEN, "Ocultar «Editar»", "Oculta el botón de la esquina superior izquierda que permite editar las tarjetas, incluido su punto rojo. Después podrás ajustar las tarjetas desde los ajustes del sistema o desactivar temporalmente esta opción para editarlas.", "Botón");
+        b.toggle(QsEntrances.SETTINGS_HIDDEN, "Ocultar «Ajustes»", "Oculta el engranaje de la esquina superior derecha del centro de control que abre los ajustes del sistema.", "Botón");
+        b.toggle(QsEntrances.HIDDEN_CLICKABLE, "Permitir tocar elementos ocultos", "Los botones «Editar» y «Ajustes» ocultos permanecen en su posición original, pero son totalmente transparentes; al tocar esa zona se abre la edición o los ajustes del sistema. Si está desactivado, los botones ocultos no ocupan espacio ni se pueden tocar. Solo afecta a los botones cuya ocultación esté activada arriba.", "Botón");
         return new Group(b);
     }
     private static Group shadeIcons() {
-        Builder b = builder("shade_status_icons", "顶部图标切页", "此开关或大时钟任一开启，下拉期间隐藏顶部状态栏的小时间、通知图标与右侧图标，并隐藏通知页自己的小时间和右侧图标；通知页与控制中心都收起后恢复。左右切页时持续隐藏，不绘制副本、不移动图标。控制中心自己的右侧保持原生，左侧小时间和通知图标仅由此开关按原生边距管理。", CONTROL_CENTER, StatusBarShadeIconSettings.MASTER);
+        Builder b = builder("shade_status_icons", "Iconos superiores al cambiar de página", "Si se activa este interruptor o el reloj grande, durante el despliegue se ocultan la hora pequeña, los iconos de notificación y los iconos de la derecha de la barra de estado; también se ocultan la hora pequeña y los iconos derechos de la página de notificaciones. Se restauran cuando ambos paneles se cierran. Permanecen ocultos durante el cambio lateral, sin dibujar copias ni mover iconos. Los iconos derechos del centro de control siguen siendo nativos; este interruptor controla la hora pequeña y las notificaciones de la izquierda con los márgenes del sistema.", CONTROL_CENTER, StatusBarShadeIconSettings.MASTER);
         return new Group(b);
     }
     private static Group qs() {
-        Builder b = builder("qs_appearance", "磁贴颜色", "活动磁贴的底色、渐变与透明度，保留原生玻璃和高光。渐变效果开销大，请按需开启。", CONTROL_CENTER, QsTileAppearance.MASTER);
-        b.colorPair("qs_global_light_color", "qs_global_dark_color", "活动填充颜色", "填充颜色");
-        b.colorPair("qs_global_light_gradient_color", "qs_global_dark_gradient_color", "渐变终点颜色", "渐变颜色");
+        Builder b = builder("qs_appearance", "Color de las tarjetas", "Color de fondo, degradado y transparencia de las tarjetas activas; conserva el vidrio y los reflejos nativos. Los degradados pueden consumir más recursos; actívalos solo si los necesitas.", CONTROL_CENTER, QsTileAppearance.MASTER);
+        b.colorPair("qs_global_light_color", "qs_global_dark_color", "Color del relleno activo", "Color de relleno");
+        b.colorPair("qs_global_light_gradient_color", "qs_global_dark_gradient_color", "Color final del degradado", "Color del degradado");
         for (String scene : new String[]{"light", "dark"}) {
-            String s = "light".equals(scene) ? "浅色背景" : "深色背景", p = QsTileAppearance.prefix(scene);
-            b.toggle(p + "_gradient_enabled", "启用渐变", "渐变效果开销大；填充透明度与颜色透明度相乘", s + " · 填充效果");
-            b.number(p + "_opacity", "填充透明度", s + " · 填充效果", "%", 0, 100, .01f);
-            b.number(p + "_gradient_angle", "渐变方向", s + " · 填充效果", "°", 0, 360, .01f);
-            b.add(p + "_gradient_range", "过渡范围", RANGE_BETWEEN, NUMERIC, s + " · 填充效果", "%", 5, 100, 1f, null, null, null, null);
+            String s = "light".equals(scene) ? "Fondo claro" : "Fondo oscuro", p = QsTileAppearance.prefix(scene);
+            b.toggle(p + "_gradient_enabled", "Activar degradado", "El degradado puede consumir más recursos; la transparencia del relleno se multiplica por la transparencia del color.", s + " · Efecto de relleno");
+            b.number(p + "_opacity", "Transparencia del relleno", s + " · Efecto de relleno", "%", 0, 100, .01f);
+            b.number(p + "_gradient_angle", "Dirección del degradado", s + " · Efecto de relleno", "°", 0, 360, .01f);
+            b.add(p + "_gradient_range", "Rango de transición", RANGE_BETWEEN, NUMERIC, s + " · Efecto de relleno", "%", 5, 100, 1f, null, null, null, null);
         }
         return new Group(b);
     }
     private static Group bigClock() {
-        Builder b = builder("notification_big_clock", "竖屏大时钟", "只调整竖屏通知页，横屏单独配置。时间与通知左右边缘对齐，通知字号、图标与卡片尺寸保持原生。上滑时顶部时间与通知边缘渐隐、模糊，底部自定义文字保持清晰。默认关闭；既有竖屏配置继续保存。", NOTIFICATION, NotificationBigClockSettings.MASTER);
-        b.text(NotificationBigClockSettings.PATTERN, "时间格式", "通知页大时钟显示的内容，可选常用格式或自定义", "时间", CLOCK_VALUES, CLOCK_LABELS);
-        b.choice(NotificationBigClockSettings.FONT, "字体来源", "原生字体有三种：跟随锁屏当前字体，或指定 OPPO Sans、OPPO Digit、OPPO Serif；竖屏可分别设置展开与收起高度，其他字体保持一个高度。自选字体使用“其他 → 字体配置”中导入的文件。", "时间", NotificationBigClockSettings.FONT_VALUES, NotificationBigClockSettings.FONT_LABELS);
-        b.number(NotificationBigClockSettings.MAX_SIZE, "字体高度调节", "时间", "dp", 48, 240, .01f);
-        b.number(NotificationBigClockSettings.COMPACT_MAX_SIZE, "收起字体高度", "时间", "dp", 12, 96, .01f);
-        b.number(NotificationBigClockSettings.SCREEN_PADDING, "屏幕内间距设置", "时间", "dp", 0, 80, .1f);
-        b.number(NotificationBigClockSettings.WEIGHT, "时间字体粗细", "时间", "", 100, 900, 1);
-        b.number(NotificationBigClockSettings.LETTER_SPACING, "时间字距", "时间", "em", -.15f, .5f, .01f);
-        b.toggle(NotificationBigClockSettings.PROPORTIONAL_DIGITS, "等宽字距限制解除",
-                "时间数字按各自字形宽度排布，可配合时间字距调整；实际宽度取决于所选字体。", "时间");
-        b.toggle(NotificationBigClockSettings.TIME_ANIMATION_DISABLED, "关闭时间变动动画",
-                "时间变化时直接更新数字，保留大时钟的入场、退场、下拉和回弹动效。", "时间变动");
-        b.toggle(NotificationBigClockSettings.LOCK_STYLE, "锁屏质感",
-                "让通知页大时钟的字形和质感像锁屏的时钟：圆润的轮廓、上浓下淡的奶白字身、一侧受光的亮边、另一侧的暗部和淡淡的外发光。这是对锁屏效果的模拟，不是逐像素复制（锁屏会取壁纸画面，这里只用时钟自己的像素）。开启后“液态玻璃文字”和“玻璃边框”暂不生效，原设置会保留；需要 Android 13 及以上。", "锁屏质感");
-        b.toggle(NotificationBigClockSettings.LOCK_STYLE_NATIVE, "借用锁屏原生玻璃",
-                "锁屏显示过时钟之后，直接用锁屏时钟自己的玻璃效果（透出壁纸、折射、发光、亮边），这是最像锁屏的做法；此时只有“字身浓度”（玻璃强度）起作用。锁屏还没显示过、或系统版本不同借不到时，自动改用下面的近似模拟，下面其余强度只作用于近似模拟。", "锁屏质感");
-        b.add(NotificationBigClockSettings.LOCK_STYLE_BODY, "字身浓度", "原生玻璃的强度，也是近似模拟字身的不透明程度：100% 是锁屏的样子，越小越透。", NUMERIC, "锁屏质感", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
-        b.add(NotificationBigClockSettings.LOCK_STYLE_GRADIENT, "上浓下淡", "字身从上到下由浓变淡的幅度：0% 上下一样，越大上下差别越明显。", NUMERIC, "锁屏质感", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
-        b.add(NotificationBigClockSettings.LOCK_STYLE_RIM, "亮边强度", "受光一侧字边的高光：0% 没有高光，越大越亮。", NUMERIC, "锁屏质感", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
-        b.add(NotificationBigClockSettings.LOCK_STYLE_RIM_DEPTH, "亮边宽度", "高光和暗部向字身里面延伸的宽度：越大越宽越柔，越小越贴边。", NUMERIC, "锁屏质感", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
-        b.add(NotificationBigClockSettings.LOCK_STYLE_ROUND, "圆润度", "字形轮廓的圆润程度：0% 保持原来的锐利边角，越大越圆、越像锁屏的软糯。", NUMERIC, "锁屏质感", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
-        b.add(NotificationBigClockSettings.LOCK_STYLE_SHADE, "暗部强度", "背光一侧字边的暗色：0% 没有暗部，越大越深，字更有立体感。", NUMERIC, "锁屏质感", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
-        b.add(NotificationBigClockSettings.LOCK_STYLE_GLOW, "外发光", "字形外面一圈淡淡的光晕：0% 没有，越大越明显。", NUMERIC, "锁屏质感", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
-        b.add(NotificationBigClockSettings.LOCK_STYLE_ANGLE, "光照方向", "光从哪个方向照来：0° 来自右边，90° 来自上方，180° 来自左边，270° 来自下方，默认 300°（右下偏下）。", NUMERIC, "锁屏质感", "°", 0, 360, 1f, null, null, null, null);
-        b.toggle(NotificationBigClockSettings.DIGIT_REVEAL_ENABLED, "字内背景透出",
-                "时间字形内透出系统已有的模糊背景，移除其中的黑色压暗，再叠加可调颜色遮罩。开启后固定使用专用背景材质，原有文字颜色、液态玻璃与锁屏质感设置保留，关闭后恢复；字体来源、字号、字重、字距、位置和动效仍可调整。", "背景透出与遮罩");
-        b.toggle(NotificationBigClockSettings.FOLLOW_STYLE, "时间和日期样式跟随",
-                "默认关闭。仅在字内背景透出开启后可用：日期和附加文字跟随时间使用背景透出与同一遮罩颜色，遮罩强度可分别调整，保持平面效果；立体边缘仅用于大时钟数字。关闭时保留各自独立的颜色和外观。", "背景透出与遮罩");
-        b.add(NotificationBigClockSettings.REVEAL_MASK_COLOR, "遮罩颜色", "叠加在字形内模糊背景上的颜色，默认白色；横竖屏分别保存。颜色自身的透明度与各类文字的遮罩强度共同决定浓淡。", COLOR, "背景透出与遮罩", "", 0, 0, 0, null, null, null, null);
-        b.add(NotificationBigClockSettings.REVEAL_MASK_OPACITY, "主时间遮罩强度", "只调整大时钟时间数字。0% 不叠加颜色，字内仍透出无黑色压暗的模糊背景；100% 按所选颜色及其透明度覆盖背景。默认白色 20%。", NUMERIC, "背景透出与遮罩", "%", 0, 100, 1f, null, null, null, null);
-        b.add(ClockBackdropSettings.DATE_MASK_OPACITY,"日期遮罩强度","开启时间和日期样式跟随后，只调整日期文字的颜色遮罩浓淡，0% 保留字内背景。",NUMERIC,"背景透出与遮罩","%",0,100,1f,null,null,null,null);
-        b.add(ClockBackdropSettings.FOOTER_MASK_OPACITY,"附文遮罩强度","开启时间和日期样式跟随后，只调整底部附加文字的颜色遮罩浓淡，0% 保留字内背景。",NUMERIC,"背景透出与遮罩","%",0,100,1f,null,null,null,null);
-        b.toggle(ClockBackdropSettings.EDGE_ENABLED,"边缘描边","沿大时钟数字边缘显示描边，提高复杂背景上的辨识度；默认开启。日期、附文与左右组件保持平面。","背景透出与遮罩");
-        b.add(ClockBackdropSettings.EDGE_WIDTH,"描边宽度","控制字形描边的宽度，默认 0.6 dp。",NUMERIC,"背景透出与遮罩","dp",0,4,.01f,null,null,null,null);
-        b.add(ClockBackdropSettings.EDGE_COLOR,"描边颜色","默认白色，支持颜色自身透明度，并与描边不透明度共同决定浓淡。",COLOR,"背景透出与遮罩","",0,0,0,null,null,null,null);
-        b.add(ClockBackdropSettings.EDGE_OPACITY,"描边不透明度","描边的浓淡，默认 60%。",NUMERIC,"背景透出与遮罩","%",0,100,1f,null,null,null,null);
-        b.add(ClockBackdropSettings.HIGHLIGHT_ANGLE,"高光角度","调整字形立体边缘的光照方向，默认 315°。",NUMERIC,"背景透出与遮罩","°",0,360,1f,null,null,null,null);
-        b.add(ClockBackdropSettings.HIGHLIGHT_STRENGTH,"高光亮度","受光一侧的亮边强度，默认 40%；0% 关闭高光。",NUMERIC,"背景透出与遮罩","%",0,100,1f,null,null,null,null);
-        b.add(ClockBackdropSettings.SHADE_STRENGTH,"暗部强度","背光一侧的暗边强度，默认 0%，保留无黑色压暗的字身；仅在主动调高后增加边缘暗部。",NUMERIC,"背景透出与遮罩","%",0,100,1f,null,null,null,null);
-        b.add(ClockBackdropSettings.DEPTH_WIDTH,"立体边缘宽度","高光与暗边向字形内部延伸的宽度，默认 1.5 dp。",NUMERIC,"背景透出与遮罩","dp",0,8,.01f,null,null,null,null);
-        b.toggle(NotificationBigClockSettings.GLASS, "液态玻璃文字", "调整时间文字的材质；字内背景透出开启时暂不生效，原设置保留，关闭背景透出后恢复。", "液态玻璃");
-        b.colorPair(NotificationBigClockSettings.COLOR_LIGHT, NotificationBigClockSettings.COLOR_DARK, "时间文字颜色", "文字颜色");
-        b.toggle(NotificationBigClockSettings.GLASS_BORDER_ENABLED, "显示玻璃边框", "", "玻璃边框");
-        b.number(NotificationBigClockSettings.GLASS_BORDER_WIDTH, "玻璃边框宽度", "玻璃边框", "dp", 0, 4, .01f);
-        b.colorPair(NotificationBigClockSettings.GLASS_BORDER_COLOR_LIGHT, NotificationBigClockSettings.GLASS_BORDER_COLOR_DARK, "边框颜色", "玻璃边框");
-        b.toggle(NotificationBigClockSettings.ENTRY_EFFECT_ENABLED, "随下拉手势移动、模糊与渐显", "展开与收起使用同一过渡", "入场效果");
-        b.number(NotificationBigClockSettings.ENTRY_TRAVEL, "入场移动距离", "入场效果", "dp", 0, 120, .01f);
-        b.number(NotificationBigClockSettings.ENTRY_BLUR_RADIUS, "入口模糊半径", "入场效果", "dp", 0, 32, .01f);
-        b.number(NotificationBigClockSettings.ENTRY_FADE_STRENGTH, "入口渐显强度", "入场效果", "%", 0, 100, .01f);
-        b.number(NotificationBigClockSettings.ENTRY_COMPLETION, "清晰显示的下拉进度", "入场效果", "%", 1, 100, .01f);
-        b.toggle(NotificationBigClockSettings.REBOUND_BLUR_ENABLED, "回弹时模糊", "通知列表在顶部或底部过度滑动、被原生弹簧弹回时，时钟被推开的距离越大越模糊，回到原位后恢复清晰。只作用于竖屏大时钟。", "回弹效果");
-        b.number(NotificationBigClockSettings.REBOUND_BLUR_RADIUS, "回弹模糊半径", "回弹效果", "dp", 0, 32, .1f);
-        b.number(NotificationBigClockSettings.REBOUND_FADE, "回弹渐隐", "回弹效果", "%", 0, 100, 1f);
-        b.toggle(NotificationBigClockSettings.REBOUND_LOCK, "关闭回弹效果", "通知列表过度滑动、被原生弹簧弹回时，时钟不再被推着移动：快速下拉、滑到底继续上推时都固定在原位。下拉时时钟的渐显和模糊、上拉时的渐隐消失都保留，只去掉回弹这一个互动。与“回弹时模糊”互斥：开启后后者被锁定关闭。只作用于竖屏大时钟。", "回弹效果");
-        b.toggle(NotificationBigClockSettings.CLOCK_CLICK_ENABLED, "点击时间打开时钟", "只作用于竖屏大时钟，默认开启", "点击操作");
-        b.text(NotificationBigClockSettings.CLOCK_LAUNCH_APP, "时间点击打开的应用", "默认使用系统时钟，也可选择其他应用", "点击操作", null, null);
-        b.toggle(NotificationBigClockSettings.DATE_CLICK_ENABLED, "点击日期打开日历", "日期显示时生效，默认开启", "日期 · 点击操作");
-        b.text(NotificationBigClockSettings.DATE_LAUNCH_APP, "日期点击打开的应用", "默认使用系统日历，也可选择其他应用", "日期 · 点击操作", null, null);
-        b.toggle(NotificationBigClockSettings.DATE_ENABLED, "显示日期", "", "日期");
-        b.text(NotificationBigClockSettings.DATE_PATTERN, "日期格式", "日期行显示的内容，支持星期、农历与干支", "日期", DATE_VALUES, DATE_LABELS);
-        b.number(NotificationBigClockSettings.DATE_SIZE, "日期字号", "日期", "dp", 8, 40, .01f);
-        b.number(NotificationBigClockSettings.DATE_WEIGHT, "日期字体粗细", "日期", "", 100, 900, 1);
-        b.number(NotificationBigClockSettings.DATE_OFFSET_X, "日期水平位置", "日期", "dp", -120, 120, .01f);
-        b.number(NotificationBigClockSettings.DATE_OFFSET_Y, "日期垂直位置", "日期", "dp", -120, 120, .01f);
-        b.number(NotificationBigClockSettings.DATE_GAP, "日期与时间间距", "日期", "dp", 0, 80, .01f);
-        alignment(b, NotificationBigClockSettings.DATE_ALIGNMENT, "日期对齐", "日期");
-        b.colorPair(NotificationBigClockSettings.DATE_COLOR_LIGHT, NotificationBigClockSettings.DATE_COLOR_DARK, "日期文字", "日期颜色");
-        b.toggle(BigClockWidgetsSettings.SWAP_WITH_DATE,"与日期互换位置","只在竖屏交换日期行与左右组件整行，主时间保持原位。日期或组件不可用、上方空间不足或日期与时间位置重叠时，自动使用原布局；已保存的开关不变。","组件布局");
+        Builder b = builder("notification_big_clock", "Reloj grande en vertical", "Solo ajusta la página de notificaciones en vertical; la horizontal se configura por separado. La hora se alinea con los bordes de las notificaciones, cuyo tamaño de texto, iconos y tarjetas conserva el aspecto nativo. Al deslizar hacia arriba, la hora superior y los bordes de las notificaciones se desvanecen y desenfocan; el texto personalizado inferior permanece nítido. Desactivado de forma predeterminada; la configuración vertical existente se conserva.", NOTIFICATION, NotificationBigClockSettings.MASTER);
+        b.text(NotificationBigClockSettings.PATTERN, "Formato de hora", "Contenido del reloj grande de la página de notificaciones; puedes elegir un formato habitual o uno personalizado.", "Hora", CLOCK_VALUES, CLOCK_LABELS);
+        b.choice(NotificationBigClockSettings.FONT, "Origen de la fuente", "Hay tres fuentes nativas: seguir la fuente actual de la pantalla de bloqueo o elegir OPPO Sans, OPPO Digit u OPPO Serif. En vertical puedes definir por separado la altura expandida y contraída; las demás fuentes usan una sola altura. Las fuentes personalizadas se importan en «Otros → Configuración de fuentes».", "Hora", NotificationBigClockSettings.FONT_VALUES, NotificationBigClockSettings.FONT_LABELS);
+        b.number(NotificationBigClockSettings.MAX_SIZE, "Ajustar altura de la fuente", "Hora", "dp", 48, 240, .01f);
+        b.number(NotificationBigClockSettings.COMPACT_MAX_SIZE, "Altura de la fuente contraída", "Hora", "dp", 12, 96, .01f);
+        b.number(NotificationBigClockSettings.SCREEN_PADDING, "Ajuste del espaciado dentro de la pantalla", "Hora", "dp", 0, 80, .1f);
+        b.number(NotificationBigClockSettings.WEIGHT, "Grosor de la fuente de la hora", "Hora", "", 100, 900, 1);
+        b.number(NotificationBigClockSettings.LETTER_SPACING, "Espaciado de la hora", "Hora", "em", -.15f, .5f, .01f);
+        b.toggle(NotificationBigClockSettings.PROPORTIONAL_DIGITS, "Desbloquear el límite de espaciado de ancho uniforme",
+                "Los números se distribuyen según el ancho de cada glifo y pueden ajustarse con el espaciado de la hora; el ancho real depende de la fuente seleccionada.", "Hora");
+        b.toggle(NotificationBigClockSettings.TIME_ANIMATION_DISABLED, "Desactivar la animación al cambiar la hora",
+                "Actualiza los números directamente cuando cambia la hora, conservando las animaciones de entrada, salida, despliegue y rebote del reloj grande.", "Cambio de hora");
+        b.toggle(NotificationBigClockSettings.LOCK_STYLE, "Textura de pantalla de bloqueo",
+                "Da al reloj grande de las notificaciones un aspecto similar al reloj de la pantalla de bloqueo: contornos redondeados, texto blanco cremoso más intenso arriba y más tenue abajo, un borde iluminado a un lado, sombra al otro y un leve resplandor exterior. Es una simulación, no una copia exacta píxel a píxel (la pantalla de bloqueo usa la imagen del fondo; aquí solo se usan los píxeles del reloj). Al activarlo, «Texto de vidrio líquido» y «Borde de vidrio» quedan en pausa, pero sus ajustes se conservan. Requiere Android 13 o posterior.", "Textura de pantalla de bloqueo");
+        b.toggle(NotificationBigClockSettings.LOCK_STYLE_NATIVE, "Usar el vidrio nativo de la pantalla de bloqueo",
+                "Cuando el reloj ya se haya mostrado en la pantalla de bloqueo, utiliza directamente su efecto de vidrio nativo (muestra el fondo, refracción, resplandor y borde iluminado), la opción más parecida al original. En ese caso solo actúa «Intensidad del cuerpo del texto» (intensidad del vidrio). Si el reloj de bloqueo aún no se ha mostrado o el sistema no permite reutilizarlo, se emplea automáticamente la simulación aproximada; los demás controles solo afectan a esa simulación.", "Textura de pantalla de bloqueo");
+        b.add(NotificationBigClockSettings.LOCK_STYLE_BODY, "Intensidad del cuerpo del texto", "Intensidad del vidrio nativo y opacidad del texto en la simulación: 100 % reproduce el aspecto de la pantalla de bloqueo; cuanto menor sea el valor, más transparente será.", NUMERIC, "Textura de pantalla de bloqueo", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
+        b.add(NotificationBigClockSettings.LOCK_STYLE_GRADIENT, "Más intenso arriba, más tenue abajo", "Grado de transición del texto de intenso a tenue de arriba abajo: 0 % mantiene la misma intensidad; cuanto mayor sea el valor, más diferencia habrá.", NUMERIC, "Textura de pantalla de bloqueo", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
+        b.add(NotificationBigClockSettings.LOCK_STYLE_RIM, "Intensidad del borde iluminado", "Reflejo en el borde del lado iluminado: 0 % sin reflejo; cuanto mayor sea el valor, más brillante.", NUMERIC, "Textura de pantalla de bloqueo", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
+        b.add(NotificationBigClockSettings.LOCK_STYLE_RIM_DEPTH, "Ancho del borde iluminado", "Distancia hacia el interior del texto que ocupan el reflejo y la sombra: cuanto mayor sea, más anchos y suaves; cuanto menor, más pegados al borde.", NUMERIC, "Textura de pantalla de bloqueo", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
+        b.add(NotificationBigClockSettings.LOCK_STYLE_ROUND, "Redondez", "Redondez del contorno de los caracteres: 0 % mantiene las esquinas nítidas; cuanto mayor sea el valor, más redondeado y suave será el aspecto.", NUMERIC, "Textura de pantalla de bloqueo", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
+        b.add(NotificationBigClockSettings.LOCK_STYLE_SHADE, "Intensidad de la sombra", "Sombra del borde en el lado opuesto a la luz: 0 % sin sombra; cuanto mayor sea el valor, más oscura y tridimensional se verá la letra.", NUMERIC, "Textura de pantalla de bloqueo", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
+        b.add(NotificationBigClockSettings.LOCK_STYLE_GLOW, "Resplandor exterior", "Un halo tenue alrededor de los caracteres: 0 % desactivado; cuanto mayor sea el valor, más visible.", NUMERIC, "Textura de pantalla de bloqueo", "%", 0, NotificationBigClockSettings.LOCK_STYLE_STRENGTH_MAX, 1f, null, null, null, null);
+        b.add(NotificationBigClockSettings.LOCK_STYLE_ANGLE, "Dirección de la luz", "Dirección de la luz: 0° desde la derecha, 90° desde arriba, 180° desde la izquierda y 270° desde abajo. El valor predeterminado es 300° (desde abajo a la derecha).", NUMERIC, "Textura de pantalla de bloqueo", "°", 0, 360, 1f, null, null, null, null);
+        b.toggle(NotificationBigClockSettings.DIGIT_REVEAL_ENABLED, "Mostrar el fondo a través de los caracteres",
+                "Muestra dentro de los caracteres de la hora el fondo desenfocado existente del sistema, elimina su oscurecimiento negro y superpone una máscara de color ajustable. Al activarlo, usa un material de fondo específico; se conservan los ajustes de color del texto, vidrio líquido y textura de bloqueo y se restauran al desactivarlo. La fuente, tamaño, grosor, espaciado, posición y animaciones siguen siendo configurables.", "Transparencia del fondo y máscara");
+        b.toggle(NotificationBigClockSettings.FOLLOW_STYLE, "Sincronizar el estilo de hora y fecha",
+                "Desactivado de forma predeterminada. Solo está disponible cuando se activa la transparencia de fondo dentro de los caracteres: la fecha y el texto adicional utilizan el mismo efecto y color de máscara que la hora, con intensidades ajustables por separado y un aspecto plano. El borde 3D solo se aplica a los números del reloj grande. Si se desactiva, se conservan los colores y estilos independientes.", "Transparencia del fondo y máscara");
+        b.add(NotificationBigClockSettings.REVEAL_MASK_COLOR, "Color de la máscara", "Color superpuesto al fondo desenfocado dentro de los caracteres; el blanco es el predeterminado. Se guarda por separado para vertical y horizontal. La transparencia del color y la intensidad de la máscara de cada texto determinan el resultado.", COLOR, "Transparencia del fondo y máscara", "", 0, 0, 0, null, null, null, null);
+        b.add(NotificationBigClockSettings.REVEAL_MASK_OPACITY, "Intensidad de la máscara de la hora principal", "Solo ajusta los números del reloj grande. 0 % no superpone color y deja visible el fondo desenfocado sin oscurecimiento negro; 100 % cubre el fondo con el color elegido y su transparencia. El valor predeterminado es blanco al 20 %.", NUMERIC, "Transparencia del fondo y máscara", "%", 0, 100, 1f, null, null, null, null);
+        b.add(ClockBackdropSettings.DATE_MASK_OPACITY,"Intensidad de la máscara de la fecha","Cuando se sincroniza el estilo de hora y fecha, ajusta solo la intensidad de la máscara de color de la fecha; 0 % conserva el fondo visible dentro de los caracteres.",NUMERIC,"Transparencia del fondo y máscara","%",0,100,1f,null,null,null,null);
+        b.add(ClockBackdropSettings.FOOTER_MASK_OPACITY,"Intensidad de la máscara del texto adicional","Cuando se sincroniza el estilo de hora y fecha, ajusta solo la máscara de color del texto inferior adicional; 0 % conserva el fondo visible dentro de los caracteres.",NUMERIC,"Transparencia del fondo y máscara","%",0,100,1f,null,null,null,null);
+        b.toggle(ClockBackdropSettings.EDGE_ENABLED,"Contorno de los bordes","Añade un contorno alrededor de los números del reloj grande para mejorar la legibilidad sobre fondos complejos; está activado de forma predeterminada. La fecha, el texto adicional y los componentes laterales conservan el aspecto plano.","Transparencia del fondo y máscara");
+        b.add(ClockBackdropSettings.EDGE_WIDTH,"Ancho del contorno","Ancho del contorno de los caracteres; el valor predeterminado es 0,6 dp.",NUMERIC,"Transparencia del fondo y máscara","dp",0,4,.01f,null,null,null,null);
+        b.add(ClockBackdropSettings.EDGE_COLOR,"Color del contorno","El blanco es el valor predeterminado. Admite transparencia propia del color, combinada con la opacidad del contorno.",COLOR,"Transparencia del fondo y máscara","",0,0,0,null,null,null,null);
+        b.add(ClockBackdropSettings.EDGE_OPACITY,"Opacidad del contorno","Intensidad del contorno; 60 % es el valor predeterminado.",NUMERIC,"Transparencia del fondo y máscara","%",0,100,1f,null,null,null,null);
+        b.add(ClockBackdropSettings.HIGHLIGHT_ANGLE,"Ángulo de la luz","Dirección de la luz de los bordes tridimensionales; 315° es el valor predeterminado.",NUMERIC,"Transparencia del fondo y máscara","°",0,360,1f,null,null,null,null);
+        b.add(ClockBackdropSettings.HIGHLIGHT_STRENGTH,"Brillo del reflejo","Intensidad del borde iluminado; 40 % es el valor predeterminado. 0 % desactiva el reflejo.",NUMERIC,"Transparencia del fondo y máscara","%",0,100,1f,null,null,null,null);
+        b.add(ClockBackdropSettings.SHADE_STRENGTH,"Intensidad de la sombra","Intensidad del borde en sombra: 0 % de forma predeterminada, para conservar el texto sin oscurecimiento negro. Solo añade sombra si aumentas el valor.",NUMERIC,"Transparencia del fondo y máscara","%",0,100,1f,null,null,null,null);
+        b.add(ClockBackdropSettings.DEPTH_WIDTH,"Ancho del borde tridimensional","Distancia hacia el interior de los caracteres que ocupan el reflejo y la sombra; 1,5 dp es el valor predeterminado.",NUMERIC,"Transparencia del fondo y máscara","dp",0,8,.01f,null,null,null,null);
+        b.toggle(NotificationBigClockSettings.GLASS, "Texto de vidrio líquido", "Ajusta el material del texto de la hora. Si se activa la transparencia de fondo dentro de los caracteres, queda temporalmente deshabilitado y se conserva la configuración; se restaura al desactivar dicha transparencia.", "Vidrio líquido");
+        b.colorPair(NotificationBigClockSettings.COLOR_LIGHT, NotificationBigClockSettings.COLOR_DARK, "Color del texto de la hora", "Color del texto");
+        b.toggle(NotificationBigClockSettings.GLASS_BORDER_ENABLED, "Mostrar borde de vidrio", "", "Borde de vidrio");
+        b.number(NotificationBigClockSettings.GLASS_BORDER_WIDTH, "Ancho del borde de vidrio", "Borde de vidrio", "dp", 0, 4, .01f);
+        b.colorPair(NotificationBigClockSettings.GLASS_BORDER_COLOR_LIGHT, NotificationBigClockSettings.GLASS_BORDER_COLOR_DARK, "Color del borde", "Borde de vidrio");
+        b.toggle(NotificationBigClockSettings.ENTRY_EFFECT_ENABLED, "Mover, desenfocar y mostrar gradualmente al deslizar el panel", "Usar la misma transición al expandir y contraer", "Efecto de entrada");
+        b.number(NotificationBigClockSettings.ENTRY_TRAVEL, "Distancia de desplazamiento de entrada", "Efecto de entrada", "dp", 0, 120, .01f);
+        b.number(NotificationBigClockSettings.ENTRY_BLUR_RADIUS, "Radio de desenfoque de entrada", "Efecto de entrada", "dp", 0, 32, .01f);
+        b.number(NotificationBigClockSettings.ENTRY_FADE_STRENGTH, "Intensidad del fundido de entrada", "Efecto de entrada", "%", 0, 100, .01f);
+        b.number(NotificationBigClockSettings.ENTRY_COMPLETION, "Progreso de despliegue para mostrar el texto nítido", "Efecto de entrada", "%", 1, 100, .01f);
+        b.toggle(NotificationBigClockSettings.REBOUND_BLUR_ENABLED, "Desenfoque al rebotar", "Cuando la lista de notificaciones se desliza más allá del límite superior o inferior y rebota con la animación nativa, el reloj se desenfoca más cuanto mayor sea el desplazamiento y vuelve a verse nítido al regresar a su lugar. Solo afecta al reloj grande en vertical.", "Efecto de rebote");
+        b.number(NotificationBigClockSettings.REBOUND_BLUR_RADIUS, "Radio de desenfoque durante el rebote", "Efecto de rebote", "dp", 0, 32, .1f);
+        b.number(NotificationBigClockSettings.REBOUND_FADE, "Desvanecimiento durante el rebote", "Efecto de rebote", "%", 0, 100, 1f);
+        b.toggle(NotificationBigClockSettings.REBOUND_LOCK, "Desactivar el efecto de rebote", "Cuando la lista de notificaciones se desliza más allá del límite y rebota, el reloj deja de desplazarse: permanece fijo tanto al desplegar rápidamente como al seguir deslizando hacia arriba al final de la lista. Se conservan el fundido y el desenfoque durante el despliegue, así como el desvanecimiento al deslizar hacia arriba; solo se elimina la interacción de rebote. Es incompatible con «Desenfoque al rebotar»: al activarlo, la otra opción queda desactivada. Solo afecta al reloj grande en vertical.", "Efecto de rebote");
+        b.toggle(NotificationBigClockSettings.CLOCK_CLICK_ENABLED, "Tocar la hora para abrir el reloj", "Solo afecta al reloj grande en vertical; activado de forma predeterminada.", "Acción al tocar");
+        b.text(NotificationBigClockSettings.CLOCK_LAUNCH_APP, "Aplicación que se abre al tocar la hora", "Usa el Reloj del sistema por defecto, o elige otra aplicación.", "Acción al tocar", null, null);
+        b.toggle(NotificationBigClockSettings.DATE_CLICK_ENABLED, "Tocar la fecha para abrir el calendario", "Funciona cuando se muestra la fecha; está activado de forma predeterminada.", "Fecha · Acción al tocar");
+        b.text(NotificationBigClockSettings.DATE_LAUNCH_APP, "Aplicación que se abre al tocar la fecha", "Usa el Calendario del sistema por defecto, o elige otra aplicación.", "Fecha · Acción al tocar", null, null);
+        b.toggle(NotificationBigClockSettings.DATE_ENABLED, "Mostrar fecha", "", "Fecha");
+        b.text(NotificationBigClockSettings.DATE_PATTERN, "Formato de fecha", "Contenido de la fila de fecha; admite día de la semana, calendario lunar y ciclo sexagenario.", "Fecha", DATE_VALUES, DATE_LABELS);
+        b.number(NotificationBigClockSettings.DATE_SIZE, "Tamaño de la fecha", "Fecha", "dp", 8, 40, .01f);
+        b.number(NotificationBigClockSettings.DATE_WEIGHT, "Grosor de fuente de la fecha", "Fecha", "", 100, 900, 1);
+        b.number(NotificationBigClockSettings.DATE_OFFSET_X, "Posición horizontal de la fecha", "Fecha", "dp", -120, 120, .01f);
+        b.number(NotificationBigClockSettings.DATE_OFFSET_Y, "Posición vertical de la fecha", "Fecha", "dp", -120, 120, .01f);
+        b.number(NotificationBigClockSettings.DATE_GAP, "Espacio entre fecha y hora", "Fecha", "dp", 0, 80, .01f);
+        alignment(b, NotificationBigClockSettings.DATE_ALIGNMENT, "Alineación de la fecha", "Fecha");
+        b.colorPair(NotificationBigClockSettings.DATE_COLOR_LIGHT, NotificationBigClockSettings.DATE_COLOR_DARK, "Texto de la fecha", "Color de la fecha");
+        b.toggle(BigClockWidgetsSettings.SWAP_WITH_DATE,"Intercambiar posición con la fecha","En vertical, intercambia toda la fila de la fecha con la de los componentes laterales; la hora principal permanece en su lugar. Si la fecha o los componentes no están disponibles, no hay espacio suficiente arriba o la fecha se solapa con la hora, se usa automáticamente la disposición original sin cambiar el interruptor guardado.","Distribución de los componentes");
         bigClockTextComponent(b,BigClockWidgetsSettings.LEFT);
         bigClockTextComponent(b,BigClockWidgetsSettings.RIGHT);
-        alignment(b, NotificationBigClockSettings.ALIGNMENT, "时间对齐", "位置与对齐");
-        b.number(NotificationBigClockSettings.OFFSET_X, "初始水平位置", "位置与对齐", "dp", -160, 160, .01f);
-        b.number(NotificationBigClockSettings.OFFSET_Y, "初始垂直位置", "位置与对齐", "dp", -120, 200, .01f);
-        b.number(NotificationBigClockSettings.COMPACT_OFFSET_X, "收起水平位置", "位置与对齐", "dp", -160, 160, .01f);
-        b.number(NotificationBigClockSettings.COMPACT_OFFSET_Y, "收起垂直位置", "位置与对齐", "dp", -120, 120, .01f);
-        b.toggle(NotificationBigClockSettings.NOTIFICATION_GAP_ENABLED, "自动保留时钟与首张通知的距离", "", "通知留白");
-        b.number(NotificationBigClockSettings.NOTIFICATION_GAP, "时间与通知间距", "通知留白", "dp", 0, 100, .01f);
-        b.toggle(NotificationBigClockSettings.NOTIFICATION_EDGE_ENABLED, "通知进入顶部边缘时模糊与渐隐", "效果随真实通知位置变化", "通知顶部边缘");
-        b.number(NotificationBigClockSettings.NOTIFICATION_EDGE_SAFE_DISTANCE, "顶部安全距离", "通知顶部边缘", "dp", 0, 100, .01f);
-        b.add(NotificationBigClockSettings.NOTIFICATION_EDGE_RANGE, "过渡范围", "通知从顶部安全距离处开始模糊与渐隐。" + RANGE_DISTANCE,
-                NUMERIC, "通知顶部边缘", "dp", 0, 120, .01f, null, null, null, null);
-        b.number(NotificationBigClockSettings.NOTIFICATION_EDGE_BLUR_RADIUS, "边缘模糊半径", "通知顶部边缘", "dp", 0, 32, .01f);
-        b.toggle(NotificationBigClockSettings.FOOTER_ENABLED, "显示底部内容", "", "底部内容");
-        b.text(NotificationBigClockSettings.FOOTER_PATTERN, "内容格式", "底部一行的格式，{text} 代表下面设置的文字", "底部内容", FOOTER_VALUES, FOOTER_LABELS);
-        b.text(NotificationBigClockSettings.FOOTER_TEXT, "编辑纯文本", "底部显示的文字，中文、英文、emoji 均可", "底部内容", null, null);
-        b.number(NotificationBigClockSettings.FOOTER_SIZE, "底部字号", "底部内容", "dp", 8, 36, .01f);
-        b.number(NotificationBigClockSettings.FOOTER_WEIGHT, "底部字体粗细", "底部内容", "", 100, 900, 1);
-        b.number(NotificationBigClockSettings.FOOTER_OFFSET_X, "底部水平位置", "底部内容", "dp", -160, 160, .01f);
-        b.number(NotificationBigClockSettings.FOOTER_OFFSET_Y, "底部垂直位置", "底部内容", "dp", -120, 120, .01f);
-        b.number(NotificationBigClockSettings.FOOTER_MARGIN, "底部安全间距", "底部内容", "dp", 0, 120, .01f);
-        alignment(b, NotificationBigClockSettings.FOOTER_ALIGNMENT, "底部内容对齐", "底部内容");
-        b.colorPair(NotificationBigClockSettings.FOOTER_COLOR_LIGHT, NotificationBigClockSettings.FOOTER_COLOR_DARK, "底部文字", "底部颜色");
+        alignment(b, NotificationBigClockSettings.ALIGNMENT, "Alineación de la hora", "Posición y alineación");
+        b.number(NotificationBigClockSettings.OFFSET_X, "Posición horizontal inicial", "Posición y alineación", "dp", -160, 160, .01f);
+        b.number(NotificationBigClockSettings.OFFSET_Y, "Posición vertical inicial", "Posición y alineación", "dp", -120, 200, .01f);
+        b.number(NotificationBigClockSettings.COMPACT_OFFSET_X, "Posición horizontal contraída", "Posición y alineación", "dp", -160, 160, .01f);
+        b.number(NotificationBigClockSettings.COMPACT_OFFSET_Y, "Posición vertical contraída", "Posición y alineación", "dp", -120, 120, .01f);
+        b.toggle(NotificationBigClockSettings.NOTIFICATION_GAP_ENABLED, "Mantener automáticamente la distancia entre el reloj y la primera notificación", "", "Espacio entre notificaciones");
+        b.number(NotificationBigClockSettings.NOTIFICATION_GAP, "Separación entre la hora y las notificaciones", "Espacio entre notificaciones", "dp", 0, 100, .01f);
+        b.toggle(NotificationBigClockSettings.NOTIFICATION_EDGE_ENABLED, "Desenfocar y desvanecer las notificaciones al acercarse al borde superior", "El efecto sigue la posición real de las notificaciones.", "Borde superior de las notificaciones");
+        b.number(NotificationBigClockSettings.NOTIFICATION_EDGE_SAFE_DISTANCE, "Distancia de seguridad superior", "Borde superior de las notificaciones", "dp", 0, 100, .01f);
+        b.add(NotificationBigClockSettings.NOTIFICATION_EDGE_RANGE, "Rango de transición", "Las notificaciones empiezan a desenfocarse y desvanecerse a partir de la distancia de seguridad superior." + RANGE_DISTANCE,
+                NUMERIC, "Borde superior de las notificaciones", "dp", 0, 120, .01f, null, null, null, null);
+        b.number(NotificationBigClockSettings.NOTIFICATION_EDGE_BLUR_RADIUS, "Radio de desenfoque del borde", "Borde superior de las notificaciones", "dp", 0, 32, .01f);
+        b.toggle(NotificationBigClockSettings.FOOTER_ENABLED, "Mostrar contenido inferior", "", "Contenido inferior");
+        b.text(NotificationBigClockSettings.FOOTER_PATTERN, "Formato del contenido", "Formato de la línea inferior; {text} representa el texto configurado abajo.", "Contenido inferior", FOOTER_VALUES, FOOTER_LABELS);
+        b.text(NotificationBigClockSettings.FOOTER_TEXT, "Editar texto simple", "Texto que se muestra abajo; admite chino, inglés y emoji.", "Contenido inferior", null, null);
+        b.number(NotificationBigClockSettings.FOOTER_SIZE, "Tamaño de fuente inferior", "Contenido inferior", "dp", 8, 36, .01f);
+        b.number(NotificationBigClockSettings.FOOTER_WEIGHT, "Grosor de fuente inferior", "Contenido inferior", "", 100, 900, 1);
+        b.number(NotificationBigClockSettings.FOOTER_OFFSET_X, "Posición horizontal inferior", "Contenido inferior", "dp", -160, 160, .01f);
+        b.number(NotificationBigClockSettings.FOOTER_OFFSET_Y, "Posición vertical inferior", "Contenido inferior", "dp", -120, 120, .01f);
+        b.number(NotificationBigClockSettings.FOOTER_MARGIN, "Margen de seguridad inferior", "Contenido inferior", "dp", 0, 120, .01f);
+        alignment(b, NotificationBigClockSettings.FOOTER_ALIGNMENT, "Alineación del contenido inferior", "Contenido inferior");
+        b.colorPair(NotificationBigClockSettings.FOOTER_COLOR_LIGHT, NotificationBigClockSettings.FOOTER_COLOR_DARK, "Texto inferior", "Color inferior");
         return new Group(b);
     }
     private static void bigClockTextComponent(Builder b,int side) {
-        String name=side==BigClockWidgetsSettings.LEFT?"左侧":"右侧",section=name+"组件";
+        String name=side==BigClockWidgetsSettings.LEFT?"Izquierda":"Derecha",section=name+"Componentes";
         boolean right=side==BigClockWidgetsSettings.RIGHT;
-        b.toggle(BigClockWidgetsSettings.enabledKey(side),"显示"+section,"在竖屏大时钟区域显示"+name+"文字组件，可与日期整行互换位置。默认关闭。",section);
-        b.text(BigClockWidgetsSettings.textKey(side),name+"组件内容","可直接选预设，也可自由输入并与普通文字组合。"
-                        +"天气、电池、信号、网络可像时间格式一样自定义，符号自己写：（电池:{电量}%{充电?⚡}）、（天气:{描述} {温度:数字}°C）、（信号:{条:4:●:○}）、（网络:{类型}）。"
-                        +"原有的（天气）（天气原色）（蜂窝信号）（网络状态）（电池）等仍然有效，显示跟随状态栏样式的图标与实时状态。"
-                        +"日期时间：（时间）（日期）（星期）（周）（年月日）（12小时）（时段）（农历）（农历日期）（干支）（日期英文）（星期英文）；（格式:HH:mm {周}）可按时间格式自定义。"
-                        +"半角括号同样有效。",section,
+        b.toggle(BigClockWidgetsSettings.enabledKey(side),"Mostrar"+section,"Mostrar en el área del reloj grande vertical"+name+"Componente de texto que puede intercambiar toda su fila con la fecha. Desactivado de forma predeterminada.",section);
+        b.text(BigClockWidgetsSettings.textKey(side),name+"Contenido del componente","Puedes elegir un valor predefinido o introducir texto libre y combinarlo con texto normal."
+                        +"El tiempo, la batería, la señal y la red pueden personalizarse como el formato horario; introduce los símbolos manualmente. Ejemplos de sintaxis: （电池:{电量}%{充电?⚡}）、（天气:{描述} {温度:数字}°C）、（信号:{条:4:●:○}）、（网络:{类型}）。"
+                        +"Los marcadores existentes （天气）（天气原色）（蜂窝信号）（网络状态）（电池） siguen funcionando y muestran iconos con el estilo de la barra de estado y el estado en tiempo real."
+                        +"Fecha y hora: （时间）（日期）（星期）（周）（年月日）（12小时）（时段）（农历）（农历日期）（干支）（日期英文）（星期英文）；（格式:HH:mm {周}） permite personalizar el formato horario."
+                        +"También se admiten paréntesis de ancho medio.",section,
                 BigClockPresets.values(right),BigClockPresets.labels(right));
-        b.add(BigClockWidgetsSettings.sizeKey(side),name+"组件字号","只调整这侧组件的文字大小。",NUMERIC,section,"dp",BigClockWidgetsSettings.MIN_SIZE,BigClockWidgetsSettings.MAX_SIZE,1f,null,null,null,null);
-        b.add(BigClockWidgetsSettings.weightKey(side),name+"组件字体粗细","只调整这侧文字粗细，默认 400；图标保持状态栏所选外形。",NUMERIC,section,"",BigClockWidgetsSettings.MIN_WEIGHT,BigClockWidgetsSettings.MAX_WEIGHT,1f,null,null,null,null);
-        b.add(BigClockWidgetsSettings.offsetXKey(side),name+"组件水平位置","相对于这侧默认位置的水平偏移，负值向左，正值向右。",NUMERIC,section,"dp",-BigClockWidgetsSettings.MAX_OFFSET,BigClockWidgetsSettings.MAX_OFFSET,1f,null,null,null,null);
-        b.add(BigClockWidgetsSettings.offsetYKey(side),name+"组件垂直位置","相对于大时钟下方默认位置的垂直偏移，负值向上，正值向下。",NUMERIC,section,"dp",-BigClockWidgetsSettings.MAX_OFFSET,BigClockWidgetsSettings.MAX_OFFSET,1f,null,null,null,null);
-        b.toggle(BigClockWidgetsSettings.followTimeColorKey(side),name+"组件颜色跟随主时间","默认开启，跟随主时间的颜色；主时间启用字内背景透出时，跟随其遮罩颜色，遮罩强度可独立调整，组件保持平面效果。关闭后可独立设置组件颜色。",section);
-        b.add(BigClockWidgetsSettings.maskOpacityKey(side),name+"组件遮罩强度","此侧组件跟随主时间且主时间开启字内背景透出时生效；只调整此侧颜色遮罩浓淡，0% 保留字内背景。",NUMERIC,section,"%",0,100,1f,null,null,null,null);
-        b.colorPair(BigClockWidgetsSettings.colorKey(side,false),BigClockWidgetsSettings.colorKey(side,true),name+"组件颜色",section);
-        b.toggle(BigClockWidgetsSettings.clickEnabledKey(side),name+"组件点击打开应用","默认关闭，开启后点击这侧文字组件打开选定应用。",section);
-        b.text(BigClockWidgetsSettings.launchAppKey(side),name+"组件点击打开的应用","选择应用后，点击这侧组件打开；留空时不启动应用。",section,null,null);
+        b.add(BigClockWidgetsSettings.sizeKey(side),name+"Tamaño de fuente del componente","Solo cambia el tamaño del texto de este componente lateral.",NUMERIC,section,"dp",BigClockWidgetsSettings.MIN_SIZE,BigClockWidgetsSettings.MAX_SIZE,1f,null,null,null,null);
+        b.add(BigClockWidgetsSettings.weightKey(side),name+"Grosor de fuente del componente","Solo cambia el grosor del texto de este lado; 400 es el valor predeterminado. Los iconos conservan la forma elegida para la barra de estado.",NUMERIC,section,"",BigClockWidgetsSettings.MIN_WEIGHT,BigClockWidgetsSettings.MAX_WEIGHT,1f,null,null,null,null);
+        b.add(BigClockWidgetsSettings.offsetXKey(side),name+"Posición horizontal del componente","Desplazamiento horizontal respecto a la posición predeterminada de este lado; negativo mueve a la izquierda y positivo a la derecha.",NUMERIC,section,"dp",-BigClockWidgetsSettings.MAX_OFFSET,BigClockWidgetsSettings.MAX_OFFSET,1f,null,null,null,null);
+        b.add(BigClockWidgetsSettings.offsetYKey(side),name+"Posición vertical del componente","Desplazamiento vertical respecto a la posición predeterminada debajo del reloj grande; negativo mueve hacia arriba y positivo hacia abajo.",NUMERIC,section,"dp",-BigClockWidgetsSettings.MAX_OFFSET,BigClockWidgetsSettings.MAX_OFFSET,1f,null,null,null,null);
+        b.toggle(BigClockWidgetsSettings.followTimeColorKey(side),name+"Color del componente según la hora principal","Activado de forma predeterminada; sigue el color de la hora principal. Si esta muestra el fondo a través de los caracteres, también sigue el color de su máscara, con intensidad ajustable por separado y aspecto plano. Al desactivarlo, puedes configurar el color del componente por separado.",section);
+        b.add(BigClockWidgetsSettings.maskOpacityKey(side),name+"Intensidad de la máscara del componente","Se aplica cuando este componente sigue a la hora principal y la hora tiene activada la transparencia de fondo dentro de los caracteres. Solo ajusta la intensidad de la máscara de color de este lado; 0 % conserva el fondo visible dentro de los caracteres.",NUMERIC,section,"%",0,100,1f,null,null,null,null);
+        b.colorPair(BigClockWidgetsSettings.colorKey(side,false),BigClockWidgetsSettings.colorKey(side,true),name+"Color del componente",section);
+        b.toggle(BigClockWidgetsSettings.clickEnabledKey(side),name+"Tocar el componente para abrir una aplicación","Desactivado de forma predeterminada. Al activarlo, tocar el texto de este lado abre la aplicación seleccionada.",section);
+        b.text(BigClockWidgetsSettings.launchAppKey(side),name+"Aplicación que se abre al tocar el componente","Selecciona una aplicación para abrirla al tocar este componente; si está vacío, no se inicia ninguna aplicación.",section,null,null);
     }
     private static Group landscapeClock() {
         Group portrait = bigClock();
-        Builder b = builder("notification_big_clock_landscape", "横屏大时钟",
-                "只调整横屏通知页，上方时钟、下方通知，清除按钮在右侧。通知大小保持原生，时间与通知左右对齐；顶部可随上滑淡出、模糊，底部自定义文字保持清晰。与竖屏大时钟独立保存、独立开启，默认关闭。",
+        Builder b = builder("notification_big_clock_landscape", "Reloj grande horizontal",
+                "Solo ajusta la página de notificaciones en horizontal: reloj arriba, notificaciones abajo y botón de borrar a la derecha. Las notificaciones conservan su tamaño nativo; la hora se alinea con sus bordes. La parte superior puede desvanecerse y desenfocarse al deslizar hacia arriba, mientras que el texto inferior permanece nítido. Se guarda y activa de forma independiente del reloj grande vertical; desactivado de forma predeterminada.",
                 NOTIFICATION, NotificationBigClockSettings.LANDSCAPE_MASTER);
         for (Item item : portrait.items) if (!item.master && !NotificationBigClockSettings.SCREEN_PADDING.equals(item.key)
                 && !bigClockWidget(item.key)
@@ -857,73 +857,73 @@ public final class SettingsCatalog {
                 NotificationBigClockSettings.landscapeKey(item.key), item.title, item.description, item.type,
                 item.section, item.unit, item.min, item.max, item.step, item.values, item.labels,
                 NotificationBigClockSettings.landscapeKey(item.pairedKey), item.scene);
-        b.toggle(NotificationBigClockSettings.LANDSCAPE_NOTIFICATION_WIDTH_ENABLED,"调整通知长度","只改变横屏通知卡片宽度，通知文字与图标大小保持原生。","通知布局");
-        b.number(NotificationBigClockSettings.LANDSCAPE_NOTIFICATION_WIDTH,"通知长度","通知布局","%",50,150,1);
+        b.toggle(NotificationBigClockSettings.LANDSCAPE_NOTIFICATION_WIDTH_ENABLED,"Ajustar la longitud de las notificaciones","Solo cambia el ancho de las tarjetas de notificación en horizontal; el texto y los iconos conservan su tamaño nativo.","Distribución de las notificaciones");
+        b.number(NotificationBigClockSettings.LANDSCAPE_NOTIFICATION_WIDTH,"Longitud de las notificaciones","Distribución de las notificaciones","%",50,150,1);
         return new Group(b);
     }
     private static Group clear() {
-        Builder b = builder("notification_clear", "竖屏清除按钮位置", "位置、入场动效、通知安全距离和按钮颜色只作用于竖屏，保留原生清除操作。横屏位置与颜色请到横屏清除按钮位置单独设置。", NOTIFICATION, NotificationClearAppearance.MASTER);
-        b.toggle("notification_clear_motion_enabled", "独立滑入与淡入", "只调整清除按钮的入场与收起，不依赖大时钟", "动效与安全距离");
-        b.number("notification_clear_safe_distance", "与通知安全距离", "动效与安全距离", "dp", 0, 160, .1f);
-        b.number("notification_clear_entry_travel", "入场位移", "动效与安全距离", "dp", 0, 160, .1f);
-        b.number("notification_clear_offset_y", "垂直位置", "动效与安全距离", "dp", -160, 160, .1f);
-        b.colorPair(NotificationClearAppearance.COLOR_LIGHT, NotificationClearAppearance.COLOR_DARK, "按钮底色", "按钮底色");
-        b.toggle(NotificationClearAppearance.GRADIENT_ENABLED, "启用渐变", "", "渐变效果");
-        b.colorPair(NotificationClearAppearance.GRADIENT_COLOR_LIGHT, NotificationClearAppearance.GRADIENT_COLOR_DARK, "渐变终点", "渐变效果");
-        b.number(NotificationClearAppearance.OPACITY, "底色透明度", "按钮底色", "%", 0, 100, .01f);
-        b.number(NotificationClearAppearance.GRADIENT_ANGLE, "渐变方向", "渐变效果", "°", 0, 360, .01f);
-        b.add(NotificationClearAppearance.GRADIENT_RANGE, "过渡范围", RANGE_BETWEEN, NUMERIC, "渐变效果", "%", 5, 100, 1f, null, null, null, null);
+        Builder b = builder("notification_clear", "Posición del botón de borrar en vertical", "La posición, la animación de entrada, la distancia de seguridad de las notificaciones y el color del botón solo se aplican en vertical y conservan la acción nativa de borrar. Configura por separado la posición y el color horizontal en «Posición del botón de borrar en horizontal».", NOTIFICATION, NotificationClearAppearance.MASTER);
+        b.toggle("notification_clear_motion_enabled", "Entrada y fundido independientes", "Ajusta solo la entrada y el cierre del botón de borrar; no depende del reloj grande.", "Animación y distancia de seguridad");
+        b.number("notification_clear_safe_distance", "Con la distancia de seguridad de las notificaciones", "Animación y distancia de seguridad", "dp", 0, 160, .1f);
+        b.number("notification_clear_entry_travel", "Desplazamiento de entrada", "Animación y distancia de seguridad", "dp", 0, 160, .1f);
+        b.number("notification_clear_offset_y", "Posición vertical", "Animación y distancia de seguridad", "dp", -160, 160, .1f);
+        b.colorPair(NotificationClearAppearance.COLOR_LIGHT, NotificationClearAppearance.COLOR_DARK, "Color de fondo del botón", "Color de fondo del botón");
+        b.toggle(NotificationClearAppearance.GRADIENT_ENABLED, "Activar degradado", "", "Efecto de degradado");
+        b.colorPair(NotificationClearAppearance.GRADIENT_COLOR_LIGHT, NotificationClearAppearance.GRADIENT_COLOR_DARK, "Color final del degradado", "Efecto de degradado");
+        b.number(NotificationClearAppearance.OPACITY, "Transparencia del fondo", "Color de fondo del botón", "%", 0, 100, .01f);
+        b.number(NotificationClearAppearance.GRADIENT_ANGLE, "Dirección del degradado", "Efecto de degradado", "°", 0, 360, .01f);
+        b.add(NotificationClearAppearance.GRADIENT_RANGE, "Rango de transición", RANGE_BETWEEN, NUMERIC, "Efecto de degradado", "%", 5, 100, 1f, null, null, null, null);
         return new Group(b);
     }
     private static Group landscapeClear() {
-        Builder b = builder("notification_clear_landscape", "横屏清除按钮位置",
-                "位置与颜色独立于竖屏保存，位置开关不影响下方颜色开关。跟随通知页原生移动、渐隐与清除操作；位移过大可能与通知重叠或超出屏幕。首次升级继承原先共用颜色，之后两方向分别调整。",
+        Builder b = builder("notification_clear_landscape", "Posición del botón de borrar en horizontal",
+                "La posición y el color se guardan por separado de los ajustes verticales; el interruptor de posición no afecta al interruptor de color inferior. Sigue el movimiento, desvanecimiento y acción de borrado nativos de la página de notificaciones. Un desplazamiento excesivo puede solaparse con las notificaciones o salir de la pantalla. En la primera actualización se hereda el color que antes se compartía; después cada orientación se configura por separado.",
                 NOTIFICATION, NotificationClearMotion.LANDSCAPE_MASTER);
-        b.number(NotificationClearMotion.LANDSCAPE_OFFSET_X, "水平位置", "位置", "dp", -160, 160, .1f);
-        b.number(NotificationClearMotion.LANDSCAPE_OFFSET_Y, "垂直位置", "位置", "dp", -160, 160, .1f);
-        b.toggle(NotificationClearAppearance.LANDSCAPE_MASTER,"自定义按钮颜色","仅横屏生效，不依赖位置开关；关闭恢复横屏原生材质。","按钮底色");
-        b.colorPair(NotificationClearAppearance.LANDSCAPE_COLOR_LIGHT,NotificationClearAppearance.LANDSCAPE_COLOR_DARK,"按钮底色","按钮底色");
-        b.number(NotificationClearAppearance.LANDSCAPE_OPACITY,"底色透明度","按钮底色","%",0,100,.01f);
-        b.toggle(NotificationClearAppearance.LANDSCAPE_GRADIENT_ENABLED,"启用渐变","仅横屏自定义颜色开启时生效。","渐变效果");
-        b.colorPair(NotificationClearAppearance.LANDSCAPE_GRADIENT_COLOR_LIGHT,NotificationClearAppearance.LANDSCAPE_GRADIENT_COLOR_DARK,"渐变终点","渐变效果");
-        b.number(NotificationClearAppearance.LANDSCAPE_GRADIENT_ANGLE,"渐变方向","渐变效果","°",0,360,.01f);
-        b.add(NotificationClearAppearance.LANDSCAPE_GRADIENT_RANGE,"过渡范围",RANGE_BETWEEN,NUMERIC,"渐变效果","%",5,100,1f,null,null,null,null);
+        b.number(NotificationClearMotion.LANDSCAPE_OFFSET_X, "Posición horizontal", "Posición", "dp", -160, 160, .1f);
+        b.number(NotificationClearMotion.LANDSCAPE_OFFSET_Y, "Posición vertical", "Posición", "dp", -160, 160, .1f);
+        b.toggle(NotificationClearAppearance.LANDSCAPE_MASTER,"Color personalizado del botón","Solo funciona en horizontal y no depende del interruptor de posición; al desactivarlo se restaura el material nativo horizontal.","Color de fondo del botón");
+        b.colorPair(NotificationClearAppearance.LANDSCAPE_COLOR_LIGHT,NotificationClearAppearance.LANDSCAPE_COLOR_DARK,"Color de fondo del botón","Color de fondo del botón");
+        b.number(NotificationClearAppearance.LANDSCAPE_OPACITY,"Transparencia del fondo","Color de fondo del botón","%",0,100,.01f);
+        b.toggle(NotificationClearAppearance.LANDSCAPE_GRADIENT_ENABLED,"Activar degradado","Solo funciona si está activado el color personalizado horizontal.","Efecto de degradado");
+        b.colorPair(NotificationClearAppearance.LANDSCAPE_GRADIENT_COLOR_LIGHT,NotificationClearAppearance.LANDSCAPE_GRADIENT_COLOR_DARK,"Color final del degradado","Efecto de degradado");
+        b.number(NotificationClearAppearance.LANDSCAPE_GRADIENT_ANGLE,"Dirección del degradado","Efecto de degradado","°",0,360,.01f);
+        b.add(NotificationClearAppearance.LANDSCAPE_GRADIENT_RANGE,"Rango de transición",RANGE_BETWEEN,NUMERIC,"Efecto de degradado","%",5,100,1f,null,null,null,null);
         return new Group(b);
     }
     private static Group lockscreenDate() {
-        Builder b=builder("lockscreen_date", "锁屏日期自定义",
-                "自定义锁屏的年月日与星期文字，保持系统原生字体、大小和更新频率。仅处理锁屏日期，不改变通知页或控制中心时间，默认关闭。",
+        Builder b=builder("lockscreen_date", "Personalizar la fecha de la pantalla de bloqueo",
+                "Personaliza el texto de año, mes, día y semana de la pantalla de bloqueo, conservando la fuente, el tamaño y la frecuencia de actualización nativos. Solo afecta a la fecha de la pantalla de bloqueo, no a la hora del panel de notificaciones ni del centro de control. Desactivado de forma predeterminada.",
                 LOCK_SCREEN, LockscreenControls.DATE_ENABLED);
-        b.text(LockscreenControls.DATE_FORMAT,"日期格式","锁屏日期显示的内容，例如 yyyy年M月d日 {星期}","显示内容",
-                new String[]{"M月d日 {周}","yyyy年M月d日 {星期}","yyyy/MM/dd EEEE","M月d日"},
-                new String[]{"月日与星期","年月日与完整星期","数字日期与星期","只显示月日"});
+        b.text(LockscreenControls.DATE_FORMAT,"Formato de fecha","Contenido de la fecha de la pantalla de bloqueo; por ejemplo, yyyy年M月d日 {星期}.","Contenido mostrado",
+                new String[]{"M月d日 {周}","yyyy年M月d日 {星期}","yyyy/MM/dd EEEE","M d"},
+                new String[]{"Día, mes y día de la semana","Año, mes, día y nombre completo del día","Fecha numérica y día de la semana","Mostrar solo el mes y el día"});
         return new Group(b);
     }
     private static Group lockscreenLock() {
-        return new Group(builder("lockscreen_lock_icon", "隐藏锁屏小锁",
-                "隐藏锁屏小锁和它旁边的充电提示文字，只改绘制；保留解锁触摸区域、原生状态和指纹交互，默认关闭。",
+        return new Group(builder("lockscreen_lock_icon", "Ocultar el candado pequeño de la pantalla de bloqueo",
+                "Oculta el candado pequeño de la pantalla de bloqueo y el texto de carga que aparece junto a él. Solo modifica el dibujo: conserva la zona táctil de desbloqueo, el estado del sistema y la interacción con la huella. Desactivado de forma predeterminada.",
                 LOCK_SCREEN, LockscreenControls.HIDE_LOCK));
     }
     private static Group lockscreenBlur() {
-        Builder b=builder("lockscreen_status_blur", "状态栏区域模糊",
-                "只模糊锁屏顶部壁纸，向下逐渐恢复清晰。时间、通知和状态图标保持清晰；缓存壁纸模糊，随原生解锁和息屏进度淡出。",
+        Builder b=builder("lockscreen_status_blur", "Desenfoque de la zona de la barra de estado",
+                "Desenfoca solo el fondo de pantalla de la parte superior de la pantalla de bloqueo y recupera gradualmente la nitidez hacia abajo. La hora, las notificaciones y los iconos de estado permanecen nítidos; el fondo desenfocado se almacena en caché y se desvanece durante el desbloqueo nativo y el apagado de la pantalla.",
                 LOCK_SCREEN, LockscreenStatusBlur.ENABLED);
-        b.number(LockscreenStatusBlur.RADIUS,"模糊强度","模糊范围","dp",0,40,.1f);
-        b.number(LockscreenStatusBlur.RANGE,"主要模糊高度","模糊范围","dp",0,200,.1f);
-        b.number(LockscreenStatusBlur.TRANSITION,"由虚到实过渡高度","模糊范围","dp",0,120,.1f);
-        b.add(LockscreenStatusBlur.MASK_COLOR,"颜色遮罩","向下渐隐，只覆盖壁纸；颜色透明度为 0 时不显示遮罩。",COLOR,"颜色遮罩","",0,0,0,null,null,null,null);
+        b.number(LockscreenStatusBlur.RADIUS,"Intensidad del desenfoque","Zona de desenfoque","dp",0,40,.1f);
+        b.number(LockscreenStatusBlur.RANGE,"Altura principal del desenfoque","Zona de desenfoque","dp",0,200,.1f);
+        b.number(LockscreenStatusBlur.TRANSITION,"Altura de transición de desenfocado a nítido","Zona de desenfoque","dp",0,120,.1f);
+        b.add(LockscreenStatusBlur.MASK_COLOR,"Máscara de color","Se desvanece hacia abajo y solo cubre el fondo de pantalla; si la transparencia del color es 0, no se muestra la máscara.",COLOR,"Máscara de color","",0,0,0,null,null,null,null);
         return new Group(b);
     }
     private static Group fluidAccent() {
-        Builder b=builder("fluid_cloud_accent", "流体云媒体强调色",
-                "音乐流体云使用系统取色的强调色，其他卡片可跟随当前媒体色。总开关关闭时暂停本页的媒体强调色。锁屏与 AOD 上的渐变、不透明度、提亮和通知跟随，在“锁屏 → 亮屏锁屏 / AOD 息屏显示”里分别设置，这里只管颜色来源。作用于悬浮展开、锁屏和 AOD；通知栏不受影响，该场景已停用。",
+        Builder b=builder("fluid_cloud_accent", "Color de énfasis multimedia de Fluid Cloud",
+                "La cápsula multimedia de Fluid Cloud usa el color de énfasis detectado por el sistema; otras tarjetas pueden seguir el color del medio actual. Al desactivar el interruptor principal, se pausa el color multimedia de esta página. El degradado, la opacidad, el aclarado y el seguimiento de notificaciones en la pantalla de bloqueo y AOD se configuran por separado en «Pantalla de bloqueo → Bloqueo con pantalla encendida / AOD». Aquí solo se define el origen del color. Se aplica a las tarjetas flotantes expandidas, la pantalla de bloqueo y AOD, no al panel de notificaciones; esta última escena está desactivada.",
                 OTHER, FluidCloudAccent.ENABLED);
-        b.toggle(FluidCloudAccent.MASK_ENABLED,"强调色遮罩","在媒体色上叠一层颜色，强调色与跟随色共用。","遮罩");
-        b.add(FluidCloudAccent.MASK_COLOR,"遮罩颜色","",COLOR,"遮罩","",0,0,0,null,null,null,null);
-        b.add(FluidCloudAccent.MASK_OPACITY,"遮罩不透明度","遮罩盖在媒体色上的浓淡：100% 完全不透明，0% 完全透明。",NUMERIC,"遮罩","%",0,100,.1f,null,null,null,null);
-        b.add(FluidCloudAccent.OPACITY,"填充不透明度","强调色与跟随色铺在卡片上的浓淡：100% 完全不透明，0% 完全透明。锁屏开了“锁屏自定义”时用下面的锁屏值。",NUMERIC,"颜色填充","%",0,100,.1f,null,null,null,null);
-        b.toggle(FluidCloudStyle.FOLLOW_MEDIA,"跟随媒体强调色","没有自己强调色的卡片使用当前媒体色，用本页的遮罩与不透明度；没有媒体时使用“流体云样式”里的自定义底色。需要先开启“流体云样式”里的自定义底色，关掉它跟随也一起停止。颜色变化（切歌、关掉媒体、回到系统颜色）会淡入淡出，不会突然跳变。","跟随媒体色");
-        b.toggle(FluidCloudStyle.FOLLOW_ONLY_PLAYING,"仅播放时跟随","媒体暂停或停止后不再跟随，回到自定义底色。","跟随媒体色");
+        b.toggle(FluidCloudAccent.MASK_ENABLED,"Máscara del color de énfasis","Superpone un color al color multimedia; el color de énfasis y el color seguido comparten esta máscara.","Máscara");
+        b.add(FluidCloudAccent.MASK_COLOR,"Color de la máscara","",COLOR,"Máscara","",0,0,0,null,null,null,null);
+        b.add(FluidCloudAccent.MASK_OPACITY,"Opacidad de la máscara","Intensidad de la máscara superpuesta al color multimedia: 100 % opaca, 0 % transparente.",NUMERIC,"Máscara","%",0,100,.1f,null,null,null,null);
+        b.add(FluidCloudAccent.OPACITY,"Opacidad del relleno","Intensidad del color de énfasis o del color seguido sobre la tarjeta: 100 % opaco y 0 % transparente. Si está activado «Personalización de bloqueo», usa los valores de pantalla de bloqueo de abajo.",NUMERIC,"Relleno de color","%",0,100,.1f,null,null,null,null);
+        b.toggle(FluidCloudStyle.FOLLOW_MEDIA,"Seguir el color de énfasis multimedia","Las tarjetas que no tienen un color de énfasis propio usan el color del medio actual, con la máscara y opacidad de esta página; si no hay contenido multimedia, usan el color personalizado de «Estilo de Fluid Cloud». Primero debes activar allí el color personalizado de fondo. Si lo desactivas, también se desactiva el seguimiento. Los cambios de color (al cambiar de canción, detener la reproducción o volver al color del sistema) se funden suavemente, sin saltos repentinos.","Seguir el color multimedia");
+        b.toggle(FluidCloudStyle.FOLLOW_ONLY_PLAYING,"Seguir solo durante la reproducción","Al pausar o detener el medio, deja de seguir el color y vuelve al fondo personalizado.","Seguir el color multimedia");
         return new Group(b);
     }
     /**
@@ -931,189 +931,189 @@ public final class SettingsCatalog {
      * and the "unify style" switch that makes AOD and the notifications follow it. Where the colour comes from stays on the media-accent page.
      */
     private static Group lockAwake() {
-        Builder b = new Builder("lock_awake", "亮屏锁屏",
-                "屏幕亮着时锁屏上的样子：音乐、秒表、计时等流体云卡片怎么铺颜色、渐变到哪里、提亮和遮罩，底部的小胶囊，以及普通通知（微信、短信等）是否跟随音乐主色。息屏显示在“AOD”页单独设置，也可以在这一页开启“统一样式”让两边一致。这一页单独生效，不需要开启“流体云样式”和“流体云媒体强调色”（它们只管桌面悬浮卡片等其他场景）：打开下面的“亮屏渐变样式”或“亮屏自定义”，锁屏上的卡片就按当前音乐的主色着色；普通通知用“通知跟随媒体色”或“统一样式”。",
-                LOCK_SCREEN, FluidCloudAccent.LOCK_GRADIENT, true, "亮屏渐变样式", "音乐卡在亮屏锁屏用顶部主色渐变到透明（到哪里完全淡出由下面的“过渡范围”决定）；默认关闭，整张卡片和秒表等其他卡片一样填充，锁屏观感统一。");
-        b.toggle(LockNotificationSettings.UNIFY_AOD,"统一样式","开启后，锁屏与 AOD 上的普通通知按流体云卡片的样子着色——颜色、渐变、浓淡与卡片完全一致（亮屏按本页的样式，AOD 按“AOD”页的样式），不再用单独的跟随开关和强度；没有音乐在播放时，AOD 里的通知和流体云卡片沿用亮屏锁屏卡片的中性玻璃底色和同一套颜色层。亮屏和 AOD 的样式仍然各自设置，互不影响。关闭则通知用各自的跟随设置。默认关闭。","统一样式");
-        b.add(FluidCloudAccent.GRADIENT_RANGE,"过渡范围","亮屏锁屏音乐卡和锁屏底部胶囊的渐变，从顶部开始。"+RANGE_FADE,
-                NUMERIC,"亮屏样式","%",5,100,1f,null,null,null,null);
-        b.choice(FluidCloudStyle.COLOR_STYLE,"颜色填充样式","只决定锁屏音乐卡的颜色怎么铺：纯色是整张卡片一种颜色（原来的样子）；原生渐变是直接改它自带渐变的颜色，替换原本的黑色渐变（“亮屏渐变样式”已开时本来就是渐变）。锁屏底部胶囊同样跟这里。秒表、外卖等其他卡片和普通通知不受这个选择影响。","亮屏样式",
+        Builder b = new Builder("lock_awake", "Pantalla de bloqueo encendida",
+                "Aspecto de la pantalla de bloqueo mientras la pantalla está encendida: cómo se colorean, degradan, aclaran y enmascaran las tarjetas de Fluid Cloud (música, cronómetro, temporizador, etc.), además de la pequeña cápsula inferior y de si las notificaciones normales (WeChat, SMS, etc.) siguen el color principal de la música. AOD se configura por separado en la página «AOD»; también puedes activar aquí «Estilo unificado» para igualar ambos. Esta página funciona de forma independiente y no requiere activar «Estilo de Fluid Cloud» ni «Color de énfasis multimedia de Fluid Cloud», que controlan otros escenarios, como las tarjetas flotantes del escritorio. Al activar «Degradado con pantalla encendida» o «Personalización con pantalla encendida», las tarjetas de la pantalla de bloqueo se tiñen con el color principal del medio. Para las notificaciones normales, usa «Seguir color multimedia en notificaciones» o «Estilo unificado».",
+                LOCK_SCREEN, FluidCloudAccent.LOCK_GRADIENT, true, "Estilo de degradado con pantalla encendida", "La tarjeta de música usa un degradado desde el color principal superior hasta la transparencia en la pantalla de bloqueo encendida (el punto en que desaparece por completo se define con «Rango de transición»). Desactivado de forma predeterminada: toda la tarjeta usa un único relleno, igual que el cronómetro y las demás tarjetas.");
+        b.toggle(LockNotificationSettings.UNIFY_AOD,"Estilo unificado","Al activarlo, las notificaciones normales de la pantalla de bloqueo y AOD se colorean como las tarjetas de Fluid Cloud: el color, el degradado y la intensidad coinciden por completo (en la pantalla encendida se usa el estilo de esta página; en AOD, el de la página «AOD»). Dejan de utilizarse el interruptor y la intensidad de seguimiento independientes. Si no hay música reproduciéndose, las notificaciones y las tarjetas de Fluid Cloud en AOD utilizan el fondo de vidrio neutro de las tarjetas de la pantalla encendida y la misma capa de color. Los estilos de la pantalla encendida y AOD se siguen configurando por separado y no se afectan entre sí. Al desactivarlo, las notificaciones usan sus propios ajustes de seguimiento. Desactivado de forma predeterminada.","Estilo unificado");
+        b.add(FluidCloudAccent.GRADIENT_RANGE,"Rango de transición","El degradado de la tarjeta de música y de la cápsula inferior de la pantalla de bloqueo empieza desde arriba."+RANGE_FADE,
+                NUMERIC,"Estilo con pantalla encendida","%",5,100,1f,null,null,null,null);
+        b.choice(FluidCloudStyle.COLOR_STYLE,"Estilo de relleno de color","Define cómo se aplica el color a la tarjeta de música en la pantalla de bloqueo: «Color sólido» usa un único color en toda la tarjeta; «Degradado nativo» cambia los colores del degradado integrado y sustituye el degradado negro original (si está activado «Estilo de degradado con pantalla encendida», ya se utiliza un degradado). La cápsula inferior de la pantalla de bloqueo también sigue este ajuste. No afecta al cronómetro, a las tarjetas de comida a domicilio ni a las notificaciones normales.","Estilo con pantalla encendida",
                 new String[]{"solid","gradient"},
-                new String[]{"纯色","原生渐变"});
-        b.toggle(FluidCloudStyle.LOCK_CAPSULE,"锁屏底部胶囊着色","锁屏和 AOD 底部、手电筒与相机按钮之间的小胶囊。默认关闭，保持系统原样；开启后它按“强调色 → 跟随媒体色 → 自定义底色”的顺序着色。","亮屏样式");
-        b.toggle(FluidCloudAccent.LOCK_CUSTOM,"亮屏自定义","亮屏锁屏用下面的不透明度和遮罩着色（有“流体云媒体强调色”时，代替那一页的共用设置）。打开它，亮屏锁屏上的卡片就会按当前音乐的主色着色，不需要先开启“流体云媒体强调色”。","亮屏自定义");
-        b.add(FluidCloudAccent.LOCK_OPACITY,"亮屏填充不透明度","亮屏锁屏上颜色铺在卡片上的浓淡：100% 完全不透明，0% 完全透明。它只决定透不透明，颜色深浅由“亮屏提亮底色”决定。",NUMERIC,"亮屏自定义","%",0,100,.1f,null,null,null,null);
-        b.add(FluidCloudAccent.LOCK_MASK_COLOR,"亮屏遮罩颜色","",COLOR,"亮屏自定义","",0,0,0,null,null,null,null);
-        b.add(FluidCloudAccent.LOCK_MASK_OPACITY,"亮屏遮罩不透明度","亮屏锁屏上遮罩的浓淡：100% 完全不透明，0% 完全透明。",NUMERIC,"亮屏自定义","%",0,100,.1f,null,null,null,null);
-        b.add(FluidCloudAccent.LOCK_LIGHT,"亮屏提亮底色","锁屏的背景是暗的，半透明的颜色叠上去会发暗发灰，和解锁后（悬浮、下拉）亮玻璃上的样子差很多。提亮让颜色像放在白色上看那样变浅：0 不提亮，100 最浅。它只改颜色深浅，不改透明度：透不透明只由填充不透明度决定。",
-                NUMERIC,"亮屏自定义","%",0,100,1f,null,null,null,null);
-        b.toggle(FluidCloudStyle.NOTIFICATION_FOLLOW,"通知跟随媒体色","让锁屏与 AOD 的普通通知跟随音乐主色，使用与流体云卡片相同的渐变、透明过渡和高光。此开关独立控制普通通知，跟随强度在下方调整；开了“统一样式”则按流体云卡片的样子，不再用这个开关。","通知");
-        b.number(FluidCloudStyle.NOTIFICATION_FOLLOW_OPACITY,"跟随强度","通知","%",0,100,.1f);
+                new String[]{"Color sólido","Degradado nativo"});
+        b.toggle(FluidCloudStyle.LOCK_CAPSULE,"Colorear la cápsula inferior de la pantalla de bloqueo","Pequeña cápsula entre la parte inferior de la pantalla de bloqueo o AOD y los botones de linterna y cámara. Desactivada de forma predeterminada para conservar el aspecto original; al activarla, aplica los colores en este orden: color de énfasis → color multimedia seguido → fondo personalizado.","Estilo con pantalla encendida");
+        b.toggle(FluidCloudAccent.LOCK_CUSTOM,"Personalización con pantalla encendida","Colorea la pantalla de bloqueo encendida mediante la opacidad y la máscara de abajo (si existe «Color de énfasis multimedia de Fluid Cloud», sustituye los ajustes compartidos de esa página). Al activarlo, las tarjetas usan el color principal del medio actual sin necesidad de activar primero esa función.","Personalización con pantalla encendida");
+        b.add(FluidCloudAccent.LOCK_OPACITY,"Opacidad del relleno con pantalla encendida","Intensidad del color aplicado a las tarjetas con la pantalla encendida: 100 % opaco, 0 % transparente. Solo controla la transparencia; el tono se ajusta con «Aclarar el fondo con pantalla encendida».",NUMERIC,"Personalización con pantalla encendida","%",0,100,.1f,null,null,null,null);
+        b.add(FluidCloudAccent.LOCK_MASK_COLOR,"Color de la máscara con pantalla encendida","",COLOR,"Personalización con pantalla encendida","",0,0,0,null,null,null,null);
+        b.add(FluidCloudAccent.LOCK_MASK_OPACITY,"Opacidad de la máscara con pantalla encendida","Intensidad de la máscara sobre la pantalla de bloqueo encendida: 100 % opaca, 0 % transparente.",NUMERIC,"Personalización con pantalla encendida","%",0,100,.1f,null,null,null,null);
+        b.add(FluidCloudAccent.LOCK_LIGHT,"Aclarar el fondo con pantalla encendida","El fondo de la pantalla de bloqueo es oscuro y las capas semitransparentes pueden volver el color grisáceo, muy distinto del vidrio claro al desbloquear o desplegar el panel. Aclarar hace que el color parezca colocado sobre blanco: 0 no aclara y 100 es el tono más claro. Solo cambia el tono, no la transparencia, que depende de la opacidad del relleno.",
+                NUMERIC,"Personalización con pantalla encendida","%",0,100,1f,null,null,null,null);
+        b.toggle(FluidCloudStyle.NOTIFICATION_FOLLOW,"Seguir el color multimedia en las notificaciones","Hace que las notificaciones normales de la pantalla de bloqueo y AOD sigan el color principal de la música, con el mismo degradado, transición de transparencia y brillo que las tarjetas de Fluid Cloud. Este interruptor controla las notificaciones normales por separado; la intensidad se ajusta abajo. Si se activa «Estilo unificado», las notificaciones adoptan el aspecto de las tarjetas y este interruptor deja de utilizarse.","Notificaciones");
+        b.number(FluidCloudStyle.NOTIFICATION_FOLLOW_OPACITY,"Intensidad de seguimiento","Notificaciones","%",0,100,.1f);
         return new Group(b);
     }
     /** Lock screen in AOD: the same look as the lit lock screen, set on its own; "unify style" on the lit page turns this page off. */
     private static Group lockAod() {
-        Builder b = new Builder("lock_aod", "AOD 息屏显示",
-                "息屏显示（AOD）上流体云卡片和普通通知的样子，和亮屏锁屏分开设置；初始值与亮屏相同，之后各改各的。“亮屏锁屏”页的“统一样式”只决定普通通知是否按流体云卡片的样子着色，不影响这一页的设置。这一页同样单独生效，不需要开启“流体云样式”和“流体云媒体强调色”：打开下面的“AOD 渐变样式”或“AOD 自定义”，AOD 上的卡片就按当前音乐的主色着色；普通通知的着色由“亮屏锁屏”页的“通知跟随媒体色”或“统一样式”决定，强度在这一页调。",
-                LOCK_SCREEN, FluidCloudAccent.AOD_GRADIENT, true, "AOD 渐变样式", "音乐卡在 AOD 用顶部主色渐变到透明。AOD 的背景是纯黑，渐变的下半截会露出黑底，所以默认关闭，整张卡片同一种颜色。");
-        b.toggle(AodNotificationBackground.ENABLED,"AOD 通知白色玻璃背景","仅在 AOD 中，为已适配的普通通知、流体云通知和媒体卡片背景增加一层轻白玻璃质感，保留原生模糊、壁纸颜色与细节、透明度、圆角和过渡，仍可透出壁纸。文字、图标和卡片内容保持系统配色。独立生效，亮屏锁屏不受影响；关闭后恢复原背景。默认关闭。","通知背景");
-        b.toggle(FluidCloudAccent.AOD_CUSTOM,"AOD 自定义","AOD 用下面的不透明度和遮罩着色（有“流体云媒体强调色”时，代替那一页的共用设置）。打开它，AOD 上的卡片就会按当前音乐的主色着色，不需要先开启“流体云媒体强调色”。","AOD 自定义");
-        b.add(FluidCloudAccent.AOD_OPACITY,"AOD 填充不透明度","AOD 上颜色铺在卡片上的浓淡：100% 完全不透明，0% 完全透明。它只决定透不透明，颜色深浅由“AOD 提亮底色”决定。",NUMERIC,"AOD 自定义","%",0,100,.1f,null,null,null,null);
-        b.add(FluidCloudAccent.AOD_MASK_COLOR,"AOD 遮罩颜色","",COLOR,"AOD 自定义","",0,0,0,null,null,null,null);
-        b.add(FluidCloudAccent.AOD_MASK_OPACITY,"AOD 遮罩不透明度","AOD 上遮罩的浓淡：100% 完全不透明，0% 完全透明。",NUMERIC,"AOD 自定义","%",0,100,.1f,null,null,null,null);
-        b.add(FluidCloudAccent.AOD_LIGHT,"AOD 提亮底色","让颜色像放在白色上看那样变浅：0 不提亮，100 最浅。它只改颜色深浅，不改透明度。",
-                NUMERIC,"AOD 自定义","%",0,100,1f,null,null,null,null);
-        b.number(LockNotificationSettings.AOD_NOTIFICATION_FOLLOW_OPACITY,"AOD 通知跟随强度","通知","%",0,100,.1f);
+        Builder b = new Builder("lock_aod", "Pantalla siempre encendida (AOD)",
+                "Aspecto de las tarjetas de Fluid Cloud y de las notificaciones normales en AOD, configurado por separado de la pantalla de bloqueo encendida. Al principio usa los mismos valores que la pantalla encendida, pero después cada modo puede ajustarse por separado. «Estilo unificado» en la página de pantalla encendida solo controla si las notificaciones normales adoptan el aspecto de Fluid Cloud; no afecta al resto de ajustes de AOD. Esta página funciona por sí sola y no requiere activar «Estilo de Fluid Cloud» ni «Color de énfasis multimedia de Fluid Cloud». Al activar «Estilo de degradado AOD» o «Personalización AOD», las tarjetas de AOD usan el color principal del medio actual. Las notificaciones normales dependen de «Seguir el color multimedia en las notificaciones» o «Estilo unificado» de la página de pantalla encendida; la intensidad se ajusta aquí.",
+                LOCK_SCREEN, FluidCloudAccent.AOD_GRADIENT, true, "Estilo de degradado AOD", "En AOD, la tarjeta de música usa un degradado desde el color principal superior hasta la transparencia. Como el fondo de AOD es negro puro, la parte inferior del degradado deja ver el fondo negro; por eso está desactivado de forma predeterminada y toda la tarjeta usa un único color.");
+        b.toggle(AodNotificationBackground.ENABLED,"Fondo de vidrio blanco para notificaciones AOD","Solo en AOD, añade un efecto de vidrio blanco suave al fondo de las notificaciones normales compatibles, las notificaciones de Fluid Cloud y las tarjetas multimedia. Conserva el desenfoque, los colores y detalles del fondo de pantalla, la transparencia, las esquinas redondeadas y las transiciones, y permite seguir viendo el fondo. El texto, los iconos y el contenido mantienen los colores del sistema. Funciona de forma independiente y no afecta a la pantalla de bloqueo encendida; al desactivarlo, se restaura el fondo original. Desactivado de forma predeterminada.","Fondo de las notificaciones");
+        b.toggle(FluidCloudAccent.AOD_CUSTOM,"Personalización AOD","AOD utiliza la opacidad y la máscara de abajo para aplicar color (si se usa «Color de énfasis multimedia de Fluid Cloud», sustituye los ajustes compartidos de aquella página). Al activarlo, las tarjetas de AOD usan el color principal de la música sin necesidad de activar esa función.","Personalización AOD");
+        b.add(FluidCloudAccent.AOD_OPACITY,"Opacidad del relleno AOD","Intensidad del color aplicado a las tarjetas AOD: 100 % opaco, 0 % transparente. Solo controla la transparencia; el tono se ajusta con «Aclarar el fondo AOD».",NUMERIC,"Personalización AOD","%",0,100,.1f,null,null,null,null);
+        b.add(FluidCloudAccent.AOD_MASK_COLOR,"Color de la máscara AOD","",COLOR,"Personalización AOD","",0,0,0,null,null,null,null);
+        b.add(FluidCloudAccent.AOD_MASK_OPACITY,"Opacidad de la máscara AOD","Intensidad de la máscara sobre AOD: 100 % opaca, 0 % transparente.",NUMERIC,"Personalización AOD","%",0,100,.1f,null,null,null,null);
+        b.add(FluidCloudAccent.AOD_LIGHT,"Aclarar el fondo AOD","Aclara el color para que parezca colocado sobre blanco: 0 no aclara y 100 es el tono más claro. Solo cambia el tono, no la transparencia.",
+                NUMERIC,"Personalización AOD","%",0,100,1f,null,null,null,null);
+        b.number(LockNotificationSettings.AOD_NOTIFICATION_FOLLOW_OPACITY,"Intensidad de seguimiento de notificaciones AOD","Notificaciones","%",0,100,.1f);
         return new Group(b);
     }
     /** Camera-area appearance plus an independent persistence switch shared by its tabs. */
     private static Group fluidCapsule() {
-        Builder b=builder("fluid_cloud_capsule", "摄像头区域流体云",
-                "摄像头周围的流体云胶囊（音乐、计时、来电等收起或展开时出现的黑色胶囊）。分三页：底色（颜色、渐变、模糊）、边框（边框、跑马灯、向内渐隐）、形状与内容（圆角、专辑封面、出现回弹、实时频谱）。外观总开关关闭时恢复原生外观；常驻流体云独立控制自动收起。",
+        Builder b=builder("fluid_cloud_capsule", "Fluid Cloud alrededor de la cámara",
+                "Cápsula de Fluid Cloud alrededor de la cámara (la cápsula negra que aparece expandida o contraída para música, temporizadores, llamadas y otras actividades). Tiene tres páginas: fondo (color, degradado y desenfoque), borde (borde, luces en movimiento y desvanecimiento hacia dentro) y forma y contenido (esquinas redondeadas, portada del álbum, rebote de entrada y espectro en tiempo real). Al desactivar el interruptor general se restaura el aspecto original; la opción de mantener Fluid Cloud visible controla por separado el cierre automático.",
                 OTHER, FluidCloudCapsule.MASTER);
-        b.toggle(CapsulePersistence.ENABLED,"常驻流体云","开启后，摄像头区域的流体云不会因停留超时自动收起，仍可手动收起；音乐或任务结束时由系统正常清理。独立于本页外观总开关。","显示规则");
-        b.toggle(FluidCloudCapsule.FILL_ENABLED,"自定义底色","胶囊使用下面的颜色与透明度，代替原生黑色。底色较浅时胶囊里的白色文字会不易看清。","底色");
-        b.add(FluidCloudCapsule.FILL_COLOR,"底色","",COLOR,"底色","",0,0,0,null,null,null,null);
-        b.add(FluidCloudCapsule.FILL_OPACITY,"底色不透明度","100% 完全不透明，0% 完全透明。",NUMERIC,"底色","%",0,100,.1f,null,null,null,null);
-        b.toggle(FluidCloudCapsule.FOLLOW_MEDIA,"跟随媒体强调色","有媒体时胶囊使用当前媒体色，并叠加“流体云媒体强调色”页的遮罩，浓淡用本页的“底色不透明度”；没有媒体时用自定义底色或原生黑色。颜色变化会在约 0.6 秒内渐变过去。","底色");
-        b.toggle(FluidCloudCapsule.GRADIENT_ENABLED,"渐变底色","底色从上面的“底色”（或媒体色）渐变到下面的渐变颜色；需要先开启自定义底色或跟随媒体强调色。","渐变");
-        b.choice(FluidCloudCapsule.GRADIENT_MODE,"渐变方向","从上到下、从下到上，或从胶囊中间向四周。","渐变",
+        b.toggle(CapsulePersistence.ENABLED,"Mantener Fluid Cloud visible","Al activarlo, la cápsula de Fluid Cloud alrededor de la cámara no se contrae automáticamente tras un tiempo de inactividad, aunque puedes cerrarla manualmente. El sistema la elimina normalmente al finalizar la música o la tarea. Es independiente del interruptor general de apariencia de esta página.","Reglas de visualización");
+        b.toggle(FluidCloudCapsule.FILL_ENABLED,"Color de fondo personalizado","La cápsula utiliza el color y la transparencia de abajo en lugar del negro nativo. Si el fondo es demasiado claro, el texto blanco de la cápsula puede resultar difícil de leer.","Color de fondo");
+        b.add(FluidCloudCapsule.FILL_COLOR,"Color de fondo","",COLOR,"Color de fondo","",0,0,0,null,null,null,null);
+        b.add(FluidCloudCapsule.FILL_OPACITY,"Opacidad del fondo","100 % completamente opaco; 0 % completamente transparente.",NUMERIC,"Color de fondo","%",0,100,.1f,null,null,null,null);
+        b.toggle(FluidCloudCapsule.FOLLOW_MEDIA,"Seguir el color de énfasis multimedia","Cuando hay contenido multimedia, la cápsula usa el color del medio actual y aplica la máscara de «Color de énfasis multimedia de Fluid Cloud»; la intensidad se define con la opacidad del fondo de esta página. Si no hay contenido multimedia, usa el fondo personalizado o el negro nativo. El cambio de color se desvanece gradualmente en unos 0,6 segundos.","Color de fondo");
+        b.toggle(FluidCloudCapsule.GRADIENT_ENABLED,"Degradado de fondo","El fondo pasa del color superior (o del color multimedia) al color de degradado inferior. Primero debes activar el fondo personalizado o el seguimiento del color de énfasis multimedia.","Degradado");
+        b.choice(FluidCloudCapsule.GRADIENT_MODE,"Dirección del degradado","De arriba abajo, de abajo arriba o desde el centro de la cápsula hacia los lados.","Degradado",
                 new String[]{FluidCloudCapsule.TOP_BOTTOM,FluidCloudCapsule.BOTTOM_TOP,FluidCloudCapsule.CENTER},
-                new String[]{"从上到下","从下到上","中间向四周"});
-        b.add(FluidCloudCapsule.GRADIENT_COLOR,"渐变颜色","",COLOR,"渐变","",0,0,0,null,null,null,null);
-        b.add(FluidCloudCapsule.GRADIENT_RANGE,"过渡范围",RANGE_BETWEEN,
-                NUMERIC,"渐变","%",5,100,1f,null,null,null,null);
-        b.toggle(FluidCloudCapsule.BLUR_ENABLED,"背景模糊","胶囊变成毛玻璃：模糊它后面的画面，再盖一层“遮罩颜色”。开启后底色由遮罩色决定，自定义底色、渐变、跟随媒体强调色这几项会变灰、不再起作用；边框、跑马灯、圆角照常。依赖系统的窗口背景模糊，系统不支持或关闭了模糊时保持原来的底色。","模糊");
-        b.number(FluidCloudCapsule.BLUR_RADIUS,"模糊强度","模糊","dp",0,FluidCloudCapsule.MAX_BLUR_RADIUS,.5f);
-        b.add(FluidCloudCapsule.BLUR_MASK_COLOR,"遮罩颜色","盖在模糊上的一层颜色，颜色自带的透明度决定浓淡；背景模糊开启后，上面的自定义底色、渐变和跟随媒体色不再起作用。",COLOR,"模糊","",0,0,0,null,null,null,null);
-        b.toggle(FluidCloudCapsule.BORDER_ENABLED,"自定义边框","胶囊始终显示这条边框（原生只在收起时有一圈很淡的边）。","边框");
-        b.add(FluidCloudCapsule.BORDER_COLOR,"边框颜色","",COLOR,"边框","",0,0,0,null,null,null,null);
-        b.number(FluidCloudCapsule.BORDER_WIDTH,"边框粗细","边框","dp",0,FluidCloudCapsule.MAX_BORDER_WIDTH,.1f);
-        b.toggle(FluidCloudCapsule.MARQUEE_ENABLED,"边框跑马灯","边框变成一圈绕着胶囊转动的彩色光，代替上面的普通边框。开了自定义边框时用它的粗细，否则用系统默认的 1.3 dp。只在胶囊显示时转动，约每秒 30 帧。","跑马灯");
-        b.choice(FluidCloudCapsule.MARQUEE_PRESET,"预设","自带颜色的预设有二十个；“单色流光”用颜色 1 拖出一道渐隐的尾巴；“自定义”用下面的颜色（2 到 6 个）。","跑马灯",
+                new String[]{"De arriba abajo","De abajo arriba","Del centro hacia los lados"});
+        b.add(FluidCloudCapsule.GRADIENT_COLOR,"Color del degradado","",COLOR,"Degradado","",0,0,0,null,null,null,null);
+        b.add(FluidCloudCapsule.GRADIENT_RANGE,"Rango de transición",RANGE_BETWEEN,
+                NUMERIC,"Degradado","%",5,100,1f,null,null,null,null);
+        b.toggle(FluidCloudCapsule.BLUR_ENABLED,"Desenfoque del fondo","Convierte la cápsula en vidrio esmerilado: desenfoca lo que hay detrás y superpone una capa de «Color de máscara». Al activarlo, el color de fondo lo determina la máscara y las opciones de fondo personalizado, degradado y seguimiento del color multimedia quedan deshabilitadas. El borde, la luz en movimiento y las esquinas redondeadas siguen funcionando. Depende del desenfoque de fondo de ventanas del sistema; si no es compatible o está desactivado, se conserva el fondo original.","Desenfoque");
+        b.number(FluidCloudCapsule.BLUR_RADIUS,"Intensidad del desenfoque","Desenfoque","dp",0,FluidCloudCapsule.MAX_BLUR_RADIUS,.5f);
+        b.add(FluidCloudCapsule.BLUR_MASK_COLOR,"Color de la máscara","Color que se superpone al fondo desenfocado; la transparencia propia del color determina la intensidad. Cuando el desenfoque está activado, el fondo personalizado, el degradado y el seguimiento del color multimedia dejan de aplicarse.",COLOR,"Desenfoque","",0,0,0,null,null,null,null);
+        b.toggle(FluidCloudCapsule.BORDER_ENABLED,"Borde personalizado","La cápsula muestra siempre este borde (el sistema nativo solo tiene un borde muy tenue cuando está contraída).","Borde");
+        b.add(FluidCloudCapsule.BORDER_COLOR,"Color del borde","",COLOR,"Borde","",0,0,0,null,null,null,null);
+        b.number(FluidCloudCapsule.BORDER_WIDTH,"Grosor del borde","Borde","dp",0,FluidCloudCapsule.MAX_BORDER_WIDTH,.1f);
+        b.toggle(FluidCloudCapsule.MARQUEE_ENABLED,"Luz en movimiento del borde","Sustituye el borde normal por una luz multicolor que gira alrededor de la cápsula. Si el borde personalizado está activado, usa su grosor; de lo contrario, usa el valor predeterminado del sistema de 1,3 dp. Solo se anima mientras la cápsula está visible, a unos 30 fotogramas por segundo.","Luz en movimiento");
+        b.choice(FluidCloudCapsule.MARQUEE_PRESET,"Preajuste","Hay veinte preajustes con colores incluidos. «Flujo monocromático» usa el color 1 para crear una estela que se desvanece; «Personalizado» utiliza los colores de abajo (de 2 a 6 colores).","Luz en movimiento",
                 FluidCloudCapsule.MARQUEE_PRESETS,
                 FluidCloudCapsule.MARQUEE_PRESET_LABELS);
-        b.number(FluidCloudCapsule.MARQUEE_COLOR_COUNT,"自定义颜色数量","跑马灯","个",FluidCloudCapsule.MIN_MARQUEE_COLORS,FluidCloudCapsule.MAX_MARQUEE_COLORS,1f);
-        b.add(FluidCloudCapsule.MARQUEE_COLOR_1,"颜色 1","",COLOR,"跑马灯","",0,0,0,null,null,null,null);
-        b.add(FluidCloudCapsule.MARQUEE_COLOR_2,"颜色 2","",COLOR,"跑马灯","",0,0,0,null,null,null,null);
-        b.add(FluidCloudCapsule.MARQUEE_COLOR_3,"颜色 3","",COLOR,"跑马灯","",0,0,0,null,null,null,null);
-        b.add(FluidCloudCapsule.MARQUEE_COLOR_4,"颜色 4","",COLOR,"跑马灯","",0,0,0,null,null,null,null);
-        b.add(FluidCloudCapsule.MARQUEE_COLOR_5,"颜色 5","",COLOR,"跑马灯","",0,0,0,null,null,null,null);
-        b.add(FluidCloudCapsule.MARQUEE_COLOR_6,"颜色 6","",COLOR,"跑马灯","",0,0,0,null,null,null,null);
-        b.add(FluidCloudCapsule.MARQUEE_OPACITY,"不透明度","100% 完全不透明，0% 完全透明。",NUMERIC,"跑马灯","%",0,100,.1f,null,null,null,null);
-        b.number(FluidCloudCapsule.MARQUEE_PERIOD,"转一圈用时","跑马灯","秒",FluidCloudCapsule.MIN_MARQUEE_PERIOD,FluidCloudCapsule.MAX_MARQUEE_PERIOD,.1f);
-        b.toggle(FluidCloudCapsule.MARQUEE_REVERSE,"反方向转动","默认顺时针；开启后逆时针。","跑马灯");
-        b.toggle(FluidCloudCapsule.GLOW_ENABLED,"向内渐隐","光环再向胶囊里面连续地淡出，像一圈柔和的光晕，颜色跟着跑马灯一起转。","向内渐隐");
-        b.add(FluidCloudCapsule.GLOW_DEPTH,"过渡范围","光晕从边框开始向内。"+RANGE_DISTANCE,
-                NUMERIC,"向内渐隐","dp",FluidCloudCapsule.MIN_GLOW_DEPTH,FluidCloudCapsule.MAX_GLOW_DEPTH,.5f,null,null,null,null);
-        b.toggle(FluidCloudCapsule.RADIUS_ENABLED,"自定义圆角","展开的胶囊，底色、边框和跑马灯使用同一个圆角半径。胶囊约 30dp 高，半径 15dp 及以上都是完整的胶囊形（原生也是），调小才会变成更方的圆角。收起时胶囊围着摄像头挖孔，始终保持原生形状，展开过程中再平滑过渡到这里的半径。","形状");
-        b.number(FluidCloudCapsule.RADIUS,"圆角半径","形状","dp",0,FluidCloudCapsule.MAX_RADIUS,.5f);
-        b.toggle(FluidCloudCapsule.COVER_RADIUS_ENABLED,"自定义封面圆角","音乐胶囊左边的专辑封面原生是圆形；开启后展开的胶囊用下面的圆角。收起时封面正好在摄像头挖孔处，始终保持原生圆形，展开过程中再平滑变过去。只作用于音乐胶囊，计时、来电等胶囊的图标不变；关闭即恢复圆形。","专辑封面");
-        b.add(FluidCloudCapsule.COVER_RADIUS,"封面圆角","0 为直角方形，10 dp 约为原生的圆形。",NUMERIC,"专辑封面","dp",0,FluidCloudCapsule.MAX_COVER_RADIUS,.5f,null,null,null,null);
-        b.toggle(FluidCloudCapsule.COVER_SIZE_ENABLED,"调整音乐封面大小","只改变展开时的音乐封面；胶囊整体尺寸、文字和其他图标不变，收起时恢复系统大小。","专辑封面");
-        b.add(FluidCloudCapsule.COVER_SCALE,"音乐封面大小","100% 为系统大小，展开和收起时跟随原生动画。",NUMERIC,"专辑封面","%",FluidCloudCapsule.MIN_COVER_SCALE,FluidCloudCapsule.MAX_COVER_SCALE,1f,null,null,null,null);
-        b.toggle(CapsuleEffects.BOUNCE_ENABLED,"自定义出现回弹","系统原生效果：胶囊出现时会先多撑开约 16dp 宽、3dp 高，再回落到正常大小。开启后用下面的幅度；关闭即系统原样。下一次胶囊出现时生效，不改变胶囊在摄像头处的位置。","出现回弹");
-        b.add(CapsuleEffects.BOUNCE,"回弹幅度","0% 没有回弹，100% 为系统原样，最多 200%。",NUMERIC,"出现回弹","%",0,CapsuleEffects.MAX_BOUNCE,1f,null,null,null,null);
-        b.toggle(FluidCloudCapsule.SPECTRUM_ENABLED,"实时频谱","胶囊里的音乐频谱不再播放固定动画，改为跟随正在播放的音乐实时跳动。只在胶囊显示、音乐播放时工作，其余时间不占用电量；依赖系统的音频可视化，不支持时保留原动画。","实时频谱");
-        b.add(FluidCloudCapsule.SPECTRUM_SENSITIVITY,"频谱灵敏度","可以按喜好自己调：0 时条很安静，只有明显的鼓点才会升起，最高到三分之一多一点；100 时条又高又活跃，最高处能到顶。条的高低始终跟着每个频段自己最近的响度范围走，所以调到最高也不会一直顶满；音量很小时整体会矮一些。",
-                NUMERIC,"实时频谱","%",0,100,1f,null,null,null,null);
-        b.toggle(FluidCloudCapsule.SPECTRUM_FOLLOW,"频谱跟随强调色","频谱条用当前媒体色（正在播放的音乐封面的主色，太暗时会提亮到看得清；胶囊底色正好是同一个颜色时改用深色或白色），不再用下面的固定颜色。暂时取不到媒体色时仍用下面的颜色。","实时频谱");
-        b.add(FluidCloudCapsule.SPECTRUM_COLOR,"频谱颜色","",COLOR,"实时频谱","",0,0,0,null,null,null,null);
+        b.number(FluidCloudCapsule.MARQUEE_COLOR_COUNT,"Cantidad de colores personalizados","Luz en movimiento","unidades",FluidCloudCapsule.MIN_MARQUEE_COLORS,FluidCloudCapsule.MAX_MARQUEE_COLORS,1f);
+        b.add(FluidCloudCapsule.MARQUEE_COLOR_1,"Color 1","",COLOR,"Luz en movimiento","",0,0,0,null,null,null,null);
+        b.add(FluidCloudCapsule.MARQUEE_COLOR_2,"Color 2","",COLOR,"Luz en movimiento","",0,0,0,null,null,null,null);
+        b.add(FluidCloudCapsule.MARQUEE_COLOR_3,"Color 3","",COLOR,"Luz en movimiento","",0,0,0,null,null,null,null);
+        b.add(FluidCloudCapsule.MARQUEE_COLOR_4,"Color 4","",COLOR,"Luz en movimiento","",0,0,0,null,null,null,null);
+        b.add(FluidCloudCapsule.MARQUEE_COLOR_5,"Color 5","",COLOR,"Luz en movimiento","",0,0,0,null,null,null,null);
+        b.add(FluidCloudCapsule.MARQUEE_COLOR_6,"Color 6","",COLOR,"Luz en movimiento","",0,0,0,null,null,null,null);
+        b.add(FluidCloudCapsule.MARQUEE_OPACITY,"Opacidad","100 % completamente opaco; 0 % completamente transparente.",NUMERIC,"Luz en movimiento","%",0,100,.1f,null,null,null,null);
+        b.number(FluidCloudCapsule.MARQUEE_PERIOD,"Duración de una vuelta","Luz en movimiento","segundos",FluidCloudCapsule.MIN_MARQUEE_PERIOD,FluidCloudCapsule.MAX_MARQUEE_PERIOD,.1f);
+        b.toggle(FluidCloudCapsule.MARQUEE_REVERSE,"Girar en sentido contrario","Por defecto gira en sentido horario; al activarlo, gira en sentido antihorario.","Luz en movimiento");
+        b.toggle(FluidCloudCapsule.GLOW_ENABLED,"Desvanecer hacia dentro","El halo se desvanece gradualmente hacia el interior de la cápsula, creando un resplandor suave cuyo color gira junto con la luz del borde.","Desvanecer hacia dentro");
+        b.add(FluidCloudCapsule.GLOW_DEPTH,"Rango de transición","El resplandor empieza en el borde y se desvanece hacia dentro."+RANGE_DISTANCE,
+                NUMERIC,"Desvanecer hacia dentro","dp",FluidCloudCapsule.MIN_GLOW_DEPTH,FluidCloudCapsule.MAX_GLOW_DEPTH,.5f,null,null,null,null);
+        b.toggle(FluidCloudCapsule.RADIUS_ENABLED,"Esquinas redondeadas personalizadas","Cuando la cápsula está expandida, el fondo, el borde y la luz en movimiento usan el mismo radio de esquina. La cápsula mide unos 30 dp de alto; un radio de 15 dp o más produce una forma completamente ovalada, igual que la nativa. Los radios menores crean esquinas más cuadradas. Al contraerse alrededor del recorte de la cámara, conserva la forma nativa y vuelve suavemente al radio elegido durante la expansión.","Forma");
+        b.number(FluidCloudCapsule.RADIUS,"Radio de esquina","Forma","dp",0,FluidCloudCapsule.MAX_RADIUS,.5f);
+        b.toggle(FluidCloudCapsule.COVER_RADIUS_ENABLED,"Esquinas personalizadas para la portada","La portada del álbum, a la izquierda de la cápsula musical, es circular de forma nativa. Al activar esta opción, la cápsula expandida usa el radio de esquina de abajo. Al contraerse, la portada queda junto al recorte de la cámara y conserva su forma circular; al expandirse, cambia suavemente. Solo afecta a la cápsula musical; los iconos de temporizadores, llamadas y otras cápsulas no cambian. Al desactivarlo, se restaura el círculo.","Portada del álbum");
+        b.add(FluidCloudCapsule.COVER_RADIUS,"Radio de esquina de la portada","0 crea esquinas cuadradas; 10 dp se aproxima al círculo nativo.",NUMERIC,"Portada del álbum","dp",0,FluidCloudCapsule.MAX_COVER_RADIUS,.5f,null,null,null,null);
+        b.toggle(FluidCloudCapsule.COVER_SIZE_ENABLED,"Ajustar el tamaño de la portada musical","Solo cambia la portada de música cuando la cápsula está expandida. El tamaño de la cápsula, el texto y los demás iconos no cambian; al contraerse, se restaura el tamaño del sistema.","Portada del álbum");
+        b.add(FluidCloudCapsule.COVER_SCALE,"Tamaño de la portada musical","100 % equivale al tamaño del sistema; al expandirse y contraerse, sigue la animación nativa.",NUMERIC,"Portada del álbum","%",FluidCloudCapsule.MIN_COVER_SCALE,FluidCloudCapsule.MAX_COVER_SCALE,1f,null,null,null,null);
+        b.toggle(CapsuleEffects.BOUNCE_ENABLED,"Rebote de aparición personalizado","El efecto nativo amplía brevemente la cápsula unos 16 dp de ancho y 3 dp de alto cuando aparece, antes de volver a su tamaño normal. Al activar esta opción, se utiliza la intensidad de abajo; al desactivarla, se restaura el comportamiento original. Se aplica la próxima vez que aparezca la cápsula y no cambia su posición alrededor de la cámara.","Rebote de aparición");
+        b.add(CapsuleEffects.BOUNCE,"Intensidad del rebote","0 % sin rebote; 100 % reproduce el efecto original del sistema; máximo 200 %.",NUMERIC,"Rebote de aparición","%",0,CapsuleEffects.MAX_BOUNCE,1f,null,null,null,null);
+        b.toggle(FluidCloudCapsule.SPECTRUM_ENABLED,"Espectro en tiempo real","Sustituye la animación fija del espectro musical de la cápsula por una visualización que reacciona en tiempo real a la música. Solo funciona cuando la cápsula está visible y se reproduce música; no consume energía el resto del tiempo. Depende de la visualización de audio del sistema; si no es compatible, conserva la animación original.","Espectro en tiempo real");
+        b.add(FluidCloudCapsule.SPECTRUM_SENSITIVITY,"Sensibilidad del espectro","Ajusta la sensibilidad a tu gusto: en 0, las barras apenas se mueven y solo suben con golpes de batería claros, hasta algo más de un tercio de la altura; en 100, son más altas y activas y pueden llegar al borde superior. La altura sigue el rango de volumen reciente de cada banda, por lo que no se mantienen siempre al máximo. Con volumen bajo, el conjunto también se verá más bajo.",
+                NUMERIC,"Espectro en tiempo real","%",0,100,1f,null,null,null,null);
+        b.toggle(FluidCloudCapsule.SPECTRUM_FOLLOW,"El espectro sigue el color de énfasis","Las barras del espectro usan el color del medio actual (el color principal de la portada musical, aclarado si es demasiado oscuro para verse). Si coincide con el fondo de la cápsula, se usa un color oscuro o blanco. Deja de usar el color fijo de abajo; si el color multimedia no está disponible temporalmente, se conserva el color inferior.","Espectro en tiempo real");
+        b.add(FluidCloudCapsule.SPECTRUM_COLOR,"Color del espectro","",COLOR,"Espectro en tiempo real","",0,0,0,null,null,null,null);
         return new Group(b);
     }
     private static Group fluidStyle() {
-        Builder b=builder("fluid_cloud_style", "流体云样式",
-                "通知类跟随系统样式，以及流体云在悬浮展开、锁屏与 AOD 的底色。适配范围按可识别的业务分类选择，只控制本页样式；未识别的卡片归入“其他与未识别”。强调色和跟随媒体色独立设置，优先于这里的底色。",
+        Builder b=builder("fluid_cloud_style", "Estilo de Fluid Cloud",
+                "Estilo del sistema para las notificaciones y fondo de Fluid Cloud en tarjetas flotantes expandidas, pantalla de bloqueo y AOD. Selecciona las categorías de actividad compatibles; solo controla el estilo de esta página. Las tarjetas no identificadas se incluyen en «Otros o no identificados». El color de énfasis y el seguimiento del color multimedia se configuran por separado y tienen prioridad sobre este fondo.",
                 OTHER, FluidCloudStyle.MASTER);
-        b.toggle(FluidCloudStyle.FOLLOW_NOTIFICATION,"通知类跟随系统样式","通知栏跟随通知卡片，悬浮通知跟随悬浮通知材质，锁屏保留系统小组件材质。","通知类");
-        b.toggle(FluidCloudStyle.SCOPE_FLOAT,"悬浮展开","桌面悬浮的流体云卡片。","作用场景");
-        b.toggle(FluidCloudStyle.SCOPE_LOCK,"锁屏与 AOD","锁屏和 AOD 保持同一种颜色，进出 AOD 不跳变。","作用场景");
-        b.toggle(FluidCloudStyle.DESKTOP_BACKGROUND,"自定义底色","只改颜色与透明度，保留原生模糊和动效。","底色");
-        b.choice(FluidCloudStyle.BACKGROUND_MODE,"背景模式","原生渐变保留原生模糊、材质、形状和动画，可调整过渡范围；自定义纯色背景使用所选颜色。媒体强调色与跟随媒体色优先。","底色",
+        b.toggle(FluidCloudStyle.FOLLOW_NOTIFICATION,"Seguir el estilo del sistema para las notificaciones","El panel de notificaciones sigue las tarjetas de notificación, las notificaciones flotantes siguen el material de las ventanas flotantes y la pantalla de bloqueo conserva el material de los widgets del sistema.","Notificaciones");
+        b.toggle(FluidCloudStyle.SCOPE_FLOAT,"Vista flotante expandida","Tarjetas de Fluid Cloud que flotan sobre el escritorio.","Escenario de aplicación");
+        b.toggle(FluidCloudStyle.SCOPE_LOCK,"Pantalla de bloqueo y AOD","La pantalla de bloqueo y AOD mantienen el mismo color, sin cambios bruscos al entrar o salir de AOD.","Escenario de aplicación");
+        b.toggle(FluidCloudStyle.DESKTOP_BACKGROUND,"Color de fondo personalizado","Solo cambia el color y la transparencia; conserva el desenfoque y las animaciones nativas.","Color de fondo");
+        b.choice(FluidCloudStyle.BACKGROUND_MODE,"Modo de fondo","El degradado nativo conserva el desenfoque, el material, la forma y la animación del sistema, y permite ajustar el rango de transición. El fondo sólido personalizado usa el color seleccionado. El color de énfasis multimedia y el seguimiento del color multimedia tienen prioridad.","Color de fondo",
                 new String[]{"native","custom"},
-                new String[]{"原生渐变","自定义纯色背景"});
-        b.add(FluidCloudStyle.BACKGROUND_COLOR,"自定义颜色","",COLOR,"底色","",0,0,0,null,null,null,null);
-        b.add(FluidCloudStyle.BACKGROUND_OPACITY,"填充不透明度","100% 完全不透明，0% 完全透明。",NUMERIC,"底色","%",0,100,.1f,null,null,null,null);
-        b.add(FluidCloudStyle.BACKGROUND_GRADIENT_START,"渐变起点","从卡片顶部往下多远才开始变化，之前保持起点色。0% 即从最顶部开始。只作用于悬浮展开卡片的原生渐变；锁屏与 AOD 使用各自页面的外观设置。",NUMERIC,"渐变","%",0,98,.1f,null,null,null,null);
-        b.add(FluidCloudStyle.BACKGROUND_GRADIENT_RANGE,"渐变终点","变化到多远结束，之后保持终点色。100% 保留系统渐变的长度，调小则更短、更快地到达终点色。",NUMERIC,"渐变","%",1,100,.1f,null,null,null,null);
-        b.add(FluidCloudStyle.BACKGROUND_GRADIENT_MID,"渐变中线","起点与终点之间，颜色变化到一半的位置。50% 为匀速；调小更早变化，调大更晚变化。",NUMERIC,"渐变","%",1,99,.1f,null,null,null,null);
-        b.add(FluidCloudStyle.BACKGROUND_GRADIENT_STRENGTH,"渐变强度","起点色与终点色的差距：100% 为系统原样；调低渐变变平，0% 整张都是起点色，没有渐变；调高对比更强，终点更淡。",NUMERIC,"渐变","%",0,200,.1f,null,null,null,null);
-        b.add(FluidCloudStyle.BACKGROUND_GRADIENT_OPACITY,"渐变透明度","只让渐变这一层变透明，底色与模糊不受影响；100% 为系统原样。与上面的“填充不透明度”不同，后者作用于整张底色。",NUMERIC,"渐变","%",0,100,.1f,null,null,null,null);
-        b.toggle(FluidCloudStyle.MEDIA_KEEP_HIGHLIGHT,"音乐媒体保留高光","音乐卡片保留原生高光；需先开启 C17 高光去除。","高光");
+                new String[]{"Degradado nativo","Fondo sólido personalizado"});
+        b.add(FluidCloudStyle.BACKGROUND_COLOR,"Color personalizado","",COLOR,"Color de fondo","",0,0,0,null,null,null,null);
+        b.add(FluidCloudStyle.BACKGROUND_OPACITY,"Opacidad del relleno","100 % completamente opaco; 0 % completamente transparente.",NUMERIC,"Color de fondo","%",0,100,.1f,null,null,null,null);
+        b.add(FluidCloudStyle.BACKGROUND_GRADIENT_START,"Inicio del degradado","Distancia desde la parte superior de la tarjeta hasta el inicio del cambio de color; antes de ese punto se mantiene el color inicial. 0 % empieza arriba del todo. Solo afecta al degradado nativo de las tarjetas flotantes expandidas; la pantalla de bloqueo y AOD usan sus propios ajustes.",NUMERIC,"Degradado","%",0,98,.1f,null,null,null,null);
+        b.add(FluidCloudStyle.BACKGROUND_GRADIENT_RANGE,"Color final del degradado","Distancia hasta el final del cambio de color; después se mantiene el color final. 100 % conserva la longitud del degradado del sistema; los valores menores hacen que termine antes y más rápido.",NUMERIC,"Degradado","%",1,100,.1f,null,null,null,null);
+        b.add(FluidCloudStyle.BACKGROUND_GRADIENT_MID,"Punto medio del degradado","Posición entre el inicio y el final donde el color ha cambiado a la mitad. 50 % produce una transición uniforme; un valor menor adelanta el cambio y uno mayor lo retrasa.",NUMERIC,"Degradado","%",1,99,.1f,null,null,null,null);
+        b.add(FluidCloudStyle.BACKGROUND_GRADIENT_STRENGTH,"Intensidad del degradado","Diferencia entre el color inicial y el final: 100 % reproduce el sistema; los valores menores aplanan el degradado, 0 % deja toda la tarjeta con el color inicial y sin degradado, y los valores mayores aumentan el contraste y aclaran el color final.",NUMERIC,"Degradado","%",0,200,.1f,null,null,null,null);
+        b.add(FluidCloudStyle.BACKGROUND_GRADIENT_OPACITY,"Transparencia del degradado","Solo vuelve transparente la capa del degradado; no afecta al fondo ni al desenfoque. 100 % reproduce el sistema. A diferencia de «Opacidad del relleno», esta opción no afecta a todo el fondo.",NUMERIC,"Degradado","%",0,100,.1f,null,null,null,null);
+        b.toggle(FluidCloudStyle.MEDIA_KEEP_HIGHLIGHT,"Conservar los reflejos de las tarjetas multimedia","Conserva los reflejos nativos de la tarjeta musical; primero debes activar «Eliminar reflejos de C17».","Reflejos");
         String[] scopeIds={"media","ride_hailing","food_delivery","parcel_pickup","food_pickup","timer","alarm","navigation","travel","battery","earphones","smart_suggestions","other"};
-        String[] scopeTitles={"音乐媒体","打车","外卖","取件码与快递","取餐码与到店自提","倒计时","闹钟","导航","交通出行","低电量与充电","耳机","情景建议","其他与未识别"};
+        String[] scopeTitles={"Contenido multimedia","Transporte por aplicación de viajes","Comida a domicilio","Códigos de recogida y paquetería","Código de pedido y recogida en tienda","Cuenta atrás","Alarma","Navegación","Transporte","Batería baja y carga","Auriculares","Sugerencias contextuales","Otros o no identificados"};
         for(int index=0;index<scopeIds.length;index++)b.toggle("fluid_cloud_scope_"+scopeIds[index]+"_enabled",scopeTitles[index],
-                "other".equals(scopeIds[index])?"其他任务和暂未识别类别的流体云。关闭后停用本页对这些卡片的样式调整。"
-                        :"smart_suggestions".equals(scopeIds[index])?"到家或到公司开启 Wi-Fi、观影静音、关闭手电筒等系统建议。关闭后停用本页对这些卡片的样式调整。"
-                        :"battery".equals(scopeIds[index])?"低电量省电和充电流体云提醒。关闭后停用本页对这些卡片的样式调整。"
-                        :"earphones".equals(scopeIds[index])?"耳机连接流体云。关闭后停用本页对这类卡片的样式调整。"
-                        :"关闭后停用本页对这类流体云的样式调整；未识别的卡片归入“其他与未识别”。","适配范围");
+                "other".equals(scopeIds[index])?"Fluid Cloud para otras tareas y categorías que aún no se identifican. Al desactivarlo, se deja de ajustar el estilo de estas tarjetas."
+                        :"smart_suggestions".equals(scopeIds[index])?"Sugerencias del sistema como activar Wi-Fi al llegar a casa o al trabajo, silenciar durante una película o apagar la linterna. Al desactivarlo, se deja de ajustar el estilo de estas tarjetas."
+                        :"battery".equals(scopeIds[index])?"Avisos de batería baja, ahorro de energía y carga en Fluid Cloud. Al desactivarlo, se deja de ajustar el estilo de estas tarjetas."
+                        :"earphones".equals(scopeIds[index])?"Fluid Cloud cuando se conectan los auriculares. Al desactivarlo, se deja de ajustar el estilo de estas tarjetas."
+                        :"Al desactivarlo, se deja de ajustar el estilo de estas tarjetas de Fluid Cloud; las tarjetas no identificadas se agrupan en «Otros o no identificados».","Ámbito de compatibilidad");
         return new Group(b);
     }
     private static Group wholeStack() {
-        Builder b=builder("notification_stack", "堆叠通知", "使用系统原生堆叠，随列表滑动自动展开和缩放。竖屏需开启竖屏大时钟；横屏需开启横屏大时钟和“横屏也生效”。关闭对应大时钟后，该方向自动恢复原生通知，保留已保存参数。展开应用分组仍使用系统原生点击操作。", NOTIFICATION, NotificationBigClockSettings.STACK_ENABLED);
-        b.toggle(FeatureOptions.STACK_LANDSCAPE_ENABLED,"横屏也生效","开启堆叠通知后，还需开启横屏大时钟，才允许横屏使用同样的堆叠。默认关闭。","显示规则");
-        b.toggle(NotificationMiniStack.AUTO_HIDE_IN_STACK,"自动隐藏小堆叠","同应用小堆叠被整列堆叠覆盖时隐藏后面的层，展开后恢复。需同时开启堆叠通知与同应用小堆叠；关闭任一种堆叠时暂停生效，保留此项选择。","显示规则");
-        b.number(NotificationBigClockSettings.VISIBLE_COUNT,"完整通知数量","显示规则","个",1,5,1);
+        Builder b=builder("notification_stack", "Notificaciones apiladas", "Usa el apilado nativo del sistema, que se expande y escala automáticamente al desplazarse por la lista. En vertical debes activar el reloj grande vertical; en horizontal, el reloj grande horizontal y «Aplicar también en horizontal». Si se desactiva el reloj grande correspondiente, esa orientación vuelve automáticamente a las notificaciones nativas y conserva los ajustes guardados. Los grupos de aplicaciones siguen usando las acciones táctiles del sistema.", NOTIFICATION, NotificationBigClockSettings.STACK_ENABLED);
+        b.toggle(FeatureOptions.STACK_LANDSCAPE_ENABLED,"Aplicar también en horizontal","Después de activar las notificaciones apiladas, también debes activar el reloj grande horizontal para permitir el apilado en horizontal. Desactivado de forma predeterminada.","Reglas de visualización");
+        b.toggle(NotificationMiniStack.AUTO_HIDE_IN_STACK,"Ocultar automáticamente el apilado pequeño","Cuando el apilado de toda la columna cubre las capas del apilado pequeño de la misma aplicación, oculta las capas posteriores y las restaura al expandirse. Requiere activar tanto las notificaciones apiladas como el apilado pequeño por aplicación. Se pausa si cualquiera de los modos se desactiva, pero se conserva esta opción.","Reglas de visualización");
+        b.number(NotificationBigClockSettings.VISIBLE_COUNT,"Cantidad de notificaciones completas","Reglas de visualización","unidades",1,5,1);
         return new Group(b);
     }
     /** Same-app mini stack: an independent page, not tied to either big clock, the whole-list stack or the fluid cloud. */
     private static Group miniStack() {
-        Builder b = new Builder("notification_mini_stack", "同应用小堆叠", NotificationMiniStackSource.SHORT
-                + "。系统已把同一应用的通知收成一组时，收起状态显示完整的第一条，后面最多露出两层真实通知；点按第一条展开整组，"
-                + "展开、收起、侧滑和清除仍由系统处理。默认关闭；开启或关闭后，在主页“重启系统界面”后完整生效。",
+        Builder b = new Builder("notification_mini_stack", "Apilado pequeño por aplicación", NotificationMiniStackSource.SHORT
+                + ". Cuando el sistema agrupa las notificaciones de una misma aplicación, el estado contraído muestra completa la primera notificación y deja ver hasta dos capas de notificaciones reales detrás. Al tocar la primera, se expande todo el grupo,"
+                + "El sistema sigue controlando la expansión, contracción, deslizamiento lateral y eliminación. Desactivado de forma predeterminada; tras activar o desactivar la función, reinicia la interfaz del sistema desde la página principal para aplicar todos los cambios.",
                 NOTIFICATION, NotificationMiniStack.ENABLED, true, NotificationMiniStackSource.FEATURE,
-                "只作用于系统原生通知组（同一应用、至少两条）；单条或未分组的通知保持原样。首次开启会先显示功能来源声明。");
-        b.toggle(NotificationMiniStack.HIDE_BADGE, "隐藏原生角标数量", "隐藏小堆叠的数量及收起动画残留；关闭后恢复数量。展开的通知组保持系统行为。", "显示规则");
+                "Solo afecta a los grupos de notificaciones nativos (dos o más notificaciones de una misma aplicación). Las notificaciones individuales o no agrupadas no cambian. La primera vez que se activa, se muestra un aviso sobre el origen de la función.");
+        b.toggle(NotificationMiniStack.HIDE_BADGE, "Ocultar la cantidad de indicadores nativos", "Oculta el contador del apilado pequeño y los restos de su animación al contraerse; al desactivarlo, restaura el contador. Los grupos expandidos conservan el comportamiento del sistema.", "Reglas de visualización");
         return new Group(b);
     }
     private static Group nativeStatusIcons() {
-        Builder b=builder("status_hint_icons", "系统提示图标", "独立调整蓝牙、定位、闹钟等原生提示图标的数量、间距与保留优先级。每个图标的左右位置和先后在状态栏排序页统一设置。通知图标、Wi-Fi、蜂窝信号、电池和网速不由本页控制。", STATUSBAR, NativeStatusIcons.MASTER);
-        b.number(NativeStatusIcons.Y,"垂直位置","位置","dp",-16,16,.1f);
-        layoutMargins(b, StatusBarLayoutSettings.SYSTEM, "左右间距");
-        b.number(NativeStatusIcons.MAX,"最多显示数量","显示规则","个",0,14,1);
-        b.add(NativeStatusIcons.SPACING,"附加间距","0 保留系统间距，正值放宽。只移动提示图标，不改变网络和电池位置；间距或位移过大可能超出屏幕。",NUMERIC,"位置","dp",0,12,.1f,null,null,null,null);
-        b.text(NativeStatusIcons.PRIORITY,"显示优先级","长按拖拽中文图标名称排序，靠前的优先保留；只显示系统当前允许显示的图标。","显示规则",
+        Builder b=builder("status_hint_icons", "Iconos de aviso del sistema", "Ajusta por separado la cantidad, el espaciado y la prioridad de los iconos de aviso nativos, como Bluetooth, ubicación y alarmas. La posición izquierda/derecha y el orden de cada icono se configuran en la página de orden de la barra de estado. Esta página no controla los iconos de notificación, Wi-Fi, señal móvil, batería ni velocidad de red.", STATUSBAR, NativeStatusIcons.MASTER);
+        b.number(NativeStatusIcons.Y,"Posición vertical","Posición","dp",-16,16,.1f);
+        layoutMargins(b, StatusBarLayoutSettings.SYSTEM, "Espaciado lateral");
+        b.number(NativeStatusIcons.MAX,"Cantidad máxima visible","Reglas de visualización","unidades",0,14,1);
+        b.add(NativeStatusIcons.SPACING,"Espaciado adicional","0 conserva el espaciado del sistema; los valores positivos lo aumentan. Solo mueve los iconos de aviso, no la red ni la batería. Un espaciado o desplazamiento demasiado grande puede sacarlos de la pantalla.",NUMERIC,"Posición","dp",0,12,.1f,null,null,null,null);
+        b.text(NativeStatusIcons.PRIORITY,"Prioridad de visualización","Mantén pulsado y arrastra los nombres de los iconos para ordenarlos; los primeros tienen prioridad para conservarse. Solo se muestran los iconos que el sistema permite mostrar en ese momento.","Reglas de visualización",
                 new String[]{"","bluetooth,location,alarm_clock","location,microphone,camera,bluetooth","zen,alarm_clock,bluetooth"},
-                new String[]{"跟随系统","蓝牙优先","定位与隐私优先","勿扰与闹钟优先"});
+                new String[]{"Seguir al sistema","Prioridad de Bluetooth","Prioridad de ubicación y privacidad","Prioridad de No molestar y alarmas"});
         return new Group(b);
     }
     private static Group media() {
-        Builder b = builder("qs_media", "音乐卡片", "封面背景、虚化与小封面发光，按浅色和深色界面分别设置。换封面立即显示新封面的取样纯色，停止更新约 1 秒后后台计算模糊背景，再柔和淡入。", CONTROL_CENTER, QsMediaAppearance.MASTER);
-        b.toggle(QsMediaAppearance.BACKGROUND, "使用封面作为卡片背景", "居中裁切，保留原生标题与播放按钮", "显示效果");
-        b.toggle(QsMediaAppearance.GLOW, "小封面外发光", "保留系统玻璃与高光", "显示效果");
-        b.number(QsMediaAppearance.TRANSITION, "封面过渡时间", "过渡", "ms", 0, QsMediaAppearance.MAX_TRANSITION_MS, 10f);
-        b.number(QsMediaAppearance.SETTLE, "换封面后的等待时间", "过渡", "ms", 0, QsMediaAppearance.MAX_SETTLE_MS, 50f);
+        Builder b = builder("qs_media", "Tarjeta musical", "Configura por separado para interfaces claras y oscuras el fondo de la portada, el desenfoque y el resplandor exterior de la miniatura. Al cambiar la portada, muestra inmediatamente un color sólido muestreado de la nueva imagen. Cuando no haya nuevas actualizaciones durante aproximadamente un segundo, calcula el fondo desenfocado en segundo plano y lo hace aparecer suavemente.", CONTROL_CENTER, QsMediaAppearance.MASTER);
+        b.toggle(QsMediaAppearance.BACKGROUND, "Usar la portada como fondo de la tarjeta", "Recorte centrado; conserva el título y los controles de reproducción nativos.", "Efecto visual");
+        b.toggle(QsMediaAppearance.GLOW, "Resplandor exterior de la miniatura", "Conservar el vidrio y los reflejos del sistema", "Efecto visual");
+        b.number(QsMediaAppearance.TRANSITION, "Duración de la transición de la portada", "Transición", "ms", 0, QsMediaAppearance.MAX_TRANSITION_MS, 10f);
+        b.number(QsMediaAppearance.SETTLE, "Tiempo de espera tras cambiar la portada", "Transición", "ms", 0, QsMediaAppearance.MAX_SETTLE_MS, 50f);
         for (String scene : new String[]{"light", "dark"}) {
-            String s = "light".equals(scene) ? "浅色界面" : "深色界面", p = QsMediaAppearance.prefix(scene);
-            b.number(p + "_background_opacity", "背景透明度", s + " · 背景", "%", 0, 100, .01f);
-            b.number(p + "_background_blur", "背景模糊度", s + " · 背景", "dp", 0, 48, .01f);
-            b.toggle(p + "_background_solid_enabled", "背景改用封面主色", "不显示封面图片，只铺封面取样的一块纯色；仍受背景透明度控制", s + " · 背景");
-            b.toggle(p + "_background_custom_enabled", "背景改用自定义颜色", "优先于封面主色；没有封面时保持系统原样", s + " · 背景");
-            b.number(p + "_background_tint_opacity", "背景叠加色强度", s + " · 背景", "%", 0, 100, .01f);
-            b.toggle(p + "_glow_inverse_enabled", "发光使用封面反色", "关闭后使用自定义发光颜色", s + " · 外发光");
-            b.number(p + "_glow_opacity", "发光透明度", s + " · 外发光", "%", 0, 100, .01f);
-            b.number(p + "_glow_radius", "发光模糊半径", s + " · 外发光", "dp", 0, 48, .01f);
-            b.number(p + "_glow_spread", "发光扩散距离", s + " · 外发光", "dp", 0, 24, .01f);
+            String s = "light".equals(scene) ? "Interfaz clara" : "Interfaz oscura", p = QsMediaAppearance.prefix(scene);
+            b.number(p + "_background_opacity", "Transparencia del fondo", s + " · Fondo", "%", 0, 100, .01f);
+            b.number(p + "_background_blur", "Intensidad del desenfoque del fondo", s + " · Fondo", "dp", 0, 48, .01f);
+            b.toggle(p + "_background_solid_enabled", "Usar el color principal de la portada como fondo", "No muestra la imagen de la portada; usa solo un color sólido muestreado de ella. Sigue sujeto a la transparencia del fondo.", s + " · Fondo");
+            b.toggle(p + "_background_custom_enabled", "Usar un color de fondo personalizado", "Tiene prioridad sobre el color principal de la portada; si no hay portada, conserva el aspecto original del sistema.", s + " · Fondo");
+            b.number(p + "_background_tint_opacity", "Intensidad del color superpuesto al fondo", s + " · Fondo", "%", 0, 100, .01f);
+            b.toggle(p + "_glow_inverse_enabled", "Usar el color invertido de la portada para el resplandor", "Al desactivarlo, se usa el color de resplandor personalizado.", s + " · Resplandor exterior");
+            b.number(p + "_glow_opacity", "Transparencia del resplandor", s + " · Resplandor exterior", "%", 0, 100, .01f);
+            b.number(p + "_glow_radius", "Radio de desenfoque del resplandor", s + " · Resplandor exterior", "dp", 0, 48, .01f);
+            b.number(p + "_glow_spread", "Distancia de expansión del resplandor", s + " · Resplandor exterior", "dp", 0, 24, .01f);
         }
-        b.colorPair("qs_media_light_glow_color", "qs_media_dark_glow_color", "自定义发光颜色", "发光颜色");
-        b.colorPair("qs_media_light_background_color", "qs_media_dark_background_color", "自定义背景颜色", "背景颜色");
-        b.colorPair("qs_media_light_background_tint_color", "qs_media_dark_background_tint_color", "背景叠加色", "背景叠加色");
+        b.colorPair("qs_media_light_glow_color", "qs_media_dark_glow_color", "Color de resplandor personalizado", "Color del resplandor");
+        b.colorPair("qs_media_light_background_color", "qs_media_dark_background_color", "Color de fondo personalizado", "Color de fondo");
+        b.colorPair("qs_media_light_background_tint_color", "qs_media_dark_background_tint_color", "Color superpuesto al fondo", "Color superpuesto al fondo");
         return new Group(b);
     }
 
     private static Group highlightRemoval() {
-        Builder b = builder("c17_highlight_removal", "C17 高光去除",
-                "去除通知与控制中心原生材质的边缘高光、内缘光泽和聚光，保留模糊、圆角与原生交互，使表面更接近亚克力。可分别设置浅色和深色底色，默认关闭。",
+        Builder b = builder("c17_highlight_removal", "Eliminar reflejos de C17",
+                "Elimina los reflejos de borde, el brillo interior y los destellos de los materiales nativos de las notificaciones y del centro de control. Conserva el desenfoque, las esquinas redondeadas y la interacción nativa para dar a la superficie un aspecto más acrílico. Se pueden configurar fondos claros y oscuros por separado. Está desactivado de forma predeterminada.",
                 OTHER, C17HighlightRemoval.ENABLED);
-        b.toggle(C17HighlightRemoval.NOTIFICATION_ENABLED, "通知栏去高光", "只处理通知页和通知卡片的高光，关闭时恢复原生。", "作用范围");
-        b.toggle(C17HighlightRemoval.HEADS_UP_ENABLED, "消息通知去高光", "去除屏幕顶部悬浮横幅通知的高光与边缘效果，保留模糊、内容和点击操作。与下拉通知栏范围独立。", "作用范围");
-        b.toggle(C17HighlightRemoval.CONTROL_ENABLED, "状态栏面板去高光", "处理右侧控制中心、磁贴和音乐卡片的高光，关闭时恢复原生。", "作用范围");
-        b.toggle(C17HighlightRemoval.UNIFORM_NOTIFICATION_ENABLED, "统一通知卡片颜色", "可单独使用。使用下方浅色或深色底色，保留原生模糊和内容。会增加一次背景合成，请按需使用。", "通知颜色");
-        b.toggle(C17HighlightRemoval.BACKGROUND_ENABLED, "自定义亚克力底色",
-                "为普通材质设置统一底色；磁贴自定义颜色与音乐封面背景保持各自设置。关闭后只去高光。", "底色");
+        b.toggle(C17HighlightRemoval.NOTIFICATION_ENABLED, "Eliminar reflejos del panel de notificaciones", "Solo afecta a los reflejos de la página y las tarjetas de notificación. Al desactivarlo, se restaura el aspecto nativo.", "Ámbito de aplicación");
+        b.toggle(C17HighlightRemoval.HEADS_UP_ENABLED, "Eliminar reflejos de las notificaciones flotantes", "Elimina los reflejos y bordes del aviso flotante que aparece en la parte superior de la pantalla. Conserva el desenfoque, el contenido y las acciones táctiles. Es independiente del ámbito del panel desplegable.", "Ámbito de aplicación");
+        b.toggle(C17HighlightRemoval.CONTROL_ENABLED, "Eliminar reflejos del panel de la barra de estado", "Afecta al centro de control de la derecha, los mosaicos y la tarjeta de música. Al desactivarlo, se restaura el aspecto nativo.", "Ámbito de aplicación");
+        b.toggle(C17HighlightRemoval.UNIFORM_NOTIFICATION_ENABLED, "Unificar el color de las tarjetas de notificación", "Se puede usar de forma independiente. Configura el fondo claro u oscuro que aparece abajo; conserva el desenfoque y el contenido nativos. Añade una composición de fondo adicional, así que actívalo solo si lo necesitas.", "Color de las notificaciones");
+        b.toggle(C17HighlightRemoval.BACKGROUND_ENABLED, "Fondo acrílico personalizado",
+                "Aplica un fondo uniforme a los materiales comunes. Los colores personalizados de los mosaicos y el fondo de la portada musical conservan sus propios ajustes. Al desactivarlo, solo se eliminan los reflejos.", "Color de fondo");
         b.colorPair(C17HighlightRemoval.LIGHT_BACKGROUND, C17HighlightRemoval.DARK_BACKGROUND,
-                "亚克力底色", "颜色与透明度");
+                "Fondo acrílico", "Color y transparencia");
         return new Group(b);
     }
 
@@ -1127,31 +1127,31 @@ public final class SettingsCatalog {
         // Each page appears once, where its effect is seen; network entries follow their on-screen order.
         // The per-surface carrier text and the shared pull-down clock are the only deliberate repeats.
         if (STATUSBAR.equals(category)) return Arrays.asList(
-                new NavigationSection("排列顺序", StatusBarLayoutSettings.GROUP),
-                new NavigationSection("时间与电量", "clock", "battery"),
-                new NavigationSection("网络信号", "speed", "data", "wifi", "label", "native_network_badge"),
-                new NavigationSection("通知图标", "notification_icons", "notification_icon_overrides"),
-                new NavigationSection("系统图标", "status_hint_icons"));
+                new NavigationSection("Orden", StatusBarLayoutSettings.GROUP),
+                new NavigationSection("Hora y batería", "clock", "battery"),
+                new NavigationSection("Señal de red", "speed", "data", "wifi", "label", "native_network_badge"),
+                new NavigationSection("Iconos de notificación", "notification_icons", "notification_icon_overrides"),
+                new NavigationSection("Iconos del sistema", "status_hint_icons"));
         if (CONTROL_CENTER.equals(category)) return Arrays.asList(
-                new NavigationSection("磁贴与滑块", "tile_2x1_fill", "tile_corners", "tile_icon_size", "qs_appearance"),
-                new NavigationSection("音乐卡片", "qs_media"),
-                new NavigationSection("顶部时间与文字", "shade_clock", "carrier"),
-                new NavigationSection("顶部按钮", QsEntrances.GROUP));
+                new NavigationSection("Mosaicos y controles deslizantes", "tile_2x1_fill", "tile_corners", "tile_icon_size", "qs_appearance"),
+                new NavigationSection("Tarjeta musical", "qs_media"),
+                new NavigationSection("Hora y texto superiores", "shade_clock", "carrier"),
+                new NavigationSection("Botones superiores", QsEntrances.GROUP));
         if (NOTIFICATION.equals(category)) return Arrays.asList(
-                new NavigationSection("时钟与日期", "notification_big_clock", "notification_big_clock_landscape", "shade_clock"),
-                new NavigationSection("通知堆叠", "notification_stack", "notification_mini_stack"),
-                new NavigationSection("清除按钮", "notification_clear", "notification_clear_landscape"),
-                new NavigationSection("界面文字", "carrier", "classic_text"));
+                new NavigationSection("Reloj y fecha", "notification_big_clock", "notification_big_clock_landscape", "shade_clock"),
+                new NavigationSection("Apilado de notificaciones", "notification_stack", "notification_mini_stack"),
+                new NavigationSection("Botón de borrar", "notification_clear", "notification_clear_landscape"),
+                new NavigationSection("Texto de la interfaz", "carrier", "classic_text"));
         if (OTHER.equals(category)) return Arrays.asList(
-                new NavigationSection("图标", "status_icon_library"),
-                new NavigationSection("字体", "font"),
-                new NavigationSection("流体云", "fluid_cloud_accent", "fluid_cloud_style", "fluid_cloud_capsule"),
-                new NavigationSection("下拉面板壁纸", "shade_wallpaper_portrait", "shade_wallpaper_landscape"),
-                new NavigationSection("面板外观", "c17_highlight_removal"));
-        if (LOCK_SCREEN.equals(category)) return Arrays.asList(new NavigationSection("日期与文字", "lockscreen_date", "carrier"),
-                new NavigationSection("提示图标", "lockscreen_lock_icon"),
-                new NavigationSection("壁纸与模糊", "lockscreen_status_blur"),
-                new NavigationSection("亮屏与 AOD", "lock_awake", "lock_aod"));
+                new NavigationSection("Iconos", "status_icon_library"),
+                new NavigationSection("Fuentes", "font"),
+                new NavigationSection("Fluid Cloud", "fluid_cloud_accent", "fluid_cloud_style", "fluid_cloud_capsule"),
+                new NavigationSection("Fondo del panel desplegable", "shade_wallpaper_portrait", "shade_wallpaper_landscape"),
+                new NavigationSection("Apariencia del panel", "c17_highlight_removal"));
+        if (LOCK_SCREEN.equals(category)) return Arrays.asList(new NavigationSection("Fecha y texto", "lockscreen_date", "carrier"),
+                new NavigationSection("Iconos de aviso", "lockscreen_lock_icon"),
+                new NavigationSection("Fondo de pantalla y desenfoque", "lockscreen_status_blur"),
+                new NavigationSection("Pantalla encendida y AOD", "lock_awake", "lock_aod"));
         return Collections.emptyList();
     }
     public static List<DetailPage> detailPages(Group group) {
@@ -1159,28 +1159,28 @@ public final class SettingsCatalog {
         LinkedHashMap<String, List<Item>> buckets = new LinkedHashMap<>();
         LinkedHashMap<String, String> labels = new LinkedHashMap<>();
         if (group.id.startsWith("notification_big_clock")) {
-            labels.put("time", "时间"); labels.put("look", "外观"); labels.put("date", "日期");
-            labels.put("widgets", "左右组件");
-            labels.put("motion", "动效与通知"); labels.put("footer", "底部");
+            labels.put("time", "Hora"); labels.put("look", "Apariencia"); labels.put("date", "Fecha");
+            labels.put("widgets", "Componentes izquierdo y derecho");
+            labels.put("motion", "Animaciones y notificaciones"); labels.put("footer", "Parte inferior");
         } else if ("carrier".equals(group.id)) {
-            labels.put("notification", "通知栏"); labels.put("control", "控制中心"); labels.put("lockscreen", "锁屏");
+            labels.put("notification", "Panel de notificaciones"); labels.put("control", "Centro de control"); labels.put("lockscreen", "Pantalla de bloqueo");
         } else if ("classic_text".equals(group.id)) {
-            labels.put("carrier", "运营商"); labels.put("clock", "时间与日期");
+            labels.put("carrier", "Operador"); labels.put("clock", "Hora y fecha");
         } else if ("native_network_badge".equals(group.id)) {
-            labels.put("part1", "角标1"); labels.put("part2", "角标2"); labels.put("activity", "数据小箭头");
+            labels.put("part1", "Indicador 1"); labels.put("part2", "Indicador 2"); labels.put("activity", "Flecha de datos");
         } else if ("battery".equals(group.id)) {
-            labels.put("style", "样式"); labels.put("text", "内文字"); labels.put("layout", "布局"); labels.put("colors", "颜色");
+            labels.put("style", "Estilo"); labels.put("text", "Texto interior"); labels.put("layout", "Diseño"); labels.put("colors", "Color");
         } else if ("qs_media".equals(group.id) || "qs_appearance".equals(group.id)) {
-            labels.put("common", "常用"); labels.put("light", "浅色界面"); labels.put("dark", "深色界面");
+            labels.put("common", "General"); labels.put("light", "Interfaz clara"); labels.put("dark", "Interfaz oscura");
         } else if ("clock".equals(group.id)) {
-            labels.put("default", "默认时钟"); labels.put("dual", "双排时钟"); labels.put("common", "通用设置");
+            labels.put("default", "Reloj predeterminado"); labels.put("dual", "Reloj de dos filas"); labels.put("common", "Ajustes generales");
         } else if ("fluid_cloud_capsule".equals(group.id)) {
-            labels.put("fill","底色"); labels.put("border","边框"); labels.put("content","形状与内容");
+            labels.put("fill","Color de fondo"); labels.put("border","Borde"); labels.put("content","Forma y contenido");
         } else if ("fluid_cloud_style".equals(group.id)) {
-            labels.put("notification","通知类");labels.put("appearance","流体云外观");labels.put("scope","适配范围");
+            labels.put("notification","Notificaciones");labels.put("appearance","Apariencia de Fluid Cloud");labels.put("scope","Ámbito de compatibilidad");
         } else if (group.id.startsWith("shade_wallpaper")) {
-            labels.put("notification", "通知中心"); labels.put("control", "控制中心"); labels.put("classic", "经典下拉");
-        } else labels.put("all", "全部");
+            labels.put("notification", "Centro de notificaciones"); labels.put("control", "Centro de control"); labels.put("classic", "Panel desplegable clásico");
+        } else labels.put("all", "Todo");
         for (String id : labels.keySet()) buckets.put(id, new ArrayList<>());
         Set<String> shared = new HashSet<>();
         for (Item item : commonDetailItems(group)) shared.add(item.key);
@@ -1210,11 +1210,11 @@ public final class SettingsCatalog {
     public static String detailModeReason(Group group, DetailPage page, String panelMode) {
         if (group == null || page == null || !group.id.startsWith("shade_wallpaper")) return "";
         if (!PanelMode.CLASSIC.equals(panelMode) && !PanelMode.SEPARATE.equals(panelMode))
-            return "系统面板模式尚未确认；这里显示已保存的配置，按实际模式使用";
+            return "No se ha confirmado el modo del panel del sistema. Aquí se muestra la configuración guardada; se aplicará según el modo real.";
         if ("classic".equals(page.id) == PanelMode.CLASSIC.equals(panelMode)) return "";
         return PanelMode.CLASSIC.equals(panelMode)
-                ? "当前为经典模式；独立通知中心与控制中心壁纸暂停，切回分离模式后按保存值恢复"
-                : "当前为分离模式；经典下拉壁纸暂停，切回经典模式后按保存值恢复";
+                ? "El modo actual es clásico. Los fondos independientes del centro de notificaciones y del centro de control están pausados; se restaurarán con los valores guardados al volver al modo separado."
+                : "El modo actual es separado. El fondo desplegable clásico está pausado; se restaurará con los valores guardados al volver al modo clásico.";
     }
     /** The old shared carrier switch remains portable but has no editor; three scene switches replace it. */
     public static List<Item> searchItems(Group group) {
@@ -1254,32 +1254,32 @@ public final class SettingsCatalog {
     }
     /** One panel's tab reads top to bottom: the picture, how it is shown, the clock zone. */
     private static int wallpaperSectionPriority(String section) {
-        if ("壁纸图片".equals(section)) return 0;
-        if ("显示".equals(section)) return 10;
-        if ("大时钟区域".equals(section)) return 20;
+        if ("Imagen de fondo".equals(section)) return 0;
+        if ("Mostrar".equals(section)) return 10;
+        if ("Área del reloj grande".equals(section)) return 20;
         return 50;
     }
     private static int sectionPriority(String section) {
         String title = section.contains(" · ") ? section.substring(section.indexOf(" · ") + 3) : section;
-        if ("背景透出与遮罩".equals(title)) return -10;
-        if ("主时间立体边缘".equals(title)) return 0;
-        if ("日期".equals(title) || "底部内容".equals(title)) return 0;
-        if ("日期位置".equals(title) || "底部位置".equals(title)) return 10;
-        if ("日期背景样式".equals(title) || "底部背景样式".equals(title)) return 30;
-        if ("初始位置".equals(title)) return -1;
-        if ("锁屏质感".equals(title)) return 5;
-        if ("液态玻璃".equals(title)) return 15;
-        if ("玻璃边框".equals(title)) return 25;
-        if ("内容与字体".equals(title)) return 0;
-        if ("大小与字重".equals(title)) return 20;
-        if ("位置与对齐".equals(title)) return 30;
-        if (Arrays.asList("显示样式", "时间格式", "字体来源", "显示效果", "信号布局", "电池样式", "通知页", "控制中心", "锁屏", "底色", "内容").contains(title)) return 0;
-        if ("位置".equals(title)) return 10;
-        if ("左右间距".equals(title)) return 11;
-        if ("大小".equals(title) || "字体高度".equals(title)) return 20;
-        if ("文字样式".equals(title) || "文字与间距".equals(title)) return 30;
-        if (title.contains("颜色") || "颜色与透明度".equals(title)) return 50;
-        if ("收起样式".equals(title) || "收起位置".equals(title)) return 60;
+        if ("Transparencia del fondo y máscara".equals(title)) return -10;
+        if ("Borde con relieve de la hora principal".equals(title)) return 0;
+        if ("Fecha".equals(title) || "Contenido inferior".equals(title)) return 0;
+        if ("Posición de la fecha".equals(title) || "Posición inferior".equals(title)) return 10;
+        if ("Estilo del fondo de la fecha".equals(title) || "Estilo del fondo del contenido inferior".equals(title)) return 30;
+        if ("Posición inicial".equals(title)) return -1;
+        if ("Textura de pantalla de bloqueo".equals(title)) return 5;
+        if ("Vidrio líquido".equals(title)) return 15;
+        if ("Borde de vidrio".equals(title)) return 25;
+        if ("Contenido y fuente".equals(title)) return 0;
+        if ("Tamaño y grosor".equals(title)) return 20;
+        if ("Posición y alineación".equals(title)) return 30;
+        if (Arrays.asList("Estilo de visualización", "Formato de hora", "Origen de la fuente", "Efecto visual", "Distribución de la señal", "Estilo de batería", "Panel de notificaciones", "Centro de control", "Pantalla de bloqueo", "Color de fondo", "Contenido").contains(title)) return 0;
+        if ("Posición".equals(title)) return 10;
+        if ("Espaciado lateral".equals(title)) return 11;
+        if ("Tamaño".equals(title) || "Altura de la fuente".equals(title)) return 20;
+        if ("Estilo del texto".equals(title) || "Texto y espaciado".equals(title)) return 30;
+        if (title.contains("Color") || "Color y transparencia".equals(title)) return 50;
+        if ("Estilo contraído".equals(title) || "Posición contraída".equals(title)) return 60;
         return 40;
     }
     /** The panel a wallpaper setting belongs to: its tab. */
@@ -1294,7 +1294,7 @@ public final class SettingsCatalog {
         if("fluid_cloud_style".equals(group.id))return FluidCloudScope.isScopeKey(item.key)?"scope"
                 :FluidCloudStyle.FOLLOW_NOTIFICATION.equals(item.key)?"notification":"appearance";
         if("fluid_cloud_capsule".equals(group.id))
-            return Arrays.asList("底色","渐变","模糊").contains(section)?"fill":Arrays.asList("边框","跑马灯","向内渐隐").contains(section)?"border":"content";
+            return Arrays.asList("Color de fondo","Degradado","Desenfoque").contains(section)?"fill":Arrays.asList("Borde","Luz en movimiento","Desvanecer hacia dentro").contains(section)?"border":"content";
         if ("clock".equals(group.id) && (ClockLayoutSettings.digitKey("clock").equals(item.key)
                 || ClockLayoutSettings.digitSpacingKey("clock").equals(item.key) || ClockLayoutSettings.colonKey("clock").equals(item.key)
                 || StatusBarLayoutSettings.key(StatusBarLayoutSettings.CLOCK,"margin_left").equals(item.key)
@@ -1303,11 +1303,11 @@ public final class SettingsCatalog {
                 || ClockLayoutSettings.MARGIN_START.equals(item.key) || ClockLayoutSettings.MARGIN_END.equals(item.key) ? "dual" : "default";
         if (group.id.startsWith("notification_big_clock")) {
             if (bigClockWidget(item.key)) return "widgets";
-            if (section.startsWith("日期")) return "date";
-            if (section.startsWith("通知") || "入场效果".equals(section) || "回弹效果".equals(section)) return "motion";
-            if (section.startsWith("底部")) return "footer";
-            if (section.startsWith("玻璃") || "锁屏质感".equals(section) || "液态玻璃".equals(section) || "文字颜色".equals(section)
-                    || "背景透出与遮罩".equals(section) || "主时间立体边缘".equals(section)) return "look";
+            if (section.startsWith("Fecha")) return "date";
+            if (section.startsWith("Notificaciones") || "Efecto de entrada".equals(section) || "Efecto de rebote".equals(section)) return "motion";
+            if (section.startsWith("Parte inferior")) return "footer";
+            if (section.startsWith("Vidrio") || "Textura de pantalla de bloqueo".equals(section) || "Vidrio líquido".equals(section) || "Color del texto".equals(section)
+                    || "Transparencia del fondo y máscara".equals(section) || "Borde con relieve de la hora principal".equals(section)) return "look";
             return "time";
         }
         if ("carrier".equals(group.id)) {
@@ -1319,15 +1319,15 @@ public final class SettingsCatalog {
         if ("native_network_badge".equals(group.id)) return item.key.startsWith(NativeNetworkBadgeSettings.PART_ONE+"_") ? "part1"
                 : item.key.startsWith(NativeNetworkBadgeSettings.PART_TWO+"_") ? "part2" : "activity";
         if ("battery".equals(group.id)) {
-            if ("电池内文字".equals(section)) return "text";
+            if ("Texto dentro de la batería".equals(section)) return "text";
             if (COLOR.equals(item.type) || item.key.endsWith("_color_enabled")) return "colors";
-            if ("位置".equals(section) || "左右间距".equals(section) || "大小".equals(section)) return "layout";
+            if ("Posición".equals(section) || "Espaciado lateral".equals(section) || "Tamaño".equals(section)) return "layout";
             return "style";
         }
         if ("qs_media".equals(group.id) || "qs_appearance".equals(group.id)) {
             if (!item.scene.isEmpty()) return item.scene;
-            if (section.startsWith("浅色")) return "light";
-            if (section.startsWith("深色")) return "dark";
+            if (section.startsWith("Claro")) return "light";
+            if (section.startsWith("Oscuro")) return "dark";
             return "common";
         }
         return "all";
@@ -1375,207 +1375,207 @@ public final class SettingsCatalog {
         if (!shelved.isEmpty()) return shelved;
         if(BigClockWidgetsSettings.SWAP_WITH_DATE.equals(key)) {
             if(!StatusBarSettings.bool(values,NotificationBigClockSettings.DATE_ENABLED)
-                    ||!(StatusBarSettings.settingNumber(values,NotificationBigClockSettings.DATE_SIZE,15f)>0f))return "请先开启有效日期";
+                    ||!(StatusBarSettings.settingNumber(values,NotificationBigClockSettings.DATE_SIZE,15f)>0f))return "Primero, activa una fecha válida.";
             if(!StatusBarSettings.bool(values,BigClockWidgetsSettings.LEFT_ENABLED)
-                    &&!StatusBarSettings.bool(values,BigClockWidgetsSettings.RIGHT_ENABLED))return "请先开启至少一侧组件";
+                    &&!StatusBarSettings.bool(values,BigClockWidgetsSettings.RIGHT_ENABLED))return "Primero, activa al menos un componente lateral.";
         }
         if(bigClockWidget(key)) {
             int side=BigClockWidgetsSettings.textSide(key);
             String parent=side>=0&&!BigClockWidgetsSettings.enabledKey(side).equals(key)?BigClockWidgetsSettings.enabledKey(side):null;
             if(parent!=null&&!StatusBarSettings.bool(values,parent))return BigClockWidgetsSettings.LEFT_ENABLED.equals(parent)
-                    ?"请先开启显示左侧组件":"请先开启显示右侧组件";
+                    ?"Primero, activa la visualización del componente izquierdo.":"Primero, activa la visualización del componente derecho.";
         }
         if (StatusBarLayoutSettings.key(StatusBarLayoutSettings.LABEL, "order").equals(key)
                 && StatusBarSettings.bool(values, StatusBarLayoutSettings.WIFI_LABEL_SHARED))
-            return "已与 Wi-Fi 共用排序，请调整 Wi-Fi 的所在区域与顺序";
+            return "Comparte el orden con Wi-Fi. Ajusta la zona y el orden desde la configuración de Wi-Fi.";
         if ((StatusBarLayoutSettings.sideKey(key) || StatusBarLayoutSettings.orderKey(key))
-                && !StatusBarSettings.bool(values, StatusBarLayoutSettings.MASTER)) return "请先开启状态栏排序";
+                && !StatusBarSettings.bool(values, StatusBarLayoutSettings.MASTER)) return "Primero, activa el orden de la barra de estado.";
         if ((DataBatterySpacing.ENABLED.equals(key) || DataBatterySpacing.SPACING.equals(key))
                 && StatusBarLayoutSettings.enabledValues(values))
-            return "状态栏排序或左右间距已接管布局；原值保留，关闭排序并将所有左右间距恢复为 0 后恢复";
+            return "El orden de la barra de estado o los márgenes laterales controlan ahora la distribución. Los valores anteriores se conservan; para restaurarlos, desactiva el orden y devuelve todos los márgenes laterales a 0.";
         if (StatusBarSettings.SPEED_OFFSET_X.equals(key)
                 && StatusBarSettings.bool(values, SpeedPosition.SAFE_GAP_ENABLED))
-            return "距离模式已接管水平定位；关闭“与相邻图标保持距离”后可调整，原水平数值会保留";
+            return "El modo de distancia controla ahora la posición horizontal. Desactiva «Mantener distancia con los iconos adyacentes» para ajustar la posición. Se conservan los valores horizontales anteriores.";
         String modeReason = PanelMode.freezeReason(key);
         if (modeReason != null && !modeReason.isEmpty()) return modeReason;
         if(NetworkLabelFormats.owns(key)&&!StatusBarSettings.bool(values,NetworkLabelFormats.ENABLED))
-            return "请先开启自定义制式显示内容";
+            return "Primero, activa el contenido personalizado del tipo de red.";
         String clockKey=NotificationBigClockSettings.portraitKey(key);
         String backdropSwitch=key!=null&&key.startsWith(NotificationBigClockSettings.LANDSCAPE_PREFIX)
                 ?NotificationBigClockSettings.landscapeKey(NotificationBigClockSettings.DIGIT_REVEAL_ENABLED):NotificationBigClockSettings.DIGIT_REVEAL_ENABLED;
-        if(ClockBackdropSettings.owns(key)&&!StatusBarSettings.bool(values,backdropSwitch))return "请先开启字内背景透出";
+        if(ClockBackdropSettings.owns(key)&&!StatusBarSettings.bool(values,backdropSwitch))return "Primero, activa el fondo visible a través del texto.";
         if((ClockBackdropSettings.DATE_MASK_OPACITY.equals(clockKey)||ClockBackdropSettings.FOOTER_MASK_OPACITY.equals(clockKey))
                 &&!StatusBarSettings.bool(values,clockKey.equals(key)?NotificationBigClockSettings.FOLLOW_STYLE:NotificationBigClockSettings.landscapeKey(NotificationBigClockSettings.FOLLOW_STYLE)))
-            return "请先开启时间和日期样式跟随";
+            return "Primero, activa la opción para que la hora y la fecha sigan el mismo estilo.";
         if(BigClockWidgetsSettings.maskOpacityKey(key)) {
-            if(!StatusBarSettings.bool(values,BigClockWidgetsSettings.followTimeColorKey(BigClockWidgetsSettings.textSide(key))))return "请先开启组件颜色跟随主时间";
-            if(!StatusBarSettings.bool(values,NotificationBigClockSettings.DIGIT_REVEAL_ENABLED))return "请先开启竖屏字内背景透出";
+            if(!StatusBarSettings.bool(values,BigClockWidgetsSettings.followTimeColorKey(BigClockWidgetsSettings.textSide(key))))return "Primero, activa la opción para que el color del componente siga el de la hora principal.";
+            if(!StatusBarSettings.bool(values,NotificationBigClockSettings.DIGIT_REVEAL_ENABLED))return "Primero, activa el fondo visible a través del texto en orientación vertical.";
         }
         if(ClockBackdropSettings.NOTIFICATION_FOLLOW.equals(key)||ClockBackdropSettings.NOTIFICATION_RELIEF.equals(key))
-            return "通知文字背景材质已移除；旧设置仅保留配置兼容";
+            return "Se ha eliminado el material de fondo del texto de las notificaciones. Los ajustes anteriores se conservan solo por compatibilidad.";
         if(BigClockWidgetsSettings.launchAppKey(key)&&!StatusBarSettings.bool(values,BigClockWidgetsSettings.clickEnabledKey(BigClockWidgetsSettings.textSide(key))))
-            return "请先开启组件点击打开应用";
+            return "Primero, activa la opción para abrir una aplicación al tocar el componente.";
         if(backdropMaterialControl(key)&&StatusBarSettings.bool(values,backdropSwitch))
-            return "已开启字内背景透出，当前使用专用背景材质；关闭后恢复原外观设置";
+            return "Está activado el fondo visible a través del texto y se usa un material de fondo específico. Al desactivarlo, se restaura el aspecto anterior.";
         if ((NotificationBigClockSettings.FOLLOW_STYLE.equals(clockKey)
                 ||NotificationBigClockSettings.REVEAL_MASK_COLOR.equals(clockKey)
                 ||NotificationBigClockSettings.REVEAL_MASK_OPACITY.equals(clockKey))
                 &&!StatusBarSettings.bool(values,clockKey.equals(key)?NotificationBigClockSettings.DIGIT_REVEAL_ENABLED
                 :NotificationBigClockSettings.landscapeKey(NotificationBigClockSettings.DIGIT_REVEAL_ENABLED)))
-            return "请先开启字内背景透出";
+            return "Primero, activa el fondo visible a través del texto.";
         String styleSwitch=clockKey.equals(key)?NotificationBigClockSettings.LOCK_STYLE
                 :NotificationBigClockSettings.landscapeKey(NotificationBigClockSettings.LOCK_STYLE);
-        if(lockStyleStrength(clockKey)&&!StatusBarSettings.bool(values,styleSwitch))return "请先开启锁屏质感";
-        if(plainGlass(clockKey)&&StatusBarSettings.bool(values,styleSwitch))return "已被锁屏质感替代，关闭锁屏质感后可用";
+        if(lockStyleStrength(clockKey)&&!StatusBarSettings.bool(values,styleSwitch))return "Primero, activa el efecto de textura de la pantalla de bloqueo.";
+        if(plainGlass(clockKey)&&StatusBarSettings.bool(values,styleSwitch))return "Esta opción ha sido sustituida por el efecto de textura de la pantalla de bloqueo. Estará disponible cuando se desactive ese efecto.";
         if(NotificationBigClockSettings.CLOCK_LAUNCH_APP.equals(key)
                 &&!StatusBarSettings.bool(values,NotificationBigClockSettings.CLOCK_CLICK_ENABLED))
-            return "请先开启点击时间打开时钟";
+            return "Primero, activa la opción para abrir el reloj al tocar la hora.";
         if(NotificationBigClockSettings.DATE_LAUNCH_APP.equals(key)
                 &&!StatusBarSettings.bool(values,NotificationBigClockSettings.DATE_CLICK_ENABLED))
-            return "请先开启点击日期打开日历";
+            return "Primero, activa la opción para abrir el calendario al tocar la fecha.";
         if((NotificationBigClockSettings.REBOUND_BLUR_ENABLED.equals(key)||NotificationBigClockSettings.REBOUND_BLUR_RADIUS.equals(key)
                 ||NotificationBigClockSettings.REBOUND_FADE.equals(key))
                 &&StatusBarSettings.bool(values,NotificationBigClockSettings.REBOUND_LOCK))
-            return "已开启“关闭回弹效果”，没有回弹也就没有回弹时的模糊，两者互斥；先关闭它才能使用";
+            return "Está activada la opción «Desactivar el efecto de rebote». Sin rebote no hay desenfoque durante el rebote; ambas opciones son incompatibles. Desactiva primero esta opción.";
         if((NotificationBigClockSettings.REBOUND_BLUR_RADIUS.equals(key)||NotificationBigClockSettings.REBOUND_FADE.equals(key))
                 &&!StatusBarSettings.bool(values,NotificationBigClockSettings.REBOUND_BLUR_ENABLED))
-            return "请先开启回弹时模糊";
+            return "Primero, activa el desenfoque durante el rebote.";
         boolean unified=StatusBarSettings.bool(values,LockNotificationSettings.UNIFY_AOD);
         if(unified&&(FluidCloudStyle.NOTIFICATION_FOLLOW.equals(key)||FluidCloudStyle.NOTIFICATION_FOLLOW_OPACITY.equals(key)
                 ||LockNotificationSettings.AOD_NOTIFICATION_FOLLOW_OPACITY.equals(key)))
-            return "已开启“统一样式”：通知按流体云卡片的样子着色，不再用这里的开关和强度";
+            return "Está activado el estilo unificado: las notificaciones adoptan los colores de las tarjetas de Fluid Cloud, por lo que se ignoran este interruptor y su intensidad.";
         if((FluidCloudAccent.AOD_OPACITY.equals(key)||FluidCloudAccent.AOD_MASK_COLOR.equals(key)||FluidCloudAccent.AOD_MASK_OPACITY.equals(key))
                 &&!StatusBarSettings.bool(values,FluidCloudAccent.AOD_CUSTOM))
-            return "请先开启 AOD 自定义";
+            return "Primero, activa la personalización de AOD.";
         String wallpaper=wallpaperReason(key,values);
         if(!wallpaper.isEmpty())return wallpaper;
         if(NotificationIconArea.FOLLOW_LAUNCHER.equals(key)
                 &&!"native".equals(StatusBarSettings.string(values,NotificationIconArea.MODE)))
-            return "仅在原生通知图标显示方式下生效";
+            return "Solo se aplica al modo de visualización de iconos de notificación nativos.";
         if(FluidCloudStyle.MEDIA_KEEP_HIGHLIGHT.equals(key)
                 &&!StatusBarSettings.bool(values,C17HighlightRemoval.ENABLED))
-            return "请先在“界面材质 → C17 高光去除”开启高光去除；本项只决定音乐卡片是否保留";
+            return "Primero, activa la eliminación de reflejos en «Materiales de la interfaz → Eliminar reflejos de C17». Esta opción solo determina si se conservan en la tarjeta de música.";
         // The media-accent page has one master. Everything on it, following included, is greyed while it is off.
         if(fluidAccentChild(key)&&!StatusBarSettings.bool(values,FluidCloudAccent.ENABLED))
-            return "请先开启流体云媒体强调色";
+            return "Primero, activa el color de énfasis multimedia de Fluid Cloud.";
         if((FluidCloudAccent.MASK_COLOR.equals(key)||FluidCloudAccent.MASK_OPACITY.equals(key))
                 &&!StatusBarSettings.bool(values,FluidCloudAccent.MASK_ENABLED))
-            return "请先开启强调色遮罩";
+            return "Primero, activa la máscara del color de énfasis.";
         boolean customBase=StatusBarSettings.bool(values,FluidCloudStyle.MASTER)&&StatusBarSettings.bool(values,FluidCloudStyle.DESKTOP_BACKGROUND);
         if(FluidCloudStyle.FOLLOW_MEDIA.equals(key)&&!customBase)
-            return "请先开启“流体云样式”里的自定义底色";
+            return "Primero, activa el fondo personalizado en «Estilo de Fluid Cloud».";
         // "Only while playing" also governs the lock screen's and AOD's own following, which needs neither master.
         if(FluidCloudStyle.FOLLOW_ONLY_PLAYING.equals(key)&&!lockOwnFollowing(values)
                 &&!(StatusBarSettings.bool(values,FluidCloudStyle.FOLLOW_MEDIA)&&customBase))
-            return "请先开启跟随媒体强调色，或锁屏 / AOD 页里的通知跟随、统一样式、渐变样式、自定义";
+            return "Primero, activa el seguimiento del color de énfasis multimedia o una de estas opciones de la pantalla de bloqueo/AOD: notificaciones que siguen el color, estilo unificado, estilo degradado o personalización.";
         if(FluidCloudStyle.NOTIFICATION_FOLLOW_OPACITY.equals(key)
                 &&!StatusBarSettings.bool(values,FluidCloudStyle.NOTIFICATION_FOLLOW))
-            return "请先开启通知跟随媒体色";
+            return "Primero, activa la opción para que las notificaciones sigan el color multimedia.";
         if((FluidCloudAccent.LOCK_OPACITY.equals(key)||FluidCloudAccent.LOCK_MASK_COLOR.equals(key)
                 ||FluidCloudAccent.LOCK_MASK_OPACITY.equals(key))
                 &&!StatusBarSettings.bool(values,FluidCloudAccent.LOCK_CUSTOM))
-            return "请先开启锁屏自定义";
+            return "Primero, activa la personalización de la pantalla de bloqueo.";
         if(fluidStyleChild(key)&&!StatusBarSettings.bool(values,FluidCloudStyle.MASTER))
-            return "请先开启流体云样式";
+            return "Primero, activa el estilo de Fluid Cloud.";
         if(capsuleChild(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.MASTER))
-            return "请先开启摄像头区域流体云";
+            return "Primero, activa Fluid Cloud en el área de la cámara.";
         if(glassOverridesFill(key)&&StatusBarSettings.bool(values,FluidCloudCapsule.BLUR_ENABLED))
-            return "背景模糊开启后底色由遮罩色决定，这一项不再起作用";
+            return "Cuando se activa el desenfoque del fondo, el color de fondo lo determina la máscara; esta opción deja de tener efecto.";
         if(FluidCloudCapsule.BLUR_MASK_COLOR.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.BLUR_ENABLED))
-            return "请先开启背景模糊";
+            return "Primero, activa el desenfoque del fondo.";
         if(FluidCloudCapsule.GLOW_ENABLED.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.MARQUEE_ENABLED))
-            return "请先开启边框跑马灯";
+            return "Primero, activa el borde luminoso animado.";
         if(FluidCloudCapsule.GLOW_DEPTH.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.GLOW_ENABLED))
-            return "请先开启向内渐隐";
+            return "Primero, activa el desvanecimiento hacia dentro.";
         if((FluidCloudCapsule.SPECTRUM_COLOR.equals(key)||FluidCloudCapsule.SPECTRUM_FOLLOW.equals(key))
                 &&!StatusBarSettings.bool(values,FluidCloudCapsule.SPECTRUM_ENABLED))
-            return "请先开启实时频谱";
+            return "Primero, activa el espectro en tiempo real.";
         if(FluidCloudCapsule.MARQUEE_COLOR_COUNT.equals(key)&&!"custom".equals(StatusBarSettings.string(values,FluidCloudCapsule.MARQUEE_PRESET)))
-            return "只有“自定义”预设使用";
+            return "Solo se utiliza con el ajuste preestablecido «Personalizado».";
         for(int i=3;i<FluidCloudCapsule.MARQUEE_COLOR_KEYS.length;i++)
             if(FluidCloudCapsule.MARQUEE_COLOR_KEYS[i].equals(key)&&"custom".equals(StatusBarSettings.string(values,FluidCloudCapsule.MARQUEE_PRESET))
                     &&i>=Math.round(StatusBarSettings.settingNumber(values,FluidCloudCapsule.MARQUEE_COLOR_COUNT,FluidCloudCapsule.DEFAULT_MARQUEE_COLOR_COUNT)))
-                return "自定义颜色数量只有 "+Math.round(StatusBarSettings.settingNumber(values,FluidCloudCapsule.MARQUEE_COLOR_COUNT,FluidCloudCapsule.DEFAULT_MARQUEE_COLOR_COUNT))+" 个";
+                return "La cantidad de colores personalizados es de solo "+Math.round(StatusBarSettings.settingNumber(values,FluidCloudCapsule.MARQUEE_COLOR_COUNT,FluidCloudCapsule.DEFAULT_MARQUEE_COLOR_COUNT))+" colores";
         if(FluidCloudCapsule.FILL_COLOR.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.FILL_ENABLED))
-            return "请先开启自定义底色";
+            return "Primero, activa el fondo personalizado.";
         if(FluidCloudCapsule.FILL_OPACITY.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.FILL_ENABLED)
                 &&!StatusBarSettings.bool(values,FluidCloudCapsule.FOLLOW_MEDIA))
-            return "请先开启自定义底色或跟随媒体强调色";
+            return "Primero, activa el fondo personalizado o el seguimiento del color de énfasis multimedia.";
         if(FluidCloudCapsule.BORDER_COLOR.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.BORDER_ENABLED))
-            return "请先开启自定义边框";
+            return "Primero, activa el borde personalizado.";
         // The running light alone draws at the plugin's own outline width; only the custom border makes the width adjustable.
         if(FluidCloudCapsule.BORDER_WIDTH.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.BORDER_ENABLED))
             return StatusBarSettings.bool(values,FluidCloudCapsule.MARQUEE_ENABLED)
-                    ?"未开启自定义边框，跑马灯使用系统默认粗细 1.3 dp；开启自定义边框后可调"
-                    :"请先开启自定义边框";
+                    ?"Sin un borde personalizado, el efecto luminoso usa el grosor predeterminado del sistema de 1,3 dp. Activa el borde personalizado para ajustarlo."
+                    :"Primero, activa el borde personalizado.";
         if(FluidCloudCapsule.GRADIENT_ENABLED.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.FILL_ENABLED)
                 &&!StatusBarSettings.bool(values,FluidCloudCapsule.FOLLOW_MEDIA))
-            return "请先开启自定义底色或跟随媒体强调色";
+            return "Primero, activa el fondo personalizado o el seguimiento del color de énfasis multimedia.";
         if((FluidCloudCapsule.GRADIENT_MODE.equals(key)||FluidCloudCapsule.GRADIENT_COLOR.equals(key))
                 &&!StatusBarSettings.bool(values,FluidCloudCapsule.GRADIENT_ENABLED))
-            return "请先开启渐变底色";
+            return "Primero, activa el fondo degradado.";
         if(FluidCloudCapsule.BLUR_RADIUS.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.BLUR_ENABLED))
-            return "请先开启背景模糊";
+            return "Primero, activa el desenfoque del fondo.";
         if(marqueeChild(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.MARQUEE_ENABLED))
-            return "请先开启边框跑马灯";
+            return "Primero, activa el borde luminoso animado.";
         if(FluidCloudCapsule.MARQUEE_COLOR_1.equals(key)&&!"comet".equals(StatusBarSettings.string(values,FluidCloudCapsule.MARQUEE_PRESET))
                 &&!"custom".equals(StatusBarSettings.string(values,FluidCloudCapsule.MARQUEE_PRESET)))
-            return "当前预设自带颜色；选“单色流光”或“自定义”后可改";
+            return "El ajuste preestablecido actual ya incluye colores. Selecciona «Flujo monocromático» o «Personalizado» para modificarlos.";
         if((FluidCloudCapsule.MARQUEE_COLOR_2.equals(key)||FluidCloudCapsule.MARQUEE_COLOR_3.equals(key))
                 &&!"custom".equals(StatusBarSettings.string(values,FluidCloudCapsule.MARQUEE_PRESET)))
-            return "只有“自定义”预设使用这个颜色";
+            return "Este color solo se utiliza con el ajuste preestablecido «Personalizado».";
         if(FluidCloudCapsule.SPECTRUM_SENSITIVITY.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.SPECTRUM_ENABLED))
-            return "请先开启实时频谱";
+            return "Primero, activa el espectro en tiempo real.";
         if(FluidCloudCapsule.RADIUS.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.RADIUS_ENABLED))
-            return "请先开启自定义圆角";
+            return "Primero, activa las esquinas redondeadas personalizadas.";
         if(FluidCloudCapsule.COVER_RADIUS.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.COVER_RADIUS_ENABLED))
-            return "请先开启自定义封面圆角";
+            return "Primero, activa las esquinas redondeadas personalizadas de la portada.";
         if(FluidCloudCapsule.COVER_SCALE.equals(key)&&!StatusBarSettings.bool(values,FluidCloudCapsule.COVER_SIZE_ENABLED))
-            return "请先开启调整音乐封面大小";
+            return "Primero, activa el ajuste del tamaño de la portada musical.";
         if(CapsuleEffects.BOUNCE.equals(key)&&!StatusBarSettings.bool(values,CapsuleEffects.BOUNCE_ENABLED))
-            return "请先开启自定义出现回弹";
+            return "Primero, activa el rebote de entrada personalizado.";
         boolean gradientShape=FluidCloudStyle.BACKGROUND_GRADIENT_RANGE.equals(key)||FluidCloudStyle.BACKGROUND_GRADIENT_START.equals(key)
                 ||FluidCloudStyle.BACKGROUND_GRADIENT_MID.equals(key)||FluidCloudStyle.BACKGROUND_GRADIENT_STRENGTH.equals(key)
                 ||FluidCloudStyle.BACKGROUND_GRADIENT_OPACITY.equals(key);
         if(FluidCloudStyle.BACKGROUND_MODE.equals(key)||FluidCloudStyle.BACKGROUND_COLOR.equals(key)
                 ||FluidCloudStyle.BACKGROUND_OPACITY.equals(key)||gradientShape) {
-            if(!StatusBarSettings.bool(values,FluidCloudStyle.MASTER))return "请先开启流体云样式";
-            if(!StatusBarSettings.bool(values,FluidCloudStyle.DESKTOP_BACKGROUND))return "请先开启自定义底色";
+            if(!StatusBarSettings.bool(values,FluidCloudStyle.MASTER))return "Primero, activa el estilo de Fluid Cloud.";
+            if(!StatusBarSettings.bool(values,FluidCloudStyle.DESKTOP_BACKGROUND))return "Primero, activa el fondo personalizado.";
             if(gradientShape
                     &&!"native".equals(StatusBarSettings.string(values,FluidCloudStyle.BACKGROUND_MODE)))
-                return "请选择原生渐变背景模式";
+                return "Selecciona el modo de fondo degradado nativo.";
             if(FluidCloudStyle.BACKGROUND_COLOR.equals(key)
                     &&"notification".equals(StatusBarSettings.string(values,FluidCloudStyle.BACKGROUND_MODE)))
-                return "跟随系统通知时使用系统颜色；选择系统默认或自定义颜色后可编辑";
+                return "Cuando se siguen las notificaciones del sistema, se usa el color del sistema. Selecciona «Predeterminado del sistema» o «Color personalizado» para editarlo.";
         }
         if(ClockLayoutSettings.STRINGS.containsKey(key)||ClockLayoutSettings.NUMBERS.containsKey(key)||ClockLayoutSettings.COLORS.containsKey(key)) {
             for(String group:ClockLayoutSettings.DIGIT_GROUPS)
                 if(ClockLayoutSettings.digitSpacingKey(group).equals(key)
-                        &&!StatusBarSettings.bool(values,ClockLayoutSettings.digitKey(group)))return "请先开启等宽数字";
+                        &&!StatusBarSettings.bool(values,ClockLayoutSettings.digitKey(group)))return "Primero, activa los números monoespaciados.";
             if(key.startsWith("clock_dual_")&&!StatusBarSettings.bool(values,ClockLayoutSettings.DUAL_ENABLED))
-                return "请先开启双排时钟";
+                return "Primero, activa el reloj de dos filas.";
             if((ClockLayoutSettings.MARGIN_START.equals(key)||ClockLayoutSettings.MARGIN_END.equals(key))
-                    &&!StatusBarSettings.bool(values,ClockLayoutSettings.MARGIN_ENABLED))return "请先开启整体边距";
+                    &&!StatusBarSettings.bool(values,ClockLayoutSettings.MARGIN_ENABLED))return "Primero, activa el margen general.";
         }
         if(NotificationBigClockSettings.STACK_ENABLED.equals(key)
                 &&!StatusBarSettings.bool(values,NotificationBigClockSettings.MASTER)
                 &&!(StatusBarSettings.bool(values,NotificationBigClockSettings.LANDSCAPE_MASTER)
                     &&StatusBarSettings.bool(values,FeatureOptions.STACK_LANDSCAPE_ENABLED)))
-            return "请先开启对应方向的大时钟，避免通知无法滚动";
+            return "Primero, activa el reloj grande para la orientación correspondiente, para evitar problemas al desplazar las notificaciones.";
         if(FeatureOptions.STACK_LANDSCAPE_ENABLED.equals(key)
                 &&!StatusBarSettings.bool(values,NotificationBigClockSettings.LANDSCAPE_MASTER))
-            return "请先开启对应方向的大时钟，避免通知无法滚动";
+            return "Primero, activa el reloj grande para la orientación correspondiente, para evitar problemas al desplazar las notificaciones.";
         if(NotificationMiniStack.HIDE_BADGE.equals(key)&&!StatusBarSettings.bool(values,NotificationMiniStack.ENABLED))
-            return "请先开启小堆叠（同应用）";
+            return "Primero, activa el apilado compacto (misma aplicación).";
         if(NotificationMiniStack.AUTO_HIDE_IN_STACK.equals(key)) {
-            if(!StatusBarSettings.bool(values,NotificationBigClockSettings.STACK_ENABLED))return "请先开启堆叠通知";
-            if(!StatusBarSettings.bool(values,NotificationMiniStack.ENABLED))return "请先开启小堆叠（同应用）";
+            if(!StatusBarSettings.bool(values,NotificationBigClockSettings.STACK_ENABLED))return "Primero, activa el apilado de notificaciones.";
+            if(!StatusBarSettings.bool(values,NotificationMiniStack.ENABLED))return "Primero, activa el apilado compacto (misma aplicación).";
         }
         Item item=item(key);
         if(item!=null && "native_network_badge".equals(item.groupId)
                 && !key.startsWith("native_data_activity_")
                 && StatusBarSettings.bool(values,"label_enabled"))
-            return "请先关闭网络制式文字，再启用原生角标调整";
+            return "Desactiva primero el texto del tipo de red y después activa el ajuste de los indicadores nativos.";
         return unavailableReason(key);
     }
 
@@ -1594,19 +1594,19 @@ public final class SettingsCatalog {
         for(boolean landscape:new boolean[]{false,true})
             if((key.equals(ShadeWallpaperSettings.blurWithPullKey(landscape))||key.equals(ShadeWallpaperSettings.swipeSlideKey(landscape)))
                     &&!StatusBarSettings.bool(values,ShadeWallpaperSettings.masterKey(landscape)))
-                return landscape?"请先开启横屏下拉壁纸":"请先开启竖屏下拉壁纸";
+                return landscape?"Primero, activa el fondo del panel desplegable en orientación horizontal.":"Primero, activa el fondo del panel desplegable en orientación vertical.";
         for(String scene:ShadeWallpaperSettings.SCENES) {
             boolean ofScene=key.equals(ShadeWallpaperSettings.enabledKey(scene))||key.equals(ShadeWallpaperSettings.brightnessKey(scene))||key.equals(ShadeWallpaperSettings.blurKey(scene))
                     ||(ShadeWallpaperSettings.hasZone(scene)&&(zoneKey(scene,key)||key.equals(ShadeWallpaperSettings.zoneEnabledKey(scene))));
             if(ofScene&&!StatusBarSettings.bool(values,ShadeWallpaperSettings.masterKey(scene)))
-                return ShadeWallpaperSettings.landscape(scene)?"请先开启横屏下拉壁纸":"请先开启竖屏下拉壁纸";
+                return ShadeWallpaperSettings.landscape(scene)?"Primero, activa el fondo del panel desplegable en orientación horizontal.":"Primero, activa el fondo del panel desplegable en orientación vertical.";
             if(key.equals(ShadeWallpaperSettings.enabledKey(scene))
                     &&!ShadeWallpaperSettings.validRevision(String.valueOf(values==null?null:values.get(ShadeWallpaperSettings.revisionKey(scene)))))
-                return "请先在“壁纸图片”里选择这个面板的图片";
+                return "Primero, selecciona la imagen para este panel en «Imágenes de fondo».";
             if(!ShadeWallpaperSettings.hasZone(scene))continue;
-            if(zoneKey(scene,key)&&!StatusBarSettings.bool(values,ShadeWallpaperSettings.zoneEnabledKey(scene)))return "请先开启大时钟区域单独设置";
+            if(zoneKey(scene,key)&&!StatusBarSettings.bool(values,ShadeWallpaperSettings.zoneEnabledKey(scene)))return "Primero, activa los ajustes independientes del área del reloj grande.";
             if(key.equals(ShadeWallpaperSettings.zoneHeightKey(scene))&&StatusBarSettings.bool(values,ShadeWallpaperSettings.zoneFollowKey(scene)))
-                return "区域高度正跟随大时钟；关闭“区域高度跟随大时钟”后才用这个固定高度";
+                return "La altura del área sigue actualmente la del reloj grande. Desactiva «La altura del área sigue al reloj grande» para usar una altura fija.";
         }
         return "";
     }
@@ -1663,27 +1663,27 @@ public final class SettingsCatalog {
 
     /** Actual precedence and mutual exclusion, shown at the top of each affected feature. */
     public static String conflictDescription(String groupId, String category) {
-        if ("clock".equals(groupId)) return "默认时钟与双排时钟二选一：开启一个会自动关闭另一个，各自的开关在对应标签顶部。竖屏或横屏通知页启用大时钟后，下拉页的小时间由大时钟接管；状态栏本身仍使用本页设置。双排时钟只接管状态栏时间，下拉页等其他位置的时钟仍按默认时钟设置。";
-        if ("shade_clock".equals(groupId)) return "冲突：与通知栏大时钟共用通知页时间区域。修改本页启用的条件会关闭大时钟；大时钟未启用时通知页保留下拉时钟，控制中心仍使用本页设置。";
-        if ("carrier".equals(groupId) && NOTIFICATION.equals(category)) return "冲突：与通知栏大时钟共用顶部区域。启用或编辑本页条件会关闭大时钟；关闭本页开关不会自动开启大时钟。";
-        if (groupId.startsWith("notification_big_clock")) return "优先级：仅在本页对应的横屏或竖屏方向替代通知页小时间，保留控制中心原生图标。编辑下拉时钟或通知栏运营商文字会关闭两个方向的大时钟；堆叠通知在“通知栏 → 通知卡片”独立设置。";
-        if ("font".equals(groupId)) return "优先级：各功能独立字号和粗细仍有效；大时钟选择原生字体时使用自身字形，选择自选字体后才使用这里导入的文件。";
-        if ("notification_icons".equals(groupId)) return "互斥：原生图标、爱心、文字和图片只选一种。最多图标数量仅作用于原生模式；通知页隐藏规则优先于本页外观设置。";
-        if ("notification_icon_overrides".equals(groupId)) return "优先级：通知图标区域使用单个爱心、文字或图片时，暂停逐应用替换；恢复原生显示方式后继续生效。通知数量和隐藏规则仍由原生系统及对应配置控制。";
-        if ("status_icon_library".equals(groupId)) return "先导入图标库，再应用到所选范围；单项选择优先于套装。颜色默认跟随系统，原色素材可保留自带颜色；颜色和透明度分别继承。关闭、不可用与动态能力以实际原生状态为准。";
-        if ("notification_mini_stack".equals(groupId)) return "独立：只呈现系统已形成的原生通知组，不重新分组、不排序、不增加下拉手势，通知上滑展开保持原样；"
-                + "与“堆叠通知”（整列）互不依赖，不需要大时钟或流体云。通知颜色、渐变与高光仍由各自功能处理。隐私内容、悬浮通知和打开设置菜单的通知保持原生。"
+        if ("clock".equals(groupId)) return "El reloj predeterminado y el reloj de dos filas son excluyentes: al activar uno se desactiva el otro. Cada interruptor está en la parte superior de su pestaña. Si activas el reloj grande en la página de notificaciones vertical u horizontal, este sustituye a la hora pequeña del panel desplegado; la barra de estado seguirá usando los ajustes de esta página. El reloj de dos filas solo controla la hora de la barra de estado; los relojes del panel desplegado y de otras ubicaciones siguen usando la configuración predeterminada.";
+        if ("shade_clock".equals(groupId)) return "Incompatibilidad: comparte el área de la hora de la página de notificaciones con el reloj grande. Si cambias las condiciones que activan esta opción, se desactiva el reloj grande. Si el reloj grande no está activo, la página de notificaciones conserva el reloj desplegable y el centro de control sigue usando esta configuración.";
+        if ("carrier".equals(groupId) && NOTIFICATION.equals(category)) return "Incompatibilidad: comparte el área superior con el reloj grande de la página de notificaciones. Activar o editar esta opción desactiva el reloj grande. Apagar el interruptor de esta página no vuelve a activar automáticamente el reloj grande.";
+        if (groupId.startsWith("notification_big_clock")) return "Prioridad: solo sustituye la hora pequeña de la página de notificaciones en la orientación correspondiente y conserva los iconos nativos del centro de control. Editar el reloj del panel desplegable o el texto del operador en la barra de notificaciones desactiva el reloj grande en ambas orientaciones. El apilado de notificaciones se configura por separado en «Panel de notificaciones → Tarjetas de notificación».";
+        if ("font".equals(groupId)) return "Prioridad: el tamaño y el grosor de cada función siguen siendo independientes. Si el reloj grande utiliza la fuente nativa, emplea sus propios caracteres; el archivo importado aquí solo se usa al seleccionar una fuente personalizada.";
+        if ("notification_icons".equals(groupId)) return "Opciones excluyentes: elige solo una entre icono nativo, corazón, texto e imagen. La cantidad máxima de iconos solo se aplica al modo nativo; las reglas para ocultarlos en la página de notificaciones tienen prioridad.";
+        if ("notification_icon_overrides".equals(groupId)) return "Prioridad: cuando el área de iconos de notificación usa un corazón, texto o imagen únicos, se suspenden las sustituciones individuales por aplicación. Se reanudan al volver al modo de visualización nativo. El recuento de notificaciones y las reglas para ocultarlas siguen controlados por el sistema y la configuración correspondiente.";
+        if ("status_icon_library".equals(groupId)) return "Importa primero una biblioteca de iconos y después aplícala al ámbito seleccionado. La selección individual tiene prioridad sobre el paquete completo. Por defecto, el color sigue al sistema; los recursos originales pueden conservar su color propio. El color y la transparencia se heredan por separado. Los estados desactivado, no disponible y animado dependen del comportamiento nativo real.";
+        if ("notification_mini_stack".equals(groupId)) return "Independiente: solo muestra los grupos de notificaciones que el sistema ya ha creado. No vuelve a agrupar ni ordenar, y no añade gestos de deslizamiento hacia abajo. La expansión al deslizar hacia arriba conserva el comportamiento original."
+                + "No depende del «Apilado de notificaciones» de columna completa y no requiere el reloj grande ni Fluid Cloud. El color, los degradados y los reflejos de las notificaciones siguen gestionándose por separado. El contenido privado, las notificaciones flotantes y las notificaciones que abren el menú de ajustes conservan el comportamiento nativo."
                 + NotificationMiniStackSource.DECLARATION + NotificationMiniStackSource.TECHNICAL_ORIGIN;
-        if ("notification_stack".equals(groupId)) return "依赖：请先开启对应方向的大时钟，避免通知无法滚动。竖屏需竖屏大时钟；横屏还需“横屏也生效”和横屏大时钟。仅折叠外层通知列表，应用内分组保持系统原生逻辑。";
-        if ("shade_status_icons".equals(groupId)) return "优先级：此开关或大时钟任一开启，顶部原生小时间、通知图标与右侧图标及通知页的小时间和右侧图标在整个下拉、左右切页期间持续隐藏。两页都收起或两个开关都关闭时恢复原生。控制中心自己的右侧始终保留原生，左侧小时间与通知图标仅由此开关管理。通知图标样式和数量继续在“通知图标区域”中设置。";
-        if ("label".equals(groupId)) return "优先级：隐藏网络制式、Wi-Fi 已连接或两个网络开关都关闭时，隐藏优先于名称、位置、字体和颜色设置。";
-        if ("native_network_badge".equals(groupId)) return "互斥：网络制式文字开启时暂停本页调整；关闭后按原生角标的隐藏开关显示，保留本页参数。隐藏系统网络角标优先于位置、大小和字重。";
-        if ("battery".equals(groupId)) return "优先级：电池内文字调整只作用于数字；充电数字与闪电交替开启时，数字阶段使用文字设置。切换电池样式后按该样式的原生字形重新应用。";
-        if ("qs_media".equals(groupId)) return "互斥：外发光使用封面反色时，自定义发光颜色不生效。背景来源的优先级：自定义颜色 > 封面主色 > 封面图片；叠加色只作用于封面图片和封面主色。封面背景和统一圆角可同时使用。";
-        if ("c17_highlight_removal".equals(groupId)) return "共同使用：去除高光可与磁贴颜色、音乐封面背景同时开启。这两类自定义背景保留；本页亚克力底色作用于其他原生材质。";
-        if ("fluid_cloud_style".equals(groupId)) return "颜色优先级：媒体强调色 > 跟随媒体色 > 这里的自定义底色；强调色与跟随色用“流体云媒体强调色”页的遮罩与透明度，只有其余情况才用这里的底色。通知类跟随系统样式只提供材质，可与颜色叠加。颜色只作用于悬浮展开、锁屏与 AOD（AOD 与锁屏一致），不改动通知栏。去高光由 C17 高光去除统一控制。";
-        if ("fluid_cloud_accent".equals(groupId)) return "优先级 1：总开关开启后音乐卡始终使用强调色，覆盖悬浮、锁屏和 AOD；其他卡片可跟随当前媒体色（优先级 2，高于自定义底色）。强调色与跟随色共用本页的遮罩与填充透明度；锁屏与 AOD 可单独用“锁屏自定义”。总开关关闭时整页的开关都不可用。没有媒体或不在播放（开启“仅播放时跟随”时）则回到“流体云样式”里的自定义底色。";
-        if ("data".equals(groupId)) return "优先级：隐藏网络角标不会隐藏独立网络制式文字；该文字在“网络制式文字”中设置。蜂窝数据小箭头在“原生角标调整”独立开启，不受蜂窝样式或网络文字开关限制。";
+        if ("notification_stack".equals(groupId)) return "Requisito: primero activa el reloj grande en la orientación correspondiente para evitar problemas al desplazar las notificaciones. En vertical se necesita el reloj grande vertical; en horizontal también deben activarse «Aplicar también en horizontal» y el reloj grande horizontal. Solo se pliega la lista exterior; los grupos dentro de cada aplicación conservan la lógica nativa.";
+        if ("shade_status_icons".equals(groupId)) return "Prioridad: si está activado este interruptor o el reloj grande, se ocultan continuamente la hora pequeña nativa superior, los iconos de notificación y los iconos de la derecha, así como la hora pequeña y los iconos derechos de la página de notificaciones durante el despliegue y los cambios entre páginas. Se restauran al cerrar ambos paneles o desactivar los dos interruptores. Los iconos derechos del centro de control siempre se mantienen nativos. Este interruptor controla por sí solo la hora pequeña y los iconos de notificación del lado izquierdo. El estilo y la cantidad de iconos siguen configurándose en «Área de iconos de notificación».";
+        if ("label".equals(groupId)) return "Prioridad: si se oculta el tipo de red, el Wi-Fi está conectado o ambos interruptores de red están desactivados, ocultar tiene prioridad sobre los ajustes de nombre, posición, fuente y color.";
+        if ("native_network_badge".equals(groupId)) return "Opciones incompatibles: cuando está activado el texto del tipo de red, se suspende el ajuste de esta página. Al desactivarlo, se aplica el interruptor de ocultación de los indicadores nativos; los parámetros de esta página se conservan. Ocultar el indicador de red del sistema tiene prioridad sobre su posición, tamaño y grosor.";
+        if ("battery".equals(groupId)) return "Prioridad: los ajustes del texto dentro de la batería solo afectan a los números. Si los números de carga y el rayo alternan, la fase de los números usa los ajustes de texto. Al cambiar el estilo de batería, se vuelve a aplicar la forma de los caracteres nativa de ese estilo.";
+        if ("qs_media".equals(groupId)) return "Opciones incompatibles: si el resplandor exterior usa el color invertido de la portada, se ignora el color de resplandor personalizado. Prioridad del fondo: color personalizado > color principal de la portada > imagen de la portada. El color superpuesto solo afecta a la imagen o al color principal de la portada. El fondo de la portada y las esquinas uniformes se pueden usar a la vez.";
+        if ("c17_highlight_removal".equals(groupId)) return "Compatibilidad: la eliminación de reflejos puede activarse junto con los colores de los mosaicos y el fondo de la portada musical. Esos fondos personalizados se conservan; el fondo acrílico de esta página se aplica a los demás materiales nativos.";
+        if ("fluid_cloud_style".equals(groupId)) return "Prioridad del color: color de énfasis multimedia > seguir el color multimedia > fondo personalizado de esta página. El color de énfasis y el color seguido usan la máscara y la transparencia de la página «Color de énfasis multimedia de Fluid Cloud»; en los demás casos se usa el fondo de esta página. El estilo que sigue a las notificaciones del sistema solo aporta el material y se puede combinar con un color. El color solo afecta a las notificaciones flotantes expandidas, la pantalla de bloqueo y AOD (AOD sigue a la pantalla de bloqueo); no modifica el panel de notificaciones. La eliminación de reflejos se controla desde «Eliminar reflejos de C17».";
+        if ("fluid_cloud_accent".equals(groupId)) return "Prioridad 1: cuando el interruptor principal está activado, la tarjeta de música siempre utiliza el color de énfasis, incluso en notificaciones flotantes, pantalla de bloqueo y AOD. Las otras tarjetas pueden seguir el color multimedia actual (prioridad 2, por encima del fondo personalizado). El color de énfasis y el color seguido comparten la máscara y la transparencia de relleno de esta página; la pantalla de bloqueo y AOD se pueden personalizar por separado en «Personalización de pantalla de bloqueo». Si se desactiva el interruptor principal, todos los interruptores de esta página quedan inactivos. Si no hay contenido multimedia o no se está reproduciendo (cuando está activado «Seguir solo durante la reproducción»), se vuelve al fondo personalizado de «Estilo de Fluid Cloud».";
+        if ("data".equals(groupId)) return "Prioridad: ocultar el indicador de red no oculta el texto independiente del tipo de red; este se configura en «Texto del tipo de red». La flecha pequeña de datos móviles se activa por separado en «Ajuste de indicadores nativos» y no depende del estilo de datos móviles ni del interruptor del texto de red.";
         return "";
     }
     public static List<Item> allItems() { return Collections.unmodifiableList(new ArrayList<>(ITEM_BY_KEY.values())); }
@@ -1709,20 +1709,20 @@ public final class SettingsCatalog {
     /** Search may reveal an inactive mode's saved setting; explain it without changing that mode. */
     public static String inactivePresentationReason(Item item, Map<String,?> saved) {
         if (item == null || applicable(item, saved)) return "";
-        if (BigClockWidgetsSettings.textSide(item.key) >= 0) return "当前组件跟随主时间颜色；关闭跟随后使用这里保存的独立颜色";
+        if (BigClockWidgetsSettings.textSide(item.key) >= 0) return "El componente sigue actualmente el color de la hora principal. Al desactivar el seguimiento, se usa el color independiente guardado aquí.";
         String key = NotificationBigClockSettings.portraitKey(item.key);
         if (NotificationBigClockSettings.DATE_COLOR_LIGHT.equals(key) || NotificationBigClockSettings.DATE_COLOR_DARK.equals(key)
                 || NotificationBigClockSettings.FOOTER_COLOR_LIGHT.equals(key) || NotificationBigClockSettings.FOOTER_COLOR_DARK.equals(key))
-            return "当前跟随背景样式；关闭跟随后恢复这里保存的独立颜色";
-        return "仅适用于竖屏原生字体；当前字体或方向暂不使用此参数";
+            return "Actualmente sigue el estilo del fondo. Al desactivar el seguimiento, se restaura el color independiente guardado aquí.";
+        return "Solo se aplica a la fuente nativa en orientación vertical. La fuente o la orientación actuales no utilizan este parámetro.";
     }
     public static String displayTitle(Item item,Map<String,?> saved) {
         if(item==null)return "";
         if (StatusBarLayoutSettings.marginKey(item.key)
                 && ("wifi".equals(item.groupId) || "label".equals(item.groupId))
-                && StatusBarSettings.bool(saved, StatusBarLayoutSettings.WIFI_LABEL_SHARED)) return item.title + " · 共用";
+                && StatusBarSettings.bool(saved, StatusBarLayoutSettings.WIFI_LABEL_SHARED)) return item.title + " · Compartido";
         if(NotificationBigClockSettings.MAX_SIZE.equals(item.key)
-                && NotificationBigClockSettings.nativeHeightFont(StatusBarSettings.string(saved,NotificationBigClockSettings.FONT)))return "展开字体高度";
+                && NotificationBigClockSettings.nativeHeightFont(StatusBarSettings.string(saved,NotificationBigClockSettings.FONT)))return "Altura de la fuente expandida";
         return item.title;
     }
     private static boolean bigClockWidget(String key) {
@@ -1746,32 +1746,32 @@ public final class SettingsCatalog {
     }
     /** Check domain restrictions before float conversion can erase a fractional input. */
     static String numericInputError(String key, BigDecimal raw) {
-        if(BigClockWidgetsSettings.maskOpacityKey(key)&&(raw.signum()<0||raw.compareTo(BigDecimal.valueOf(100))>0))return "组件遮罩强度应为 0 到 100%";
+        if(BigClockWidgetsSettings.maskOpacityKey(key)&&(raw.signum()<0||raw.compareTo(BigDecimal.valueOf(100))>0))return "La intensidad de la máscara del componente debe estar entre 0 y 100 %.";
         if(BigClockWidgetsSettings.weightKey(key)&&(raw.compareTo(BigDecimal.valueOf(BigClockWidgetsSettings.MIN_WEIGHT))<0
-                ||raw.compareTo(BigDecimal.valueOf(BigClockWidgetsSettings.MAX_WEIGHT))>0))return "组件字体粗细应为 100 到 1000";
+                ||raw.compareTo(BigDecimal.valueOf(BigClockWidgetsSettings.MAX_WEIGHT))>0))return "El grosor de la fuente del componente debe estar entre 100 y 1000.";
         if(BigClockWidgetsSettings.sizeKey(key)&&(raw.compareTo(BigDecimal.valueOf(BigClockWidgetsSettings.MIN_SIZE))<0
-                ||raw.compareTo(BigDecimal.valueOf(BigClockWidgetsSettings.MAX_SIZE))>0))return "组件字号应为 8 到 64 dp";
+                ||raw.compareTo(BigDecimal.valueOf(BigClockWidgetsSettings.MAX_SIZE))>0))return "El tamaño de fuente del componente debe estar entre 8 y 64 dp.";
         if(BigClockWidgetsSettings.offsetKey(key)&&(raw.compareTo(BigDecimal.valueOf(-BigClockWidgetsSettings.MAX_OFFSET))<0
-                ||raw.compareTo(BigDecimal.valueOf(BigClockWidgetsSettings.MAX_OFFSET))>0))return "组件位置应为 -1000 到 1000 dp";
+                ||raw.compareTo(BigDecimal.valueOf(BigClockWidgetsSettings.MAX_OFFSET))>0))return "La posición del componente debe estar entre -1000 y 1000 dp.";
         if(NotificationBigClockSettings.REVEAL_MASK_OPACITY.equals(NotificationBigClockSettings.portraitKey(key))
-                &&(raw.signum()<0||raw.compareTo(BigDecimal.valueOf(100))>0))return "遮罩不透明度应为 0 到 100%";
+                &&(raw.signum()<0||raw.compareTo(BigDecimal.valueOf(100))>0))return "La opacidad de la máscara debe estar entre 0 y 100 %.";
         String backdropNumberError=ClockBackdropSettings.numericInputError(key,raw);
         if(backdropNumberError!=null)return backdropNumberError;
         if (StatusBarLayoutSettings.orderKey(key) && (raw.signum() < 0 || raw.stripTrailingZeros().scale() > 0
-                || raw.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) > 0)) return "排列顺序应为 0 到 2147483647 的整数";
+                || raw.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) > 0)) return "El orden debe ser un número entero entre 0 y 2147483647.";
         if (StatusBarLayoutSettings.orderKey(key) && (double) raw.floatValue() > Integer.MAX_VALUE)
-            return "排列顺序过大，请使用较小的序号";
+            return "El número de orden es demasiado grande; utiliza un valor menor.";
         if (StatusBarLayoutSettings.key(StatusBarLayoutSettings.LABEL, "order").equals(key)
-                && raw.compareTo(BigDecimal.valueOf(2)) > 0) return "制式顺序只能是 0 跟随系统、1 信号前或 2 信号后";
+                && raw.compareTo(BigDecimal.valueOf(2)) > 0) return "El orden del tipo de red solo puede ser 0 (seguir al sistema), 1 (antes de la señal) o 2 (después de la señal).";
         if (NetworkSpeedControls.INTERVAL_MILLIS.equals(key) && raw.signum() <= 0)
-            return "刷新间隔应大于 0 ms";
+            return "El intervalo de actualización debe ser superior a 0 ms.";
         if (QsTileCorners.RADIUS.equals(key) && (raw.signum() < 0 || raw.compareTo(BigDecimal.valueOf(QsTileCorners.MAX_RADIUS)) > 0))
-            return "圆角半径应为 0 到 " + (int) QsTileCorners.MAX_RADIUS + " dp";
+            return "El radio de las esquinas debe estar entre 0 y " + (int) QsTileCorners.MAX_RADIUS + " dp";
         if ((NativeStatusIcons.MAX.equals(key)||NotificationIconArea.MAX_COUNT.equals(key)) && (raw.signum() < 0 || raw.stripTrailingZeros().scale() > 0))
-            return "图标数量应为非负整数，0 表示不显示";
+            return "La cantidad de iconos debe ser un entero no negativo; 0 significa no mostrar ninguno.";
         if (NotificationBigClockSettings.VISIBLE_COUNT.equals(NotificationBigClockSettings.portraitKey(key)) && (raw.compareTo(BigDecimal.ONE) < 0
                 || raw.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) > 0 || raw.stripTrailingZeros().scale() > 0))
-            return "完整通知数量应为 1 到 2147483647 的整数";
+            return "La cantidad total de notificaciones debe ser un entero entre 1 y 2147483647.";
         return null;
     }
     /** Suggested bounds control trial confirmation, not valid manual-entry limits. */
@@ -1788,32 +1788,32 @@ public final class SettingsCatalog {
     }
     /** Options are closed sets. Pattern/string presets intentionally remain user-editable. */
     public static String validationError(Item item, Object value) {
-        if (item == null) return "未找到此设置";
+        if (item == null) return "No se encontró este ajuste.";
         if (!unavailableReason(item.key).isEmpty()) return unavailableReason(item.key);
-        if (BOOLEAN.equals(item.type)) return value instanceof Boolean ? null : "请选择开启或关闭";
+        if (BOOLEAN.equals(item.type)) return value instanceof Boolean ? null : "Selecciona activar o desactivar.";
         if (NUMERIC.equals(item.type)) {
-            if (!(value instanceof Number)) return "请输入有效数字";
+            if (!(value instanceof Number)) return "Introduce un número válido.";
             float number = ((Number) value).floatValue();
-            if (Float.isNaN(number) || Float.isInfinite(number)) return "请输入有限数字";
+            if (Float.isNaN(number) || Float.isInfinite(number)) return "Introduce un número finito.";
             String widgetNumberError=BigClockWidgetsSettings.numericValidationError(item.key,number);
             if(widgetNumberError!=null)return widgetNumberError;
             String backdropNumberError=ClockBackdropSettings.numericValidationError(item.key,number);
             if(backdropNumberError!=null)return backdropNumberError;
             if(NotificationBigClockSettings.REVEAL_MASK_OPACITY.equals(NotificationBigClockSettings.portraitKey(item.key))
-                    &&(number<0f||number>100f))return "遮罩不透明度应为 0 到 100%";
+                    &&(number<0f||number>100f))return "La opacidad de la máscara debe estar entre 0 y 100 %.";
             if (StatusBarLayoutSettings.orderKey(item.key) && (number < 0 || number != Math.floor(number)
-                    || (double) number > Integer.MAX_VALUE)) return "排列顺序应为非负整数";
+                    || (double) number > Integer.MAX_VALUE)) return "El orden debe ser un entero no negativo.";
             if (StatusBarLayoutSettings.key(StatusBarLayoutSettings.LABEL, "order").equals(item.key) && number > 2)
-                return "制式顺序只能是 0、1 或 2";
-            if (NetworkSpeedControls.INTERVAL_MILLIS.equals(item.key) && number <= 0) return "刷新间隔应大于 0 ms";
-            if (QsTileCorners.RADIUS.equals(item.key) && (number < 0 || number > QsTileCorners.MAX_RADIUS)) return "圆角半径应为 0 到 " + (int) QsTileCorners.MAX_RADIUS + " dp";
-            if ((NativeStatusIcons.MAX.equals(item.key)||NotificationIconArea.MAX_COUNT.equals(item.key)) && (number < 0 || number != Math.floor(number))) return "图标数量应为非负整数，0 表示不显示";
+                return "El orden del tipo de red solo puede ser 0, 1 o 2.";
+            if (NetworkSpeedControls.INTERVAL_MILLIS.equals(item.key) && number <= 0) return "El intervalo de actualización debe ser superior a 0 ms.";
+            if (QsTileCorners.RADIUS.equals(item.key) && (number < 0 || number > QsTileCorners.MAX_RADIUS)) return "El radio de las esquinas debe estar entre 0 y " + (int) QsTileCorners.MAX_RADIUS + " dp";
+            if ((NativeStatusIcons.MAX.equals(item.key)||NotificationIconArea.MAX_COUNT.equals(item.key)) && (number < 0 || number != Math.floor(number))) return "La cantidad de iconos debe ser un entero no negativo; 0 significa no mostrar ninguno.";
             if (NotificationBigClockSettings.VISIBLE_COUNT.equals(NotificationBigClockSettings.portraitKey(item.key)) && (number < 1
-                    || number > (float)Integer.MAX_VALUE || number != Math.floor(number))) return "完整通知数量应为 1 到 2147483647 的整数";
+                    || number > (float)Integer.MAX_VALUE || number != Math.floor(number))) return "La cantidad total de notificaciones debe ser un entero entre 1 y 2147483647.";
             return null;
         }
-        if (COLOR.equals(item.type)) return value instanceof Number ? null : "请输入有效颜色";
-        if (!(value instanceof String)) return "请输入文字";
+        if (COLOR.equals(item.type)) return value instanceof Number ? null : "Introduce un color válido.";
+        if (!(value instanceof String)) return "Introduce texto.";
         String text = (String) value;
         if (IconManagementSettings.KEY.equals(item.key)) {
             try { IconManagementSettings.parse(text); return null; }
@@ -1828,13 +1828,13 @@ public final class SettingsCatalog {
             catch (java.io.IOException invalid) { return invalid.getMessage(); }
         }
         if (LockscreenControls.DATE_FORMAT.equals(item.key)) return TimeFormat.validationError(text);
-        if (NotificationIconArea.TEXT.equals(item.key) && text.codePointCount(0, text.length()) > 12) return "符号或文字最多12个字符";
+        if (NotificationIconArea.TEXT.equals(item.key) && text.codePointCount(0, text.length()) > 12) return "El símbolo o texto puede contener como máximo 12 caracteres.";
         if (OPTIONS.equals(item.type)) {
             for (String option : item.values) if (option.equals(text)) return null;
-            return "请选择列表中的选项";
+            return "Selecciona una opción de la lista.";
         }
         if (item.key.endsWith("_pattern")) return NotificationBigClockSettings.FOOTER_PATTERN.equals(NotificationBigClockSettings.portraitKey(item.key)) ? TimeFormat.contentValidationError(text) : TimeFormat.validationError(text);
-        if (STRING.equals(item.type) && (text.length() > TimeFormat.MAX_TEXT || text.indexOf('\n') >= 0 || text.indexOf('\r') >= 0)) return "请使用不超过 120 个字符的单行文字";
+        if (STRING.equals(item.type) && (text.length() > TimeFormat.MAX_TEXT || text.indexOf('\n') >= 0 || text.indexOf('\r') >= 0)) return "Introduce un texto de una sola línea de hasta 120 caracteres.";
         return null;
     }
     private SettingsCatalog() { }

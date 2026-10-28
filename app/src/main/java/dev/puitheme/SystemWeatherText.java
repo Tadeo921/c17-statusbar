@@ -28,8 +28,8 @@ final class SystemWeatherText {
     static final String WIDGET_CARD="kswc.yN", WIDGET_ENGINE="kswc.IN";
     static final String WIDGET_INSTANT_CARD="kswc.gt";
     private static final String WIDGET_DATA="pantanal.app.bean.PantanalUIData",WIDGET_INFO="pantanal.app.bean.CardViewInfo";
-    static final String UNAVAILABLE = "天气暂无数据";
-    static final String TEMPERATURE_UNAVAILABLE = "温度暂无数据";
+    static final String UNAVAILABLE = "No hay datos meteorológicos";
+    static final String TEMPERATURE_UNAVAILABLE = "No hay datos de temperatura";
 
     static final class Snapshot {
         final String description, temperature, text;

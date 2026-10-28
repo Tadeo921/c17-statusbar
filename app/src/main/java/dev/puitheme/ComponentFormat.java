@@ -67,8 +67,8 @@ final class ComponentFormat {
         if (name == null) return 0;
         switch (name.trim()) {
             case "天气": return BigClockTextContent.WEATHER;
-            case "电池": return BigClockTextContent.BATTERY;
-            case "信号": case "蜂窝信号": return BigClockTextContent.CELLULAR;
+            case "Batería": return BigClockTextContent.BATTERY;
+            case "信号": case "Señal móvil": return BigClockTextContent.CELLULAR;
             case "网络": case "网络状态": return BigClockTextContent.NETWORK;
             default: return 0;
         }

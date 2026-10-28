@@ -5,11 +5,11 @@
   "groups": [
     {
       "id": "donation",
-      "title": "捐赠支持"
+      "title": "Apoyo mediante donaciones"
     },
     {
       "id": "support",
-      "title": "其他支持"
+      "title": "Otras formas de apoyo"
     }
   ],
   "people": [
@@ -19,7 +19,7 @@
       "group": "donation",
       "avatar": "avatars/p001.jpg",
       "featured": true,
-      "note": "特别鸣谢！没有他的支持，就没有这个模块的诞生。",
+      "note": "¡Agradecimiento especial! Sin su apoyo, este módulo no habría llegado a existir.",
       "order": 20,
       "visible": true
     },

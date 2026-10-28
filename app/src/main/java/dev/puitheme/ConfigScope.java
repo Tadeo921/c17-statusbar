@@ -38,10 +38,10 @@ public final class ConfigScope {
     private ConfigScope() {}
 
     static String categoryLabel(String category) {
-        if (SettingsCatalog.STATUSBAR.equals(category)) return "状态栏";
-        if (SettingsCatalog.NOTIFICATION.equals(category)) return "通知栏";
-        if (SettingsCatalog.CONTROL_CENTER.equals(category)) return "控制中心";
-        if (SettingsCatalog.LOCK_SCREEN.equals(category)) return "锁屏";
+        if (SettingsCatalog.STATUSBAR.equals(category)) return "Barra de estado";
+        if (SettingsCatalog.NOTIFICATION.equals(category)) return "Panel de notificaciones";
+        if (SettingsCatalog.CONTROL_CENTER.equals(category)) return "Centro de control";
+        if (SettingsCatalog.LOCK_SCREEN.equals(category)) return "Pantalla de bloqueo";
         return "";
     }
 
@@ -85,7 +85,7 @@ public final class ConfigScope {
         }
         Set<String> rest = new LinkedHashSet<>();
         for (String key : portable.keySet()) if (!claimed.contains(key)) rest.add(key);
-        if (!rest.isEmpty()) result.add(new Section(OTHER_ID, "其他设置", "", rest));
+        if (!rest.isEmpty()) result.add(new Section(OTHER_ID, "Otros ajustes", "", rest));
         built = Collections.unmodifiableList(result);
         sections = built;
         return built;

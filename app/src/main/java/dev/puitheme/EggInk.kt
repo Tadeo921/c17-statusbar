@@ -256,7 +256,7 @@ internal class InkEgg(icon: ImageBitmap, measurer: TextMeasurer) : EggScene(icon
                 centred(title, cx, top, Brush.horizontalGradient(listOf(Color.Transparent, inkGold, Color(0xFFFFF1C2), inkGold,
                     Color.Transparent), bandX - 40f * density, bandX + 40f * density), show)
             }
-            val line = layout("方寸之间 · 自有山河", 17.sp, FontWeight.Medium, FontFamily.Serif, 4.sp)
+            val line = layout("Un mundo entero en un pequeño espacio", 17.sp, FontWeight.Medium, FontFamily.Serif, 4.sp)
             val lineTop = top + title.size.height + 6f * density
             centred(line, cx, lineTop, Color(0xFF3B3B3F), eggIn(t, 2.3f, .7f) * fade)
             val thanks = layout(EGG_THANKS, 13.sp, FontWeight.Normal, FontFamily.Serif)
@@ -266,7 +266,7 @@ internal class InkEgg(icon: ImageBitmap, measurer: TextMeasurer) : EggScene(icon
         // A vertical line of verse down the left margin.
         val verse = eggIn(t, 2.8f, 1f) * fade
         if (verse > 0f) {
-            val column = layout("一\n栏\n纳\n万\n象", 16.sp, FontWeight.Medium, FontFamily.Serif)
+            val column = layout("Un\nmarco\ncontiene\nun\nuniverso", 16.sp, FontWeight.Medium, FontFamily.Serif)
             centred(column, 34f * density, h * .1f, inkBlack, .75f * verse)
             drawLine(inkCinnabar, Offset(34f * density, h * .1f - 10f * density), Offset(34f * density, h * .1f - 2f * density),
                 3f * density, StrokeCap.Round, alpha = verse)

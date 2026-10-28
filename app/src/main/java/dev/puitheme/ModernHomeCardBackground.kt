@@ -36,23 +36,23 @@ internal data class HomeCardPalette(val base: Color, val accent: Color, val fore
 
 internal fun homeCardPalette(status: String, dark: Boolean): HomeCardPalette {
     val colors = when (status) {
-        "已激活" -> Triple(0xffdff7ed, 0xff173c32, 0xff28ae83)
-        "已安装" -> Triple(0xffe5eeff, 0xff1c304b, 0xff5487e6)
-        "未安装" -> Triple(0xffeeeff3, 0xff2b2e35, 0xff8c96a8)
-        "已停用" -> Triple(0xffffefdf, 0xff3b2f1c, 0xffce9846)
-        "待重启" -> Triple(0xffe1f3f7, 0xff17343c, 0xff5aa9bf)
-        "待卸载" -> Triple(0xfff9e6e5, 0xff432928, 0xffd17c78)
-        "等待中" -> Triple(0xffffeed8, 0xff403019, 0xffd59b42)
-        "待更新" -> Triple(0xffeee7fa, 0xff342747, 0xffa17ad5)
-        "处理中" -> Triple(0xffe5e8ff, 0xff262e4c, 0xff7b87e2)
-        "优化中" -> Triple(0xffe4f3f0, 0xff1e3c38, 0xff6bb5a6)
-        "鸣谢墙" -> Triple(0xfffff0cd, 0xff3b301d, 0xffe9b952)
+        "Activado" -> Triple(0xffdff7ed, 0xff173c32, 0xff28ae83)
+        "Instalado" -> Triple(0xffe5eeff, 0xff1c304b, 0xff5487e6)
+        "No instalado" -> Triple(0xffeeeff3, 0xff2b2e35, 0xff8c96a8)
+        "Desactivado" -> Triple(0xffffefdf, 0xff3b2f1c, 0xffce9846)
+        "Pendiente de reinicio" -> Triple(0xffe1f3f7, 0xff17343c, 0xff5aa9bf)
+        "Pendiente de desinstalación" -> Triple(0xfff9e6e5, 0xff432928, 0xffd17c78)
+        "En espera" -> Triple(0xffffeed8, 0xff403019, 0xffd59b42)
+        "Pendiente de actualización" -> Triple(0xffeee7fa, 0xff342747, 0xffa17ad5)
+        "Procesando…" -> Triple(0xffe5e8ff, 0xff262e4c, 0xff7b87e2)
+        "Optimizando…" -> Triple(0xffe4f3f0, 0xff1e3c38, 0xff6bb5a6)
+        "Muro de agradecimientos" -> Triple(0xfffff0cd, 0xff3b301d, 0xffe9b952)
         else -> Triple(0xffe9edf2, 0xff262d37, 0xff8192aa)
     }
     val accent = Color(colors.third)
-    val foreground = if (status == "鸣谢墙") Color(if (dark) 0xfff2d697 else 0xff714e18)
+    val foreground = if (status == "Muro de agradecimientos") Color(if (dark) 0xfff2d697 else 0xff714e18)
         else lerp(Color(if (dark) 0xffedf5f3 else 0xff17272d), accent, .12f)
-    val secondary = if (status == "鸣谢墙") Color(if (dark) 0xffd6ba81 else 0xff89692e)
+    val secondary = if (status == "Muro de agradecimientos") Color(if (dark) 0xffd6ba81 else 0xff89692e)
         else lerp(Color(if (dark) 0xffc4ced3 else 0xff526169), accent, .10f)
     return HomeCardPalette(Color(if (dark) colors.second else colors.first), accent, foreground, secondary)
 }
@@ -128,7 +128,7 @@ internal fun HomeCardBackground(status: String, elapsed: State<Double>? = null,
     val dark = LocalC17Dark.current
     val palette = homeCardPalette(status, dark)
     Box(modifier.drawWithCache {
-        if (status == "鸣谢墙") {
+        if (status == "Muro de agradecimientos") {
             val body = Color(if (dark) 0xffd9a543 else 0xffe9b952)
             val shade = Color(if (dark) 0xffbd882e else 0xffd49b37)
             val edge = Color(if (dark) 0xffaa7d2c else 0xffbd862b)

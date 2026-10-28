@@ -32,7 +32,7 @@ public final class DiagnosticCenter {
         Entry(long time, String level, String source, String sourceLabel, String message, String detail) {
             this.time = time; this.level = level; this.source = source; this.sourceLabel = sourceLabel; this.message = message; this.detail = detail;
         }
-        String levelLabel() { return "error".equals(level) ? "错误" : "warn".equals(level) ? "警告" : "信息"; }
+        String levelLabel() { return "error".equals(level) ? "Error" : "warn".equals(level) ? "Advertencia" : "Información"; }
     }
 
     public static final class Result {
@@ -54,28 +54,28 @@ public final class DiagnosticCenter {
 
     static String sourceLabel(String source) {
         switch (source == null ? "" : source) {
-            case "hook": return "挂钩";
-            case "setting": return "设置";
-            case "tile": return "磁贴";
-            case "app": return "应用";
-            case "update": return "更新";
-            case "radio": return "网络";
-            case "font": return "字体";
-            case "export": return "导出";
-            case "config": return "配置";
-            case "scene": return "场景";
-            case "clock": return "时钟";
-            case "fluid": return "流体云";
-            case "notification": return "通知";
-            case "ui": return "界面";
-            case "environment": return "环境";
-            case "status_hints": return "提示图标";
-            case "media": return "媒体";
-            case "acrylic": return "亚克力";
-            case "bigclock": return "大时钟";
-            case "native-stack": return "原生堆叠";
-            case "qs_style": return "磁贴样式";
-            default: return source == null || source.isEmpty() ? "其他" : source;
+            case "hook": return "Hooks";
+            case "setting": return "Ajustes";
+            case "tile": return "Tarjetas";
+            case "app": return "Aplicación";
+            case "update": return "Actualización";
+            case "radio": return "Red";
+            case "font": return "Fuentes";
+            case "export": return "Exportación";
+            case "config": return "Configuración";
+            case "scene": return "Escena";
+            case "clock": return "Reloj";
+            case "fluid": return "Fluid Cloud";
+            case "notification": return "Notificaciones";
+            case "ui": return "Interfaz";
+            case "environment": return "Entorno";
+            case "status_hints": return "Iconos de aviso";
+            case "media": return "Contenido multimedia";
+            case "acrylic": return "Acrílico";
+            case "bigclock": return "Reloj grande";
+            case "native-stack": return "Apilado nativo";
+            case "qs_style": return "Estilo de las tarjetas";
+            default: return source == null || source.isEmpty() ? "Otros" : source;
         }
     }
 
@@ -107,35 +107,35 @@ public final class DiagnosticCenter {
         if (details != null) {
             String kind = details.optString("kind", "");
             if ("fact".equals(kind)) {
-                text.append("状态 ").append(details.optString("topic", ""));
+                text.append("Estado ").append(details.optString("topic", ""));
                 JSONObject values = details.optJSONObject("values");
                 if (values != null) {
                     int shown = 0;
                     for (Iterator<String> keys = values.keys(); keys.hasNext() && shown < 10; shown++) {
                         String key = keys.next();
-                        text.append(shown == 0 ? "：" : "，").append(key).append('=').append(values.opt(key));
+                        text.append(shown == 0 ? " — " : ", ").append(key).append('=').append(values.opt(key));
                     }
                 }
             } else if ("hook_stage".equals(kind)) {
-                text.append("阶段 ").append(details.optString("phase", ""));
+                text.append("Etapa ").append(details.optString("phase", ""));
             } else if ("setting_change".equals(kind)) {
-                text.append("修改 ").append(settingName(details.optString("key", "")));
+                text.append("Cambio: ").append(settingName(details.optString("key", "")));
             } else if ("runtime_applied".equals(kind)) {
-                text.append("系统界面进程 ").append(details.optInt("pid", 0)).append("，运行标识 ").append(details.optString("runtime", ""));
+                text.append("Proceso de la interfaz del sistema ").append(details.optInt("pid", 0)).append(", identificador de ejecución ").append(details.optString("runtime", ""));
             }
         }
         JSONObject exception = event.optJSONObject("exception");
         JSONArray causes = exception == null ? null : exception.optJSONArray("causes");
         if (causes != null && causes.length() > 0) {
             if (text.length() > 0) text.append('\n');
-            text.append("异常 ").append(causeLine(causes.optJSONObject(0)));
-            if (causes.length() > 1) text.append("\n根因 ").append(causeLine(causes.optJSONObject(causes.length() - 1)));
+            text.append("Excepción: ").append(causeLine(causes.optJSONObject(0)));
+            if (causes.length() > 1) text.append("\nCausa raíz: ").append(causeLine(causes.optJSONObject(causes.length() - 1)));
         }
         return text.toString();
     }
 
     private static String causeLine(JSONObject cause) {
-        if (cause == null) return "未知";
+        if (cause == null) return "Desconocido";
         StringBuilder text = new StringBuilder(cause.optString("class", "unknown"));
         JSONArray stack = cause.optJSONArray("stack");
         JSONObject top = stack == null || stack.length() == 0 ? null : stack.optJSONObject(0);
@@ -151,7 +151,7 @@ public final class DiagnosticCenter {
 
     static String settingName(String key) {
         SettingsCatalog.Item item = SettingsCatalog.item(key);
-        return item == null || item.title == null || item.title.isEmpty() ? key : item.title + "（" + key + "）";
+        return item == null || item.title == null || item.title.isEmpty() ? key : item.title + " (" + key + ")";
     }
 
     /** Conclusions, most urgent first. */
@@ -159,9 +159,9 @@ public final class DiagnosticCenter {
                           Map<String, ?> values, JSONObject app, JSONObject packages, boolean loggingOn) {
         List<HookHealth.Finding> findings = new ArrayList<>();
         if (!runtimeActive) {
-            findings.add(new HookHealth.Finding("runtime_inactive", HookHealth.Severity.ERROR, "模块没有在系统界面里生效",
+            findings.add(new HookHealth.Finding("runtime_inactive", HookHealth.Severity.ERROR, "El módulo no está activo en la interfaz del sistema",
                     (runtimeMessage == null || runtimeMessage.isEmpty() ? "" : runtimeMessage + "\n")
-                            + "所有自定义效果都不会出现。在 LSPosed 里启用本模块并勾选“系统界面”，然后重启系统界面。"));
+                            + "No aparecerá ningún efecto personalizado. Activa este módulo en LSPosed, marca «Interfaz del sistema» y reinicia la interfaz del sistema."));
         }
         try {
             JSONArray advice = DiagnosticReport.diagnose(app == null ? new JSONObject() : app, packages == null ? new JSONObject() : packages, events, values);
@@ -178,8 +178,8 @@ public final class DiagnosticCenter {
                 findings.add(new HookHealth.Finding(id, severity, titleOf(id), item.optString("text", "")));
             }
         } catch (JSONException ignored) { }
-        if (runtimeActive) findings.add(new HookHealth.Finding("runtime_live", HookHealth.Severity.OK, "系统界面已加载当前版本",
-                "刚刚向系统界面核验过：它运行的就是当前模块（" + (app == null ? "" : app.optString("expected_runtime", "")) + "）。"));
+        if (runtimeActive) findings.add(new HookHealth.Finding("runtime_live", HookHealth.Severity.OK, "La interfaz del sistema cargó la versión actual",
+                "Se acaba de verificar la interfaz del sistema: está ejecutando este módulo (" + (app == null ? "" : app.optString("expected_runtime", "")) + ")."));
         if (runtimeActive || hookHealth != null) findings.addAll(HookHealth.findings(hookHealth));
         int errors = 0, warnings = 0;
         List<Entry> entries = entries(events);
@@ -194,24 +194,24 @@ public final class DiagnosticCenter {
             if (count == null) { repeated.put(key, new int[]{1}); sample.put(key, entry); } else count[0]++;
         }
         if (errors > 0) {
-            StringBuilder detail = new StringBuilder("日志里有 ").append(errors).append(" 条错误、").append(warnings).append(" 条警告。重复最多的：");
+            StringBuilder detail = new StringBuilder("Hay ").append(errors).append(" errores y ").append(warnings).append(" advertencias en el registro. Los eventos más repetidos:");
             List<Map.Entry<String, int[]>> ordered = new ArrayList<>(repeated.entrySet());
             Collections.sort(ordered, new Comparator<Map.Entry<String, int[]>>() {
                 @Override public int compare(Map.Entry<String, int[]> a, Map.Entry<String, int[]> b) { return Integer.compare(b.getValue()[0], a.getValue()[0]); }
             });
             for (int i = 0; i < Math.min(3, ordered.size()); i++) {
                 Entry first = sample.get(ordered.get(i).getKey());
-                detail.append("\n· ").append(first.sourceLabel).append("：").append(first.message).append("（").append(ordered.get(i).getValue()[0]).append(" 次）");
+                detail.append("\n· ").append(first.sourceLabel).append(" — ").append(first.message).append(" (").append(ordered.get(i).getValue()[0]).append(" veces)");
                 if (!first.detail.isEmpty()) detail.append("\n  ").append(firstLine(first.detail));
             }
-            findings.add(new HookHealth.Finding("log_errors", HookHealth.Severity.WARN, errors + " 条错误记录", detail.toString()));
+            findings.add(new HookHealth.Finding("log_errors", HookHealth.Severity.WARN, errors + " registros de error", detail.toString()));
         } else if (loggingOn && !entries.isEmpty()) {
-            findings.add(new HookHealth.Finding("log_clean", HookHealth.Severity.OK, "日志里没有错误", "已记录 " + entries.size() + " 条事件，其中警告 " + warnings + " 条。"));
+            findings.add(new HookHealth.Finding("log_clean", HookHealth.Severity.OK, "No hay errores en el registro", "Se registraron " + entries.size() + " eventos, incluidas " + warnings + " advertencias."));
         }
-        if (!loggingOn) findings.add(new HookHealth.Finding("logging_off", HookHealth.Severity.INFO, "诊断日志没有开启",
-                "挂钩状态不依赖日志。要看异常和时间线，先开启“诊断日志”，复现问题后回到这里。"));
-        else if (entries.isEmpty()) findings.add(new HookHealth.Finding("log_empty", HookHealth.Severity.INFO, "还没有日志事件",
-                "诊断日志已开启，但还没有记录。重启系统界面并操作一下有问题的功能后再来看。"));
+        if (!loggingOn) findings.add(new HookHealth.Finding("logging_off", HookHealth.Severity.INFO, "El registro de diagnóstico está desactivado",
+                "El estado de los hooks no depende del registro. Para ver errores y la cronología, activa «Registro de diagnóstico», reproduce el problema y vuelve aquí."));
+        else if (entries.isEmpty()) findings.add(new HookHealth.Finding("log_empty", HookHealth.Severity.INFO, "Todavía no hay eventos de registro",
+                "El registro de diagnóstico está activado, pero todavía no contiene eventos. Reinicia la interfaz del sistema, prueba la función problemática y vuelve a consultar."));
         Collections.sort(findings, new Comparator<HookHealth.Finding>() {
             @Override public int compare(HookHealth.Finding a, HookHealth.Finding b) { return Integer.compare(rank(a.severity), rank(b.severity)); }
         });
@@ -229,13 +229,13 @@ public final class DiagnosticCenter {
 
     private static String titleOf(String id) {
         switch (id) {
-            case "runtime_applied": return "系统界面应用配置";
-            case "runtime_token": return "系统界面运行的版本";
-            case "systemui_older_than_module": return "系统界面进程比模块旧";
-            case "systemui_version_changed": return "系统界面发生了更新";
-            case "safe_mode": return "安全模式";
-            case "dual_clock": return "双排时钟";
-            case "clock_tick": return "时钟秒数刷新";
+            case "runtime_applied": return "Aplicación de la configuración en la interfaz del sistema";
+            case "runtime_token": return "Versión en ejecución de la interfaz del sistema";
+            case "systemui_older_than_module": return "El proceso de la interfaz del sistema es anterior al módulo";
+            case "systemui_version_changed": return "La interfaz del sistema se actualizó";
+            case "safe_mode": return "Modo seguro";
+            case "dual_clock": return "Reloj de dos filas";
+            case "clock_tick": return "Actualización de los segundos del reloj";
             default: return id;
         }
     }
@@ -245,56 +245,56 @@ public final class DiagnosticCenter {
                              Map<String, ?> values, long now) {
         StringBuilder out = new StringBuilder();
         SimpleDateFormat local = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
-        out.append("C17 状态栏 · 诊断报告\n");
-        out.append("生成时间  ").append(local.format(new Date(now))).append("  ").append(zone()).append('\n');
-        out.append("模块版本  ").append(app == null ? "未知" : app.optString("version_name", "未知"))
+        out.append("Barra de estado C17 · Informe de diagnóstico\n");
+        out.append("Fecha de generación  ").append(local.format(new Date(now))).append("  ").append(zone()).append('\n');
+        out.append("Versión del módulo  ").append(app == null ? "Desconocido" : app.optString("version_name", "Desconocido"))
                 .append(" (").append(app == null ? 0 : app.optLong("version_code", 0)).append(")\n");
-        out.append("运行标识  ").append(app == null ? "未知" : app.optString("expected_runtime", "未知")).append('\n');
-        out.append("说明      报告已去除通知正文、密码、网络名与文件路径；请同时说明故障出现的方向、操作顺序、快慢，最好附录屏。\n");
+        out.append("Identificador de ejecución  ").append(app == null ? "Desconocido" : app.optString("expected_runtime", "Desconocido")).append('\n');
+        out.append("Nota      El informe omite el contenido de las notificaciones, contraseñas, nombres de red y rutas de archivo. Describe también la orientación, los pasos, la frecuencia y la velocidad del fallo; si es posible, adjunta una grabación de pantalla.\n");
 
-        section(out, "一、结论");
-        if (result.findings.isEmpty()) out.append("  没有发现明显问题。\n");
+        section(out, "1. Conclusiones");
+        if (result.findings.isEmpty()) out.append("  No se detectaron problemas evidentes.\n");
         for (HookHealth.Finding finding : result.findings) {
             out.append("  [").append(severityLabel(finding.severity)).append("] ").append(finding.title).append('\n');
             for (String line : finding.detail.split("\n")) if (!line.isEmpty()) out.append("      ").append(line).append('\n');
         }
 
-        section(out, "二、设备与系统");
+        section(out, "2. Dispositivo y sistema");
         if (device != null) {
-            line(out, "机型", join(device.optString("manufacturer"), device.optString("model")));
-            line(out, "Android", device.optString("android") + "（API " + device.optInt("sdk") + "）");
+            line(out, "Modelo", join(device.optString("manufacturer"), device.optString("model")));
+            line(out, "Android", device.optString("android") + " (API " + device.optInt("sdk") + ")");
             line(out, "ColorOS", device.optString("coloros"));
-            line(out, "版本号", device.optString("build_display"));
-            line(out, "语言/时区", device.optString("locale") + " · " + device.optString("time_zone"));
+            line(out, "Versión", device.optString("build_display"));
+            line(out, "Idioma/zona horaria", device.optString("locale") + " · " + device.optString("time_zone"));
             JSONObject display = device.optJSONObject("display");
-            if (display != null) line(out, "屏幕", display.optInt("width_px") + "×" + display.optInt("height_px") + " px · 密度 "
-                    + display.optDouble("density") + " · 字体缩放 " + display.optDouble("font_scale") + " · "
-                    + ("landscape".equals(display.optString("orientation")) ? "横屏" : "竖屏") + (display.optBoolean("night") ? " · 深色" : ""));
+            if (display != null) line(out, "Pantalla", display.optInt("width_px") + "×" + display.optInt("height_px") + " px · densidad "
+                    + display.optDouble("density") + " · escala de fuente " + display.optDouble("font_scale") + " · "
+                    + ("landscape".equals(display.optString("orientation")) ? "Horizontal" : "Vertical") + (display.optBoolean("night") ? " · modo oscuro" : ""));
         }
         if (packages != null) for (Iterator<String> keys = packages.keys(); keys.hasNext();) {
             String name = keys.next();
             JSONObject info = packages.optJSONObject(name);
-            if (info != null) line(out, shortPackage(name), info.optString("version_name") + " (" + info.optLong("version_code") + ")，更新于 "
+            if (info != null) line(out, shortPackage(name), info.optString("version_name") + " (" + info.optLong("version_code") + "), actualizado el "
                     + local.format(new Date(info.optLong("last_update_ms"))));
         }
 
-        section(out, "三、挂钩状态");
+        section(out, "3. Estado de los hooks");
         List<String[]> table = HookHealth.table(hookHealth);
-        if (table.isEmpty()) out.append("  系统界面没有回应，无法得到挂钩状态。\n");
+        if (table.isEmpty()) out.append("  La interfaz del sistema no respondió; no se pudo obtener el estado de los hooks.\n");
         for (String[] row : table) out.append("  ").append(pad(row[1], 22)).append(pad(row[2], 8)).append(row[3]).append('\n');
 
-        section(out, "四、已保存的配置");
+        section(out, "4. Configuración guardada");
         int shown = 0;
         TreeMap<String, Object> sorted = new TreeMap<>();
         if (values != null) for (Map.Entry<String, ?> entry : values.entrySet()) if (DiagnosticReport.known(entry.getKey())) sorted.put(entry.getKey(), entry.getValue());
         for (Map.Entry<String, Object> entry : sorted.entrySet()) {
-            if (shown >= 400) { out.append("  … 其余省略\n"); break; }
+            if (shown >= 400) { out.append("  … el resto se omitió\n"); break; }
             out.append("  ").append(settingName(entry.getKey())).append(" = ").append(safeValue(entry.getKey(), entry.getValue())).append('\n');
             shown++;
         }
-        if (shown == 0) out.append("  全部为默认值。\n");
+        if (shown == 0) out.append("  Todos los valores son predeterminados.\n");
 
-        section(out, "五、近期事件（最近 " + Math.min(EXPORT_TIMELINE, result.entries.size()) + " 条，本地时间）");
+        section(out, "5. Eventos recientes (últimos " + Math.min(EXPORT_TIMELINE, result.entries.size()) + " eventos, hora local)");
         int from = Math.max(0, result.entries.size() - EXPORT_TIMELINE);
         SimpleDateFormat clock = new SimpleDateFormat("MM-dd HH:mm:ss", Locale.ROOT);
         for (int i = from; i < result.entries.size(); i++) {
@@ -303,7 +303,7 @@ public final class DiagnosticCenter {
                     .append(entry.message).append('\n');
             if (!entry.detail.isEmpty()) for (String line : entry.detail.split("\n")) out.append("      ").append(line).append('\n');
         }
-        if (result.entries.isEmpty()) out.append("  没有记录。\n");
+        if (result.entries.isEmpty()) out.append("  No hay registros.\n");
         return out.toString();
     }
 
@@ -312,8 +312,8 @@ public final class DiagnosticCenter {
             JSONObject value = DiagnosticReport.settingValue(key, raw);
             if (value == null) return "—";
             String type = value.optString("type");
-            if ("text".equals(type)) return "（文本，" + value.optInt("length", 0) + " 字，已隐藏）";
-            if ("font".equals(type)) return "字体 " + value.optString("source");
+            if ("text".equals(type)) return "(texto, " + value.optInt("length", 0) + " caracteres; oculto)";
+            if ("font".equals(type)) return "Fuente " + value.optString("source");
             if ("priority".equals(type)) return String.valueOf(value.optJSONArray("slots"));
             return String.valueOf(value.opt("value"));
         } catch (JSONException invalid) { return "—"; }
@@ -324,7 +324,7 @@ public final class DiagnosticCenter {
     private static String join(String a, String b) { return (a == null ? "" : a) + (b == null || b.isEmpty() ? "" : " " + b); }
     private static String shortPackage(String name) { return name.replace("com.android.", "").replace("com.oplus.", "oplus."); }
     private static String severityLabel(HookHealth.Severity severity) {
-        switch (severity) { case ERROR: return "严重"; case WARN: return "警告"; case OK: return "正常"; default: return "提示"; }
+        switch (severity) { case ERROR: return "Grave"; case WARN: return "Advertencia"; case OK: return "Correcto"; default: return "Aviso"; }
     }
     private static String zone() { return TimeZone.getDefault().getID(); }
     /** Pads to a display width, counting each CJK character as two columns. */

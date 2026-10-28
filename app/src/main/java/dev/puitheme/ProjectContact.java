@@ -14,14 +14,14 @@ public final class ProjectContact {
     /** The author's Coolapk profile; the Coolapk app opens it when installed, otherwise the browser does. */
     public static final String COOLAPK_URL = "https://www.coolapk.com/u/745949";
     /** Shown with the donation entries. */
-    public static final String DONATION_NOTE = "捐赠金额不限。捐赠后可以联系作者，申请加入测试群；更新会先在测试群测试，稳定后再发布正式版。";
+    public static final String DONATION_NOTE = "No hay un importe mínimo ni máximo para donar. Después de donar, puedes contactar al autor y solicitar acceso al grupo de pruebas. Las actualizaciones se prueban allí antes de publicarse cuando son estables.";
     public static final String QQ = "2726344450";
     private ProjectContact() { }
     public static boolean copyQq(Context context) {
-        return copy(context, "合作与捐赠 QQ", QQ);
+        return copy(context, "QQ para colaboraciones y donaciones", QQ);
     }
     public static boolean copyCoolapk(Context context) {
-        return copy(context, "酷安用户名", COOLAPK);
+        return copy(context, "Nombre de usuario en Coolapk", COOLAPK);
     }
     private static boolean copy(Context context, String label, String value) {
         try {

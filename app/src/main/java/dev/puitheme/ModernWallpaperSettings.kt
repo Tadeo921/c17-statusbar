@@ -54,9 +54,9 @@ private fun panelAspect(app: ModernMainActivity, scene: String): Float {
 }
 
 private fun panelName(scene: String) = when {
-    scene.startsWith("control_") -> "控制中心"
-    scene.startsWith("classic_") -> "经典下拉"
-    else -> "通知中心"
+    scene.startsWith("control_") -> "Centro de control"
+    scene.startsWith("classic_") -> "Panel desplegable clásico"
+    else -> "Centro de notificaciones"
 }
 
 /**
@@ -93,33 +93,33 @@ fun ShadeWallpaperCard(app: ModernMainActivity, scene: String) {
                 Box(Modifier.fillMaxWidth(if (landscape) 1f else .46f).aspectRatio(aspect).clip(RoundedCornerShape(16.dp))
                     .background(MiuixTheme.colorScheme.surfaceContainer), contentAlignment = Alignment.Center) {
                     val image = preview
-                    if (image != null) Image(bitmap = image, contentDescription = "${panelName(scene)}壁纸预览",
+                    if (image != null) Image(bitmap = image, contentDescription = "Vista previa del fondo de ${panelName(scene)}",
                         modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                    else Text(if (hasImage) "读取中…" else "还没有图片", fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                    else Text(if (hasImage) "Leyendo…" else "Todavía no hay imágenes.", fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 }
             }
             if (deleting) {
-                Text("删除${panelName(scene)}的图片，并关闭它的壁纸、恢复原生背景？", fontSize = 14.sp,
+                Text("¿Eliminar la imagen de ${panelName(scene)}, desactivar su fondo y restaurar el fondo nativo?", fontSize = 14.sp,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    C17TextButton(text = "取消", modifier = Modifier.weight(1f), onClick = { deleting = false })
-                    C17TextButton(text = "删除", enabled = allowed, modifier = Modifier.weight(1f), onClick = {
+                    C17TextButton(text = "Cancelar", modifier = Modifier.weight(1f), onClick = { deleting = false })
+                    C17TextButton(text = "Eliminar", enabled = allowed, modifier = Modifier.weight(1f), onClick = {
                         app.deleteShadeWallpaper(scene); deleting = false
                     })
                 }
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    C17TextButton(text = if (hasImage) "从相册更换" else "从相册选择", enabled = allowed, modifier = Modifier.weight(1f),
+                    C17TextButton(text = if (hasImage) "Cambiar desde la galería" else "Seleccionar desde la galería", enabled = allowed, modifier = Modifier.weight(1f),
                         onClick = { app.pickShadeWallpaper(scene) })
-                    C17TextButton(text = "重新裁剪", enabled = allowed && hasImage, modifier = Modifier.weight(1f),
+                    C17TextButton(text = "Volver a recortar", enabled = allowed && hasImage, modifier = Modifier.weight(1f),
                         onClick = { app.editShadeWallpaper(scene) })
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (other != null) C17TextButton(text = "用于${panelName(other)}", enabled = allowed && hasImage, modifier = Modifier.weight(1f),
+                    if (other != null) C17TextButton(text = "Usar para ${panelName(other)}", enabled = allowed && hasImage, modifier = Modifier.weight(1f),
                         onClick = { app.copyShadeWallpaper(scene, other) })
-                    C17TextButton(text = "删除图片", enabled = allowed && hasImage, modifier = Modifier.weight(1f), onClick = { deleting = true })
+                    C17TextButton(text = "Eliminar imagen", enabled = allowed && hasImage, modifier = Modifier.weight(1f), onClick = { deleting = true })
                 }
-                Text("图片只用于解锁后的下拉面板，锁屏保持原生背景。选图后可以拖动、双指缩放、旋转，按屏幕的形状裁剪；应用后会自动启用这个面板和本页。",
+                Text("La imagen solo se usa en el panel desplegable después de desbloquear el teléfono; la pantalla de bloqueo conservará el fondo nativo. Tras elegir una imagen, puedes moverla, escalarla con dos dedos y girarla para recortarla a la forma de la pantalla. Al aplicarla, se activarán automáticamente este panel y esta página.",
                     fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
             }
         }
@@ -179,8 +179,8 @@ fun ShadeWallpaperCropDialog(app: ModernMainActivity, edit: WallpaperEdit) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("裁剪壁纸", fontSize = 18.sp, color = Color.White)
-                        Text("${if (ShadeWallpaperSettings.landscape(edit.scene)) "横屏" else "竖屏"} · ${panelName(edit.scene)}",
+                        Text("Recortar fondo de pantalla", fontSize = 18.sp, color = Color.White)
+                        Text("${if (ShadeWallpaperSettings.landscape(edit.scene)) "Horizontal" else "Vertical"} · ${panelName(edit.scene)}",
                             fontSize = 13.sp, color = Color(0xFFB8B8B8))
                     }
                 }
@@ -197,8 +197,8 @@ fun ShadeWallpaperCropDialog(app: ModernMainActivity, edit: WallpaperEdit) {
                 }) {
                     val shown = image
                     when {
-                        decoded == null -> Text("读取图片中…", modifier = Modifier.align(Alignment.Center), color = Color(0xFFB8B8B8), fontSize = 14.sp)
-                        shown == null -> Text("图片无法读取：${decoded?.exceptionOrNull()?.message ?: "格式不支持"}", modifier = Modifier.align(Alignment.Center),
+                        decoded == null -> Text("Leyendo imagen…", modifier = Modifier.align(Alignment.Center), color = Color(0xFFB8B8B8), fontSize = 14.sp)
+                        shown == null -> Text("No se pudo leer la imagen: ${decoded?.exceptionOrNull()?.message ?: "Formato no compatible"}", modifier = Modifier.align(Alignment.Center),
                             color = Color(0xFFFF8A80), fontSize = 14.sp)
                         window != Rect.Zero -> Canvas(Modifier.fillMaxSize()) {
                             val fit = maxOf(window.width / shown.width, window.height / shown.height) * zoom
@@ -226,22 +226,22 @@ fun ShadeWallpaperCropDialog(app: ModernMainActivity, edit: WallpaperEdit) {
                     }
                 }
                 Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("拖动移动，双指缩放；窗口的形状就是下拉面板的形状。", fontSize = 12.sp, color = Color(0xFFB8B8B8),
+                    Text("Arrastra para mover y usa dos dedos para escalar. La forma de la vista previa coincide con la del panel desplegable.", fontSize = 12.sp, color = Color(0xFFB8B8B8),
                         modifier = Modifier.padding(horizontal = 4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        C17TextButton(text = "换一张", enabled = !busy, modifier = Modifier.weight(1f),
+                        C17TextButton(text = "Elegir otra", enabled = !busy, modifier = Modifier.weight(1f),
                             onClick = { app.pickShadeWallpaper(edit.scene) })
-                        C17TextButton(text = "向右转", enabled = !busy && turned != null, modifier = Modifier.weight(1f), onClick = {
+                        C17TextButton(text = "Girar a la derecha", enabled = !busy && turned != null, modifier = Modifier.weight(1f), onClick = {
                             rotation = (rotation + 90) % 360; zoom = 1f; pan = Offset.Zero
                         })
-                        C17TextButton(text = "重置", enabled = !busy && turned != null, modifier = Modifier.weight(1f), onClick = {
+                        C17TextButton(text = "Restablecer", enabled = !busy && turned != null, modifier = Modifier.weight(1f), onClick = {
                             zoom = 1f; pan = Offset.Zero
                         })
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        C17TextButton(text = "取消", enabled = !busy, modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                        C17TextButton(text = "Cancelar", enabled = !busy, modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                             onClick = { app.wallpaperEdit = null })
-                        C17TextButton(text = if (busy) "正在处理…" else "应用", enabled = !busy && turned != null && window != Rect.Zero,
+                        C17TextButton(text = if (busy) "Procesando…" else "Aplicar", enabled = !busy && turned != null && window != Rect.Zero,
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp), onClick = {
                                 val shown = turned ?: return@C17TextButton
                                 val fit = maxOf(window.width / shown.width, window.height / shown.height) * zoom

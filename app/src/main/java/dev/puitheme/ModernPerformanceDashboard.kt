@@ -36,7 +36,7 @@ internal fun PerformanceDashboard(app: ModernMainActivity, installation: String,
         module.recordVersionCode >= RootPerformanceModule.VERSION_CODE
     val activeTask = present && fresh && module!!.lastState in listOf("waiting", "running")
     val palette = homeCardPalette(installation, LocalC17Dark.current)
-    val cardLabel = if (result == installation) "附属模块" else "附属模块 · $installation"
+    val cardLabel = if (result == installation) "Módulo complementario" else "Módulo complementario · $installation"
     var expanded by rememberSaveable { mutableStateOf(false) }
     val recordCounts = hasRecord && module!!.recordVersionCode >= 3L && module.packages > 0L
     val ringProgress = if (recordCounts) (module!!.verified.toFloat() / module.packages.toFloat()).coerceIn(0f, 1f) else 0f
@@ -64,20 +64,20 @@ internal fun PerformanceDashboard(app: ModernMainActivity, installation: String,
                     Text(cardLabel, style = C17CardTypography.label, color = palette.secondary)
                     Text(result, style = C17CardTypography.title.copy(fontSize = 22.sp, lineHeight = 28.sp), color = palette.foreground)
                     val subtitle = when {
-                        app.performanceError -> "状态读取失败，请重新查询。保留的上次记录不代表当前状态。"
-                        module == null || !module.root -> "授权 Root 后，即可安装并管理附属模块。"
-                        module.remove -> "已请求卸载，重启时尝试恢复编译策略。"
-                        module.disabled -> "附属模块已停用，启用后自动检查；已有结果由系统管理。"
-                        module.pending -> "重启后加载新的附属模块，当前运行记录不代表新版本已生效。"
-                        module.outdated -> "更新到 1.7，先核验并复用可用结果，需要时再编译；新版修复偶发失败后整个开机内无法再优化的问题，并开始记录收益。"
-                        !present -> "按需优化系统界面与控制中心，复用有效编译结果。"
-                        !fresh && hasRecord -> "以下为上次运行记录，本次执行尚未确认。"
-                        module.lastState == "waiting" -> if (module.trigger == "run") "手动任务正在准备执行。" else "自动任务等待息屏或 10 分钟无操作。"
-                        module.lastState == "running" -> if (module.trigger == "run") "手动任务正在检查或编译，无环境条件等待。" else "自动任务正在检查或编译。"
+                        app.performanceError -> "No se pudo leer el estado. Vuelve a consultarlo. El último registro conservado no representa el estado actual."
+                        module == null || !module.root -> "Concede permisos Root para instalar y administrar el módulo complementario."
+                        module.remove -> "Se solicitó la desinstalación; al reiniciar, se intentará restaurar la estrategia de compilación."
+                        module.disabled -> "El módulo complementario está desactivado. Al activarlo, comprobará automáticamente el estado; el sistema administra los resultados existentes."
+                        module.pending -> "La nueva versión del módulo complementario se cargará tras reiniciar. Los registros actuales no confirman que la nueva versión esté activa."
+                        module.outdated -> "Actualiza a 1.7: primero verifica y reutiliza los resultados disponibles, y compila solo cuando sea necesario. Esta versión corrige un fallo ocasional que impedía volver a optimizar hasta el siguiente reinicio y empieza a registrar los beneficios."
+                        !present -> "Optimiza bajo demanda la interfaz del sistema y el centro de control, reutilizando los resultados de compilación válidos."
+                        !fresh && hasRecord -> "A continuación se muestran los registros de la ejecución anterior; la ejecución actual aún no está confirmada."
+                        module.lastState == "waiting" -> if (module.trigger == "run") "La tarea manual se está preparando." else "La tarea automática espera a que la pantalla se apague o a 10 minutos de inactividad."
+                        module.lastState == "running" -> if (module.trigger == "run") "La tarea manual está comprobando o compilando; no espera a que se cumplan condiciones del entorno." else "La tarea automática está comprobando o compilando."
                         module.errorMessage().isNotEmpty() -> module.errorMessage()
-                        module.lastState == "current" -> "有效结果直接沿用，减少重复编译。"
+                        module.lastState == "current" -> "Se reutilizan directamente los resultados válidos para reducir compilaciones repetidas."
                         module.lastState == "ok" -> module.verificationMessage()
-                        else -> "安装与激活状态已确认；优化结果以独立运行记录为准。"
+                        else -> "Se ha confirmado el estado de instalación y activación; consulta el registro de ejecución independiente para conocer el resultado de la optimización."
                     }
                     Text(subtitle, style = C17CardTypography.supporting, color = palette.secondary)
                 }
@@ -87,9 +87,9 @@ internal fun PerformanceDashboard(app: ModernMainActivity, installation: String,
             val verification = when {
                 fresh -> module!!.verificationMessage()
                 module!!.recordVersionCode >= 3L && module.packages > 0L ->
-                    "上次核验记录：${module.verified}/${module.packages} 个组件，当前状态尚未确认"
-                module.recordVersionCode < 3L -> "旧版记录没有核验结果，当前状态尚未确认"
-                else -> "尚无核验结果，当前状态尚未确认"
+                    "Última verificación: ${module.verified}/${module.packages} componentes; el estado actual aún no está confirmado."
+                module.recordVersionCode < 3L -> "El registro anterior no contiene resultados verificados; el estado actual aún no está confirmado."
+                else -> "Todavía no hay resultados verificados; el estado actual aún no está confirmado."
             }
             Text(verification, Modifier.padding(horizontal = 20.dp), style = C17CardTypography.supporting,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
@@ -97,28 +97,28 @@ internal fun PerformanceDashboard(app: ModernMainActivity, installation: String,
         // Measured costs and labelled estimates only; there is no before/after run, so no speed-up percentage appears.
         val benefit = remember(module) { PerformanceBenefit.of(module) }
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("收益记录", style = C17CardTypography.label.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
+            Text("Registro de beneficios", style = C17CardTypography.label.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
                 color = MiuixTheme.colorScheme.onSurface)
             Text(benefit.since, style = C17CardTypography.supporting, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         }
         UiGroupCard {
-            UiRow("累计编译", benefit.compilesNote, benefit.compiles, Icons.Outlined.Memory)
-            UiRow("免去重编译", benefit.savedNote, benefit.saved, Icons.Outlined.Bolt)
-            UiRow("系统界面", benefit.aotNote, benefit.aot, Icons.Outlined.Smartphone)
-            UiRow("运行时编译", benefit.jitNote, benefit.jit, Icons.Outlined.Speed)
+            UiRow("Compilaciones acumuladas", benefit.compilesNote, benefit.compiles, Icons.Outlined.Memory)
+            UiRow("Compilaciones repetidas evitadas", benefit.savedNote, benefit.saved, Icons.Outlined.Bolt)
+            UiRow("Interfaz del sistema", benefit.aotNote, benefit.aot, Icons.Outlined.Smartphone)
+            UiRow("Compilación en tiempo de ejecución", benefit.jitNote, benefit.jit, Icons.Outlined.Speed)
         }
-        Text("耗时来自 ART 每次编译的返回值；“免去”按各组件上次编译耗时估算。没有做前后对比，不给出加速百分比。",
+        Text("Los tiempos proceden de los valores devueltos por ART en cada compilación; las compilaciones «evitadas» se estiman con la duración de la compilación anterior de cada componente. No se ha realizado una comparación antes/después, por lo que no se ofrece un porcentaje de aceleración.",
             Modifier.padding(horizontal = 20.dp), style = C17CardTypography.supporting,
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         // One contextual primary action, rather than four equally prominent operation buttons.
         val primary = when {
-            !reliable -> "重新查询状态"
-            module!!.remove -> "等待卸载完成"
-            module.outdated -> "更新附属模块"
-            !present -> "安装附属模块"
-            module.disabled -> "启用附属模块"
-            activeTask -> if (module.lastState == "running") "正在优化" else "自动任务等待中"
-            else -> "立即优化"
+            !reliable -> "Volver a consultar el estado"
+            module!!.remove -> "Esperando a que termine la desinstalación"
+            module.outdated -> "Actualizar módulo complementario"
+            !present -> "Instalar módulo complementario"
+            module.disabled -> "Activar módulo complementario"
+            activeTask -> if (module.lastState == "running") "Optimizando…" else "Tarea automática en espera"
+            else -> "Optimizar ahora"
         }
         C17TextButton(text = primary, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
             enabled = if (!reliable) !app.performanceBusy && !app.busy else editable && module?.remove != true &&
@@ -130,42 +130,42 @@ internal fun PerformanceDashboard(app: ModernMainActivity, installation: String,
                     else -> app.runPerformance()
                 }
             })
-        if (activeTask) Text("已有任务正在等待或执行，为避免重叠，结束后可手动优化。",
+        if (activeTask) Text("Ya hay una tarea en espera o en ejecución. Para evitar que se superpongan, podrás optimizar manualmente cuando termine.",
             Modifier.fillMaxWidth().padding(horizontal = 20.dp), style = C17CardTypography.supporting,
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary, textAlign = TextAlign.Center)
-        Text("自动：息屏或 10 分钟无操作 · 电量 > 15% · 电池 < 55℃",
+        Text("Automático: pantalla apagada o 10 min de inactividad · batería > 15 % · temperatura < 55 °C",
             Modifier.fillMaxWidth().padding(horizontal = 20.dp), style = C17CardTypography.supporting,
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary, textAlign = TextAlign.Center)
         UiGroupCard {
-            UiRow("运行详情", if (module == null) "管理器与执行记录" else
-                "${module.manager} · ${if (module.moduleVersion.isBlank()) "版本待查询" else "v${module.moduleVersion}"}",
-                if (expanded) "收起" else "展开", Icons.Outlined.Info) { expanded = !expanded }
+            UiRow("Detalles de ejecución", if (module == null) "Administrador y registros de ejecución" else
+                "${module.manager} · ${if (module.moduleVersion.isBlank()) "Versión pendiente de consulta" else "v${module.moduleVersion}"}",
+                if (expanded) "Contraer" else "Expandir", Icons.Outlined.Info) { expanded = !expanded }
             if (expanded) {
                 if (module != null) {
-                    val time = if (module.time == 0L) "尚无运行时间" else java.text.DateFormat.getDateTimeInstance().format(java.util.Date(module.time * 1000L))
-                    val origin = when (module.trigger) { "boot" -> "开机自动"; "auto" -> "按需自动"; "run" -> "手动优化"; "uninstall" -> "卸载恢复"; else -> "尚未记录" }
-                    UiRow("运行来源", "$origin · ${if (fresh) "本次开机" else "历史或未确认记录"}\n$time")
-                    UiRow("模块版本", "${module.moduleVersion}（code ${module.moduleVersionCode}）")
-                    if (module.packages > 0L) UiRow("处理记录", "共 ${module.packages} 个组件 · 编译 ${module.compiled} · 复用 ${module.reused} · 延期 ${module.deferred}")
-                    UiRow("任务优先级", when (module.priority) { "background" -> "ART 系统后台优先级"; "compatibility" -> "系统兼容方式"; else -> "尚无记录" })
+                    val time = if (module.time == 0L) "Todavía no hay datos de duración." else java.text.DateFormat.getDateTimeInstance().format(java.util.Date(module.time * 1000L))
+                    val origin = when (module.trigger) { "boot" -> "Automático al iniciar"; "auto" -> "Automático bajo demanda"; "run" -> "Optimización manual"; "uninstall" -> "Restauración al desinstalar"; else -> "Aún no hay registros." }
+                    UiRow("Origen de ejecución", "$origin · ${if (fresh) "Este arranque" else "Registro histórico o no confirmado"}\n$time")
+                    UiRow("Versión del módulo", "${module.moduleVersion}（code ${module.moduleVersionCode}）")
+                    if (module.packages > 0L) UiRow("Registro de procesamiento", "${module.packages} componentes · compilados ${module.compiled} · reutilizados ${module.reused} · pospuestos ${module.deferred}")
+                    UiRow("Prioridad de la tarea", when (module.priority) { "background" -> "Prioridad de ART en segundo plano del sistema"; "compatibility" -> "Método de compatibilidad del sistema"; else -> "Todavía no hay registros." })
                 }
                 Text(app.performanceDetail.ifEmpty { app.performanceMessage }, Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
                     style = C17CardTypography.supporting, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                Text("自动任务只在需要编译时运行，有效结果直接复用，延期后有限重试；手动优化不受环境条件限制，保留操作超时、可靠取消和防重叠。",
+                Text("La tarea automática solo se ejecuta cuando se necesita compilar, reutiliza los resultados válidos y realiza un número limitado de reintentos tras un aplazamiento. La optimización manual no depende de condiciones del entorno y conserva el límite de tiempo, la cancelación fiable y la prevención de solapamientos.",
                     Modifier.padding(horizontal = 20.dp, vertical = 10.dp), style = C17CardTypography.supporting,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                Text("检查 SystemUI 和已识别控制中心插件内的全部主要 DEX，覆盖通知、锁屏、状态栏等代码。本应用不在其中：LSPosed 以内存方式把模块代码交给系统界面，为本应用单独预编译对它无效。组件数量不等于功能数量，实际收益以实测为准。",
+                Text("Comprueba los principales archivos DEX de SystemUI y de los complementos de centro de control reconocidos, incluidos los códigos de notificaciones, pantalla de bloqueo y barra de estado. Esta aplicación no se incluye: LSPosed entrega el código del módulo a la interfaz del sistema en memoria, por lo que precompilar esta aplicación por separado no ayuda. El número de componentes no equivale al número de funciones; los beneficios reales dependen de las mediciones.",
                     Modifier.padding(horizontal = 20.dp, vertical = 10.dp), style = C17CardTypography.supporting,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
             }
-            UiRow("刷新状态", icon = Icons.Outlined.Refresh, enabled = !app.performanceBusy && !app.busy) { app.refreshPerformance() }
-            UiRow("控制中心", "查看任务、结果和记录", icon = Icons.Outlined.Dashboard) {
+            UiRow("Actualizar estado", icon = Icons.Outlined.Refresh, enabled = !app.performanceBusy && !app.busy) { app.refreshPerformance() }
+            UiRow("Centro de control", "Ver tareas, resultados y registros", icon = Icons.Outlined.Dashboard) {
                 app.startActivity(android.content.Intent(app, PerformanceWebActivity::class.java))
             }
             if (present && module?.remove != true) {
-                if (module?.disabled != true) UiRow("停用附属模块", "保留已有编译结果", icon = Icons.Outlined.Pause,
+                if (module?.disabled != true) UiRow("Desactivar módulo complementario", "Conservar los resultados de compilación existentes", icon = Icons.Outlined.Pause,
                     enabled = editable) { app.disablePerformance() }
-                UiRow("卸载附属模块", "重启时尝试恢复策略，失败保留记录", icon = Icons.Outlined.DeleteOutline,
+                UiRow("Desinstalar módulo complementario", "Intentará restaurar la estrategia al reiniciar; si falla, conservará el registro.", icon = Icons.Outlined.DeleteOutline,
                     enabled = editable) { app.removePerformance() }
             }
         }

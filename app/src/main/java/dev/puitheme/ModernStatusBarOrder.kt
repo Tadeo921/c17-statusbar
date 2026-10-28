@@ -56,30 +56,30 @@ private val hintRegions = listOf(HintIconOrderDraft.LEFT, HintIconOrderDraft.RIG
 private fun hintToken(slot: String) = "hint:$slot"
 private fun hintSlot(token: String?) = token?.takeIf { it.startsWith("hint:") }?.substring(5)?.takeIf { it in HintIconOrderDraft.SLOTS }
 private fun hintRegionTitle(side: String) = when(side) {
-    HintIconOrderDraft.LEFT -> "左侧提示"
-    HintIconOrderDraft.RIGHT -> "右侧提示"
-    HintIconOrderDraft.NATIVE -> "跟随原生侧边"
-    else -> "跟随提示组"
+    HintIconOrderDraft.LEFT -> "Indicadores de la izquierda"
+    HintIconOrderDraft.RIGHT -> "Indicadores de la derecha"
+    HintIconOrderDraft.NATIVE -> "Seguir el lado nativo"
+    else -> "Seguir el grupo de indicadores"
 }
 private fun editorTokenTitle(token: String, shared: Boolean) = hintSlot(token)?.let(NativeStatusIcons::priorityLabel) ?: orderElementTitle(token, shared)
 private fun orderRegionTitle(side: String) = when (side) {
-    StatusBarOrderDraft.LEFT -> "左侧"
-    StatusBarOrderDraft.RIGHT -> "右侧"
-    else -> "跟随系统"
+    StatusBarOrderDraft.LEFT -> "Izquierda"
+    StatusBarOrderDraft.RIGHT -> "Derecha"
+    else -> "Seguir al sistema"
 }
 private fun orderElementTitle(token: String, shared: Boolean) =
-    if (shared && token == StatusBarLayoutSettings.WIFI) "Wi-Fi / 网络制式" else StatusBarLayoutSettings.label(token)
+    if (shared && token == StatusBarLayoutSettings.WIFI) "Wi-Fi / tipo de red" else StatusBarLayoutSettings.label(token)
 /** Short names for the one-line status bar preview. */
 private fun orderShortTitle(token: String) = when (token) {
-    StatusBarLayoutSettings.NOTIFICATION -> "通知"
-    StatusBarLayoutSettings.MOBILE -> "信号"
-    StatusBarLayoutSettings.SYSTEM -> "提示"
-    StatusBarLayoutSettings.CARRIER -> "运营商(下拉)"
+    StatusBarLayoutSettings.NOTIFICATION -> "Notificaciones"
+    StatusBarLayoutSettings.MOBILE -> "Señal"
+    StatusBarLayoutSettings.SYSTEM -> "Indicador"
+    StatusBarLayoutSettings.CARRIER -> "Operador (panel desplegable)"
     else -> StatusBarLayoutSettings.label(token)
 }
 private data class OrderDrop(val side: String, val index: Int)
 /** The carrier exists only in the pull-down header and on the lock screen, and may be hidden. */
-private const val CARRIER_NOTE = "运营商只在下拉栏顶部和锁屏显示，普通状态栏没有运营商；系统或本模块隐藏运营商时，这一项的位置不会生效。"
+private const val CARRIER_NOTE = "El operador solo aparece en la parte superior del panel desplegable y en la pantalla de bloqueo, no en la barra de estado normal. Esta posición no tiene efecto si el sistema o el módulo ocultan el operador."
 
 /**
  * Status bar order editor. Each side is a left-to-right row of chips, exactly as on the status bar:
@@ -108,7 +108,7 @@ internal fun StatusBarOrderPage(app: ModernMainActivity, requested: String?, onR
     val editable = allowed && !sourceChanged
     val shared = app.bool(StatusBarLayoutSettings.WIFI_LABEL_SHARED)
     val enabled = app.bool(StatusBarLayoutSettings.MASTER)
-    val paused = if (app.bool(StatusBarSettings.SAFE_MODE)) "安全模式已开启，排序选择仍保存" else ""
+    val paused = if (app.bool(StatusBarSettings.SAFE_MODE)) "El modo seguro está activado; la selección de orden se guarda igualmente." else ""
     val applying = enabled && paused.isEmpty()
     val labelKey = StatusBarLayoutSettings.key(StatusBarLayoutSettings.LABEL, "order")
     val labelOrder = (fields[labelKey] as? Number)?.toInt() ?: 0
@@ -141,8 +141,8 @@ internal fun StatusBarOrderPage(app: ModernMainActivity, requested: String?, onR
     }
     fun requestDiscard(leave: Boolean) {
         if (fields == baseline) { if (leave) app.finishStatusBarOrder() else reload(); return }
-        app.confirmation = UiConfirmation("放弃未应用的排列？", "区域和顺序的更改尚未保存。",
-            if (leave) "放弃并返回" else "放弃更改") {
+        app.confirmation = UiConfirmation("¿Descartar la disposición no aplicada?", "Los cambios de zona y orden aún no se han guardado.",
+            if (leave) "Descartar y volver" else "Descartar cambios") {
             reload()
             if (leave) app.finishStatusBarOrder()
         }
@@ -239,8 +239,8 @@ internal fun StatusBarOrderPage(app: ModernMainActivity, requested: String?, onR
     val selectedHint = hintSlot(selectedToken)
     val controlsEditable = editable && dragging == null
     C17Scaffold(containerColor = MiuixTheme.colorScheme.surface,
-        topBar = { C17SmallTopAppBar(title = "状态栏排序（实验性）", scrollBehavior = scroll, navigationIcon = {
-            C17IconButton(onClick = app::closeGroup) { Icon(MiuixIcons.Back, "返回") }
+        topBar = { C17SmallTopAppBar(title = "Orden de la barra de estado (experimental)", scrollBehavior = scroll, navigationIcon = {
+            C17IconButton(onClick = app::closeGroup) { Icon(MiuixIcons.Back, "Volver") }
         }) }, bottomBar = {
             Column(Modifier.fillMaxWidth().background(MiuixTheme.colorScheme.surface)
                 .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
@@ -250,18 +250,18 @@ internal fun StatusBarOrderPage(app: ModernMainActivity, requested: String?, onR
                 if (selectedHint != null) HintOrderSelectionPanel(selectedHint, hintDraft, controlsEditable,
                     onSide = { moveToSide(hintToken(selectedHint), it) }, onMove = { moveWithin(hintToken(selectedHint), it) }, onClose = { selectedToken = null })
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    C17TextButton("撤销", modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                    C17TextButton("Deshacer", modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                         enabled = controlsEditable && history.isNotEmpty(), onClick = {
                             val editedToken = historyTokens.lastOrNull()
                             fields = HashMap(history.last()); history = ArrayList(history.dropLast(1))
                             historyTokens = ArrayList(historyTokens.dropLast(1))
                             if (editedToken != null) selectedToken = editedToken
                         })
-                    C17TextButton(if (applying) "应用排列" else "保存排列", modifier = Modifier.weight(2f).heightIn(min = 48.dp),
+                    C17TextButton(if (applying) "Aplicar disposición" else "Guardar disposición", modifier = Modifier.weight(2f).heightIn(min = 48.dp),
                         enabled = controlsEditable && dirty, colors = ButtonDefaults.textButtonColorsPrimary(), onClick = {
                             if (app.saveStatusBarOrderDraft(fields, baseline)) {
                                 baseline = HashMap(fields); history = arrayListOf(); historyTokens = arrayListOf()
-                                app.toast(if (applying) "排列已应用" else if (paused.isNotEmpty()) "排列已保存，解除暂停后生效" else "排列已保存，开启自定义排序后生效")
+                                app.toast(if (applying) "Disposición aplicada." else if (paused.isNotEmpty()) "Disposición guardada; surtirá efecto al quitar la pausa." else "Disposición guardada; surtirá efecto al activar el orden personalizado.")
                             }
                         })
                 }
@@ -275,14 +275,14 @@ internal fun StatusBarOrderPage(app: ModernMainActivity, requested: String?, onR
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 UiGroupCard {
                     val canSwitch = SettingsCatalog.unavailableReason(StatusBarLayoutSettings.MASTER, app.values).isEmpty() || enabled
-                    UiSwitchRow("启用自定义排序", if (paused.isNotEmpty()) (if (enabled) "已保存开启 · " else "") + paused
-                        else if (enabled) "已启用；调整后点“应用排列”生效" else "关闭时按系统排列；可以先排好再保存",
+                    UiSwitchRow("Activar orden personalizado", if (paused.isNotEmpty()) (if (enabled) "Activado y guardado · " else "") + paused
+                        else if (enabled) "Activado; pulsa «Aplicar disposición» tras hacer cambios." else "Cuando está desactivado, se usa el orden del sistema. Puedes organizarlo y guardarlo antes de activarlo.",
                         enabled, allowed && canSwitch) { app.save(StatusBarLayoutSettings.MASTER, it) }
-                    if (sourceChanged) UiRow("已保存的排列有更新", "重新载入后继续编辑", "重新载入", enabled = allowed) { requestDiscard(false) }
-                    if (!app.canEdit) UiRow("激活模块或授予 Root 后即可修改", "当前可以查看排列")
+                    if (sourceChanged) UiRow("La disposición guardada se ha actualizado.", "Vuelve a cargar para seguir editando.", "Volver a cargar", enabled = allowed) { requestDiscard(false) }
+                    if (!app.canEdit) UiRow("Activa el módulo o concede acceso Root para modificarlo.", "Ahora puedes consultar la disposición.")
                 }
                 OrderPreview(draft)
-                Text("点一下元素，再用底部按钮换区或左右移动；也可以长按元素直接拖到想要的位置。",
+                Text("Toca un elemento y usa los botones inferiores para cambiarlo de zona o moverlo a izquierda/derecha. También puedes mantenerlo pulsado y arrastrarlo a la posición deseada.",
                     Modifier.padding(horizontal = 4.dp), fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 orderRegions.forEach { side ->
                     val members = draft.tokens(side)
@@ -293,7 +293,7 @@ internal fun StatusBarOrderPage(app: ModernMainActivity, requested: String?, onR
                             OrderChip(orderElementTitle(token, shared), side,
                                 index = if (side != StatusBarOrderDraft.NATIVE && order > 0) members.indexOf(token) + 1 else 0,
                                 legacyOrder = if (side == StatusBarOrderDraft.NATIVE) order else 0,
-                                tag = if (token == StatusBarLayoutSettings.CARRIER) "仅下拉栏" else null,
+                                tag = if (token == StatusBarLayoutSettings.CARRIER) "Solo panel desplegable" else null,
                                 selected = selectedElement == token, lifted = dragging == token, draggable = editable,
                                 onBounds = { chipBounds[token] = it }, onRemoved = { chipBounds.remove(token) },
                                 onClick = { selectedToken = if (selectedToken == token) null else token },
@@ -301,10 +301,10 @@ internal fun StatusBarOrderPage(app: ModernMainActivity, requested: String?, onR
                                 onDragEnd = { latestDragEnd(it) },
                                 actions = if (!controlsEditable) emptyList() else buildList {
                                     val rank = members.indexOf(token)
-                                    if (side != StatusBarOrderDraft.NATIVE && rank > 0) add(CustomAccessibilityAction("向左移") { moveWithin(token, -1); true })
-                                    if (side != StatusBarOrderDraft.NATIVE && rank < members.size - 1) add(CustomAccessibilityAction("向右移") { moveWithin(token, 1); true })
+                                    if (side != StatusBarOrderDraft.NATIVE && rank > 0) add(CustomAccessibilityAction("Mover a la izquierda") { moveWithin(token, -1); true })
+                                    if (side != StatusBarOrderDraft.NATIVE && rank < members.size - 1) add(CustomAccessibilityAction("Mover a la derecha") { moveWithin(token, 1); true })
                                     orderRegions.filter { it != side }.forEach { destination ->
-                                        add(CustomAccessibilityAction(if (destination == StatusBarOrderDraft.NATIVE) "交给系统" else "放到${orderRegionTitle(destination)}") {
+                                        add(CustomAccessibilityAction(if (destination == StatusBarOrderDraft.NATIVE) "Dejar que lo ordene el sistema" else "Mover a ${orderRegionTitle(destination)}") {
                                             moveToSide(token, destination); true
                                         })
                                     }
@@ -319,17 +319,17 @@ internal fun StatusBarOrderPage(app: ModernMainActivity, requested: String?, onR
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     UiGroupCard {
                         val arranged = HintIconOrderDraft.SLOTS.count { hintDraft.side(it) != HintIconOrderDraft.INHERIT }
-                        UiRow("系统提示图标逐个排序", if(arranged == 0) "全部跟随上面的提示组" else "已单独安排 $arranged 项；与本页排列一起应用",
-                            if(hintsExpanded) "收起" else "展开", enabled = dragging == null) { hintsExpanded = !hintsExpanded }
+                        UiRow("Ordenar los iconos de estado del sistema individualmente", if(arranged == 0) "Todos siguen el grupo de indicadores de arriba." else "Se organizaron $arranged elementos por separado; se aplicarán junto con la disposición de esta página.",
+                            if(hintsExpanded) "Contraer" else "Expandir", enabled = dragging == null) { hintsExpanded = !hintsExpanded }
                     }
                     if(hintsExpanded) {
-                        Text("同侧提示图标按这里的先后排列；整组位置仍用上面的“系统提示图标”锚点。跟随提示组会继承整组设置，跟随原生侧边只让系统决定所在的一侧。数量不足时的显示优先级仍在系统提示图标页设置。",
+                        Text("Los indicadores de un mismo lado se ordenan aquí; la posición del grupo completo sigue el anclaje «Indicadores del sistema» de arriba. «Seguir el grupo» hereda la configuración del grupo, mientras que «Seguir el lado nativo» deja que el sistema decida en qué lado aparece. La prioridad cuando no hay espacio suficiente se configura en la página Indicadores del sistema.",
                             Modifier.padding(horizontal = 4.dp), fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                         hintRegions.forEach { side ->
                             val members = hintDraft.slots(side)
                             OrderZone(side, members, highlighted = dragging?.let(::hintSlot) != null && drop?.side == side,
                                 onBounds = { zoneBounds["hint-$side"] = it }, title = hintRegionTitle(side),
-                                note = when(side) { HintIconOrderDraft.INHERIT -> "  保留整组的位置与顺序"; HintIconOrderDraft.NATIVE -> "  系统决定侧边，仍使用提示组锚点"; else -> "  同侧提示从左往右" }) {
+                                note = when(side) { HintIconOrderDraft.INHERIT -> "  Conservar la posición y el orden del grupo completo"; HintIconOrderDraft.NATIVE -> "  El sistema decide el lado, pero se conserva el anclaje del grupo de indicadores"; else -> "  Los indicadores del mismo lado se ordenan de izquierda a derecha" }) {
                                 members.forEach { slot -> key(hintToken(slot)) {
                                     val token = hintToken(slot); val rank = members.indexOf(slot)
                                     OrderChip(NativeStatusIcons.priorityLabel(slot), side,
@@ -340,28 +340,28 @@ internal fun StatusBarOrderPage(app: ModernMainActivity, requested: String?, onR
                                         onDragStart = { latestDragStart(token, it) }, onDrag = { latestDrag(it) }, onDragEnd = { latestDragEnd(it) },
                                         regionName = hintRegionTitle(side), actions = if(!controlsEditable) emptyList() else buildList {
                                             if(side == HintIconOrderDraft.LEFT || side == HintIconOrderDraft.RIGHT) {
-                                                if(rank > 0) add(CustomAccessibilityAction("向左移") { moveWithin(token,-1);true })
-                                                if(rank < members.size-1) add(CustomAccessibilityAction("向右移") { moveWithin(token,1);true })
+                                                if(rank > 0) add(CustomAccessibilityAction("Mover a la izquierda") { moveWithin(token,-1);true })
+                                                if(rank < members.size-1) add(CustomAccessibilityAction("Mover a la derecha") { moveWithin(token,1);true })
                                             }
                                             hintRegions.filter { it != side }.forEach { target -> add(CustomAccessibilityAction(hintRegionTitle(target)) { moveToSide(token,target);true }) }
                                         })
                                 } }
                             }
                         }
-                        UiGroupCard { UiRow("所有提示跟随整组", "只重置提示图标的单独安排，应用后生效", enabled = controlsEditable) {
+                        UiGroupCard { UiRow("Todos los indicadores siguen el grupo completo.", "Solo restablece la organización individual de los indicadores; se aplicará al confirmar.", enabled = controlsEditable) {
                             updateHints(latestHints.resetAll()); selectedToken = null
                         } }
                     }
                 }
                 UiGroupCard {
                     C17BasicComponent(insideMargin = PaddingValues(horizontal = 16.dp, vertical = 12.dp)) {
-                        Text("网络制式与信号", fontSize = 16.sp)
-                        Text(if (shared) "已与 Wi-Fi 共用位置；共用开关在网络页面" else "只调整蜂窝内部先后，不改变上面的排列", fontSize = 12.sp,
+                        Text("Tipo de red y señal", fontSize = 16.sp)
+                        Text(if (shared) "Comparte la posición con Wi-Fi; el interruptor está en la página Red." else "Solo cambia el orden interno de la red móvil; no modifica la disposición de arriba.", fontSize = 12.sp,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                     }
                     if (!shared) Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("系统顺序", "制式在前", "信号在前").forEachIndexed { index, title ->
+                        listOf("Orden del sistema", "Tipo de red primero", "Señal primero").forEachIndexed { index, title ->
                             C17TextButton(title, enabled = controlsEditable, modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                                 .semantics { this.selected = index == labelOrder },
                                 colors = if (index == labelOrder) ButtonDefaults.textButtonColorsPrimary() else null,
@@ -370,16 +370,16 @@ internal fun StatusBarOrderPage(app: ModernMainActivity, requested: String?, onR
                     }
                 }
                 UiGroupCard {
-                    UiRow("全部恢复系统排列", "所有元素交给系统，应用后生效", icon = Icons.Outlined.Restore, enabled = controlsEditable) {
-                        app.confirmation = UiConfirmation("恢复系统排列？", "所有元素恢复系统区域和顺序，点“应用排列”后生效。", "恢复") {
+                    UiRow("Restaurar toda la disposición del sistema", "Deja todos los elementos en manos del sistema; se aplicará al confirmar.", icon = Icons.Outlined.Restore, enabled = controlsEditable) {
+                        app.confirmation = UiConfirmation("¿Restaurar la disposición del sistema?", "Todos los elementos volverán a las zonas y al orden del sistema. Pulsa «Aplicar disposición» para confirmar.", "Restaurar") {
                             val restored = latestDraft.resetAll()
                             updateFields(HashMap(fields).apply { putAll(restored.sideValues()); putAll(restored.orderValues()); put(labelKey, 0f); put(NativeStatusIcons.LAYOUT, latestHints.resetAll().serialize()) })
                             selectedToken = null
                         }
                     }
-                    if (dirty) UiRow("放弃未应用的更改", "回到上次保存的排列", enabled = allowed) { requestDiscard(false) }
+                    if (dirty) UiRow("Descartar los cambios no aplicados", "Volver a la última disposición guardada.", enabled = allowed) { requestDiscard(false) }
                 }
-                Text("这里列出全部可排序的元素，系统当前没有显示的元素不会被强制显示。各元素的左右间距在它自己的页面设置，不需要开启排序。",
+                Text("Aquí aparecen todos los elementos que se pueden ordenar. No se forzará la visualización de los que el sistema oculte actualmente. El espaciado lateral se configura en la página de cada elemento; no hace falta activar el orden personalizado.",
                     Modifier.padding(horizontal = 4.dp), fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
             }
             // Insertion mark and the dragged chip float above the board.
@@ -422,26 +422,26 @@ private fun OrderPreview(draft: StatusBarOrderDraft) {
     val native = draft.tokens(StatusBarOrderDraft.NATIVE)
     UiGroupCard {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("预览（从左到右）", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text("Vista previa (de izquierda a derecha)", fontSize = 14.sp, fontWeight = FontWeight.Medium)
             Row(Modifier.fillMaxWidth().heightIn(min = 36.dp).clip(RoundedCornerShape(10.dp))
                 .background(MiuixTheme.colorScheme.onSurface.copy(alpha = .06f)).padding(horizontal = 10.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
                     verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     draft.tokens(StatusBarOrderDraft.LEFT).forEach { PreviewText(orderShortTitle(it)) }
-                    if (native.isNotEmpty()) PreviewText("系统…", faint = true)
+                    if (native.isNotEmpty()) PreviewText("Sistema…", faint = true)
                 }
                 Box(Modifier.padding(horizontal = 8.dp).size(8.dp).background(MiuixTheme.colorScheme.onSurface.copy(alpha = .55f), CircleShape))
                 FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
                     verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     draft.tokens(StatusBarOrderDraft.RIGHT).forEach { PreviewText(orderShortTitle(it)) }
-                    if (native.isNotEmpty()) PreviewText("系统…", faint = true)
+                    if (native.isNotEmpty()) PreviewText("Sistema…", faint = true)
                 }
             }
-            Text(if (native.isEmpty()) "所有元素都已手动安排。"
-                else "“系统…”表示跟随系统的元素：它们留在系统原来的一侧，排在同侧手动元素的右边。",
+            Text(if (native.isEmpty()) "Todos los elementos se han organizado manualmente."
+                else "«Sistema…» representa los elementos que siguen al sistema: permanecen en el lado original y aparecen a la derecha de los elementos del mismo lado colocados manualmente.",
                 fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-            Text("流体云胶囊出现时保留自定义排序，图标的显示、隐藏和缩放继续跟随系统交互。" +
+            Text("Cuando aparece la cápsula de Fluid Cloud, se mantiene el orden personalizado; mostrar, ocultar y escalar los iconos sigue dependiendo de la interacción nativa del sistema." +
                 if (draft.side(StatusBarLayoutSettings.CARRIER) != StatusBarOrderDraft.NATIVE) "\n$CARRIER_NOTE" else "",
                 fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         }
@@ -467,15 +467,15 @@ private fun OrderZone(side: String, members: List<String>, highlighted: Boolean,
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(title, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Text(note ?: when (side) {
-                    StatusBarOrderDraft.NATIVE -> "  位置和先后由系统决定"
-                    StatusBarOrderDraft.LEFT -> "  从左往右，排在系统左侧元素前面"
-                    else -> "  从左往右，排在系统右侧元素前面"
+                    StatusBarOrderDraft.NATIVE -> "  La posición y el orden los decide el sistema"
+                    StatusBarOrderDraft.LEFT -> "  De izquierda a derecha, antes de los elementos del sistema en el lado izquierdo"
+                    else -> "  De izquierda a derecha, antes de los elementos del sistema en el lado derecho"
                 }, fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
             }
             FlowRow(Modifier.fillMaxWidth().heightIn(min = 40.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 content()
-                if (members.isEmpty()) Text(if (side == StatusBarOrderDraft.NATIVE || side == HintIconOrderDraft.INHERIT) "没有元素" else "空 · 选中元素后选择这一侧，或拖到这里",
+                if (members.isEmpty()) Text(if (side == StatusBarOrderDraft.NATIVE || side == HintIconOrderDraft.INHERIT) "No hay elementos" else "Vacío · Selecciona un elemento y elige este lado, o arrástralo aquí.",
                     Modifier.padding(vertical = 10.dp), fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
             }
         }
@@ -505,10 +505,10 @@ private fun OrderChip(title: String, side: String, index: Int, legacyOrder: Int,
                 onDragEnd = { end(true) }, onDragCancel = { end(false) },
                 onDrag = { change, amount -> change.consume(); move(amount) })
         }
-        .clickable(role = Role.Button, onClickLabel = if (selected) "取消选择$title" else "选择$title", onClick = onClick)
+        .clickable(role = Role.Button, onClickLabel = if (selected) "Deseleccionar $title" else "Seleccionar $title", onClick = onClick)
         .semantics {
             this.selected = selected
-            stateDescription = regionName + if (index > 0) "第${index}个" else ""
+            stateDescription = regionName + if (index > 0) "Elemento ${index}" else ""
             customActions = actions
         }
         .padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically,
@@ -521,7 +521,7 @@ private fun OrderChip(title: String, side: String, index: Int, legacyOrder: Int,
         Text(title, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = content)
         if (tag != null) Text(tag, fontSize = 11.sp,
             color = if (selected) MiuixTheme.colorScheme.onPrimary else MiuixTheme.colorScheme.onSurfaceVariantSummary)
-        if (legacyOrder > 0) Text("旧顺序$legacyOrder", fontSize = 11.sp,
+        if (legacyOrder > 0) Text("Orden anterior $legacyOrder", fontSize = 11.sp,
             color = if (selected) MiuixTheme.colorScheme.onPrimary else MiuixTheme.colorScheme.onSurfaceVariantSummary)
     }
 }
@@ -538,25 +538,25 @@ private fun OrderSelectionPanel(token: String, title: String, draft: StatusBarOr
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(title, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                    Text(if (side == StatusBarOrderDraft.NATIVE) "跟随系统" else "${orderRegionTitle(side)}第 ${rank + 1} 个（共 ${members.size} 个）",
+                    Text(if (side == StatusBarOrderDraft.NATIVE) "Seguir al sistema" else "${orderRegionTitle(side)}, elemento ${rank + 1} de ${members.size}",
                         fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                     if (token == StatusBarLayoutSettings.CARRIER) Text(CARRIER_NOTE, fontSize = 12.sp,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 }
-                C17IconButton(onClick = onClose) { Icon(Icons.Outlined.Close, "取消选择") }
+                C17IconButton(onClick = onClose) { Icon(Icons.Outlined.Close, "Deseleccionar") }
             }
             Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(StatusBarOrderDraft.LEFT, StatusBarOrderDraft.NATIVE, StatusBarOrderDraft.RIGHT).forEach { destination ->
                     val current = destination == side
-                    C17TextButton(if (destination == StatusBarOrderDraft.NATIVE) "跟随系统" else "放到${orderRegionTitle(destination)}",
+                    C17TextButton(if (destination == StatusBarOrderDraft.NATIVE) "Seguir al sistema" else "Mover a ${orderRegionTitle(destination)}",
                         modifier = Modifier.weight(1f).heightIn(min = 44.dp).semantics { this.selected = current },
                         enabled = editable && !current, colors = if (current) ButtonDefaults.textButtonColorsPrimary() else null,
                         onClick = { onSide(destination) })
                 }
             }
             if (side != StatusBarOrderDraft.NATIVE) Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                C17TextButton("← 往左", modifier = Modifier.weight(1f).heightIn(min = 44.dp), enabled = editable && rank > 0, onClick = { onMove(-1) })
-                C17TextButton("往右 →", modifier = Modifier.weight(1f).heightIn(min = 44.dp), enabled = editable && rank in 0 until members.size - 1, onClick = { onMove(1) })
+                C17TextButton("← Izquierda", modifier = Modifier.weight(1f).heightIn(min = 44.dp), enabled = editable && rank > 0, onClick = { onMove(-1) })
+                C17TextButton("Derecha →", modifier = Modifier.weight(1f).heightIn(min = 44.dp), enabled = editable && rank in 0 until members.size - 1, onClick = { onMove(1) })
             }
         }
     }
@@ -575,10 +575,10 @@ private fun HintOrderSelectionPanel(slot: String, draft: HintIconOrderDraft, edi
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(NativeStatusIcons.priorityLabel(slot), fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                    Text(if(physical && draft.order(slot) > 0) "${hintRegionTitle(side)}第 ${rank + 1} 个（仅提示图标）"
+                    Text(if(physical && draft.order(slot) > 0) "${hintRegionTitle(side)}, elemento ${rank + 1} (solo indicadores)"
                         else hintRegionTitle(side), fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 }
-                C17IconButton(onClick = onClose) { Icon(Icons.Outlined.Close, "取消选择") }
+                C17IconButton(onClick = onClose) { Icon(Icons.Outlined.Close, "Deseleccionar") }
             }
             listOf(listOf(HintIconOrderDraft.LEFT, HintIconOrderDraft.RIGHT),listOf(HintIconOrderDraft.INHERIT, HintIconOrderDraft.NATIVE)).forEach { pair ->
                 Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -591,8 +591,8 @@ private fun HintOrderSelectionPanel(slot: String, draft: HintIconOrderDraft, edi
                 }
             }
             if(physical) Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                C17TextButton("← 往左",modifier = Modifier.weight(1f).heightIn(min = 44.dp),enabled = editable && rank > 0,onClick = { onMove(-1) })
-                C17TextButton("往右 →",modifier = Modifier.weight(1f).heightIn(min = 44.dp),enabled = editable && rank in 0 until members.size-1,onClick = { onMove(1) })
+                C17TextButton("← Izquierda",modifier = Modifier.weight(1f).heightIn(min = 44.dp),enabled = editable && rank > 0,onClick = { onMove(-1) })
+                C17TextButton("Derecha →",modifier = Modifier.weight(1f).heightIn(min = 44.dp),enabled = editable && rank in 0 until members.size-1,onClick = { onMove(1) })
             }
         }
     }

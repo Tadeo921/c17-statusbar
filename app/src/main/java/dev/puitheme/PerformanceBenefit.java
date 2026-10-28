@@ -21,25 +21,25 @@ final class PerformanceBenefit {
     static PerformanceBenefit of(RootPerformanceModule.Snapshot report) {
         Builder b = new Builder();
         boolean ledger = report != null && report.ledgerSince > 0L;
-        b.since = ledger ? "自 " + DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
-                .format(new Date(report.ledgerSince * 1000L)) + " 起" : "尚无记录";
-        b.compiles = ledger ? report.ledgerCompiles + " 次" : "—";
-        b.compilesNote = ledger ? "耗时 " + seconds(report.ledgerWallMs)
-                + (report.ledgerSizeKb > 0L ? " · 新增产物 " + Math.round(report.ledgerSizeKb / 1024.0) + " MB" : "") : "ART 实测耗时";
-        b.saved = ledger ? report.ledgerReuses + " 次" : "—";
-        b.savedNote = ledger ? "约省编译 " + seconds(report.ledgerAvoidedMs) + "（估算）" : "相比每次都重编";
+        b.since = ledger ? "Desde " + DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+                .format(new Date(report.ledgerSince * 1000L)) + " en adelante" : "Sin registros";
+        b.compiles = ledger ? report.ledgerCompiles + " veces" : "—";
+        b.compilesNote = ledger ? "Tiempo empleado: " + seconds(report.ledgerWallMs)
+                + (report.ledgerSizeKb > 0L ? " · artefactos nuevos: " + Math.round(report.ledgerSizeKb / 1024.0) + " MB" : "") : "Tiempo medido por ART";
+        b.saved = ledger ? report.ledgerReuses + " veces" : "—";
+        b.savedNote = ledger ? "Ahorro estimado de compilación: " + seconds(report.ledgerAvoidedMs) + " (estimado)" : "Comparado con recompilar en cada comprobación";
         boolean sampled = report != null && report.runtimeSampled > 0L && report.runtimeProcSeconds > 0L;
-        b.aot = sampled ? report.runtimeAot ? "已使用" : "未使用" : "—";
-        b.aotNote = sampled ? report.runtimeAot ? "系统界面运行的是预编译产物" : "系统界面尚在解释执行" : "是否使用预编译产物";
+        b.aot = sampled ? report.runtimeAot ? "Sí" : "No" : "—";
+        b.aotNote = sampled ? report.runtimeAot ? "SystemUI está usando código precompilado" : "SystemUI todavía ejecuta código interpretado" : "Uso de código precompilado";
         boolean longEnough = sampled && report.runtimeProcSeconds >= 60L;
-        b.jit = longEnough ? Math.round(report.runtimeJitMs / (report.runtimeProcSeconds / 60.0)) + " ms/分" : "—";
-        b.jitNote = longEnough ? "JIT 线程占用 · 进程已运行 " + Math.round(report.runtimeProcSeconds / 60.0) + " 分钟"
-                : sampled ? "进程刚启动，样本太短" : "JIT 线程占用";
+        b.jit = longEnough ? Math.round(report.runtimeJitMs / (report.runtimeProcSeconds / 60.0)) + " ms/min" : "—";
+        b.jitNote = longEnough ? "Uso del hilo JIT · proceso activo durante " + Math.round(report.runtimeProcSeconds / 60.0) + " min"
+                : sampled ? "El proceso acaba de iniciarse; la muestra es demasiado breve" : "Uso del hilo JIT";
         return new PerformanceBenefit(b);
     }
 
     static String seconds(long millis) {
-        return (millis >= 10000L ? Long.toString(Math.round(millis / 1000.0)) : String.format(java.util.Locale.ROOT, "%.1f", millis / 1000.0)) + " 秒";
+        return (millis >= 10000L ? Long.toString(Math.round(millis / 1000.0)) : String.format(java.util.Locale.ROOT, "%.1f", millis / 1000.0)) + " s";
     }
 
     private static final class Builder {

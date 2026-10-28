@@ -50,11 +50,11 @@ public final class PuiThemeIconPack {
         try(ZipFile zip=new ZipFile(apk)){
             Set<String> seen=new HashSet<>();int entries=0;long expanded=0;boolean table=false,manifest=false;
             for(Enumeration<? extends ZipEntry> it=zip.entries();it.hasMoreElements();){ZipEntry entry=it.nextElement();String name=entry.getName();
-                if(++entries>512||!seen.add(name)||!IconPackArchive.safePath(name,entry.isDirectory())||executableEntry(name))throw new IOException("PUI 资源 APK 包含不支持的内容");
-                long size=entry.getSize();if(size<0||size>MAX_APK||(expanded+=size)>MAX_APK)throw new IOException("PUI 资源 APK 大小超限");
+                if(++entries>512||!seen.add(name)||!IconPackArchive.safePath(name,entry.isDirectory())||executableEntry(name))throw new IOException("El APK de recursos PUI contiene contenido no compatible");
+                long size=entry.getSize();if(size<0||size>MAX_APK||(expanded+=size)>MAX_APK)throw new IOException("El APK de recursos PUI supera el tamaño permitido");
                 table|=name.equals("resources.arsc");manifest|=name.equals("AndroidManifest.xml");
             }
-            if(!table||!manifest)throw new IOException("PUI 资源 APK 缺少资源表");
+            if(!table||!manifest)throw new IOException("Falta la tabla de recursos en el APK PUI");
         }
     }
     public static IconPackRepository.PreparedPack prepare(Context context,Uri uri)throws Exception{
@@ -62,14 +62,14 @@ public final class PuiThemeIconPack {
         List<File> apks=new ArrayList<>();
         try{
             try(InputStream input=context.getContentResolver().openInputStream(uri);FileOutputStream output=new FileOutputStream(theme)){
-                if(input==null)throw new IOException("PUI 主题无法读取");copy(input,output,MAX_THEME);output.getFD().sync();
+                if(input==null)throw new IOException("No se pudo leer el tema PUI");copy(input,output,MAX_THEME);output.getFD().sync();
             }
             Map<String,byte[]> images=new LinkedHashMap<>();Map<String,String> icons=new TreeMap<>();Set<String> found=new HashSet<>();
             try(ZipFile zip=new ZipFile(theme)){
                 int entries=0;
                 for(Enumeration<? extends ZipEntry> it=zip.entries();it.hasMoreElements();){ZipEntry entry=it.nextElement();
-                    if(++entries>4096)throw new IOException("PUI 主题文件数量超限");String selected=selectedApk(entry.getName());if(selected==null)continue;
-                    if(entry.isDirectory()||!found.add(selected)||entry.getSize()<1||entry.getSize()>MAX_APK)throw new IOException("PUI 主题资源重复或大小无效");
+                    if(++entries>4096)throw new IOException("El tema PUI contiene demasiados archivos");String selected=selectedApk(entry.getName());if(selected==null)continue;
+                    if(entry.isDirectory()||!found.add(selected)||entry.getSize()<1||entry.getSize()>MAX_APK)throw new IOException("El tema PUI contiene recursos duplicados o con tamaño no válido");
                     File apk=IconPackRepository.createSource(context);apks.add(apk);
                     try(InputStream input=zip.getInputStream(entry);FileOutputStream output=new FileOutputStream(apk)){copy(input,output,MAX_APK);output.getFD().sync();}
                     validateApk(apk);
@@ -81,18 +81,18 @@ public final class PuiThemeIconPack {
                     }
                 }
             }
-            if(found.size()!=2)throw new IOException("未找到 PUI ColorOS 17 的信号与系统提示资源，请选择原始主题 ZIP");
+            if(found.size()!=2)throw new IOException("No se encontraron recursos PUI de señal e iconos de aviso para ColorOS 17; selecciona el ZIP original del tema");
             JSONObject manifest=new JSONObject();manifest.put("format",IconPackManifest.FORMAT);manifest.put("version",2);manifest.put("fallback","native");manifest.put("render","mask");
-            manifest.put("name","PUI ColorOS 17 · 用户主题");manifest.put("author","天伞桜&PanL");manifest.put("license","用户提供素材，仅本地使用；原主题未声明公开再分发许可");
+            manifest.put("name","PUI ColorOS 17 · Tema de usuario");manifest.put("author","天伞桜&PanL");manifest.put("license","Material proporcionado por el usuario, solo para uso local; el tema original no declara permiso para redistribución pública");
             JSONObject mapping=new JSONObject();for(Map.Entry<String,String> role:icons.entrySet())mapping.put(role.getKey(),role.getValue());manifest.put("icons",mapping);
             byte[] metadata=IconPackManifest.parse(manifest.toString().getBytes(StandardCharsets.UTF_8)).bytes();
             try(ZipOutputStream zip=new ZipOutputStream(new FileOutputStream(converted))){write(zip,"manifest.json",metadata);for(Map.Entry<String,byte[]> asset:images.entrySet())write(zip,asset.getKey(),asset.getValue());}
             return IconPackRepository.prepare(context,converted,"");
-        }catch(OutOfMemoryError unavailable){throw new IOException("PUI 主题图片转换内存不足",unavailable);}
+        }catch(OutOfMemoryError unavailable){throw new IOException("No hay memoria suficiente para convertir imágenes del tema PUI",unavailable);}
         finally{theme.delete();converted.delete();for(File apk:apks)apk.delete();}
     }
     private static void copy(InputStream input,OutputStream output,int max)throws IOException{
-        int total=0,n;byte[] bytes=new byte[8192];while((n=input.read(bytes))!=-1){if((long)total+n>max)throw new IOException("PUI 主题文件大小超限");total+=n;output.write(bytes,0,n);}
+        int total=0,n;byte[] bytes=new byte[8192];while((n=input.read(bytes))!=-1){if((long)total+n>max)throw new IOException("Los archivos del tema PUI superan el tamaño permitido");total+=n;output.write(bytes,0,n);}
     }
     private static void write(ZipOutputStream zip,String name,byte[] bytes)throws IOException{zip.putNextEntry(new ZipEntry(name));zip.write(bytes);zip.closeEntry();}
     /** A unique private APK path owns these Resources; no APK class loader is created.
@@ -104,41 +104,41 @@ public final class PuiThemeIconPack {
         static Loaded open(File apk,Context context,String apkPackage)throws Exception{
             PackageManager manager=context.getPackageManager();
             PackageInfo parsed=manager.getPackageArchiveInfo(apk.getAbsolutePath(),0);
-            if(parsed==null||!apkPackage.equals(parsed.packageName))throw new IOException("PUI 资源 APK 包名不匹配");
+            if(parsed==null||!apkPackage.equals(parsed.packageName))throw new IOException("El nombre de paquete del APK de recursos PUI no coincide");
             // Build fresh metadata rather than accepting split/shared-library paths
             // from the supplied manifest. Both resource paths point to our validated file.
             ApplicationInfo info=new ApplicationInfo();info.packageName=apkPackage;
             info.sourceDir=apk.getAbsolutePath();info.publicSourceDir=info.sourceDir;
             Resources resources=manager.getResourcesForApplication(info);
             if(resources.getAssets()==Resources.getSystem().getAssets()||resources.getAssets()==context.getResources().getAssets())
-                throw new IOException("PUI 资源未能隔离加载");
+                throw new IOException("No se pudieron cargar los recursos PUI de forma aislada");
             return new Loaded(resources);
         }
         byte[] png(String apkPackage,String name)throws Exception{
-            int id=resources.getIdentifier(name,"drawable",apkPackage);if(id==0)throw new IOException("PUI 主题缺少图标："+name);
+            int id=resources.getIdentifier(name,"drawable",apkPackage);if(id==0)throw new IOException("Falta un icono en el tema PUI: "+name);
             validateXml(id,apkPackage,0,new HashSet<Integer>());
             Drawable drawable=resources.getDrawable(id,null);int width=drawable.getIntrinsicWidth(),height=drawable.getIntrinsicHeight();
-            if(width<=0||height<=0||width>4096||height>4096)throw new IOException("PUI 图标尺寸无效");
+            if(width<=0||height<=0||width>4096||height>4096)throw new IOException("Las dimensiones del icono PUI no son válidas");
             double factor=256d/Math.max(width,height);width=Math.max(1,(int)Math.round(width*factor));height=Math.max(1,(int)Math.round(height*factor));
             Bitmap bitmap=Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);
             try{drawable.setBounds(0,0,width,height);drawable.draw(new Canvas(bitmap));ByteArrayOutputStream output=new ByteArrayOutputStream();
-                if(!bitmap.compress(Bitmap.CompressFormat.PNG,100,output))throw new IOException("PUI 图标转换失败");return output.toByteArray();
+                if(!bitmap.compress(Bitmap.CompressFormat.PNG,100,output))throw new IOException("Falló la conversión del icono PUI");return output.toByteArray();
             }finally{bitmap.recycle();}
         }
         private void validateXml(int id,String apkPackage,int depth,Set<Integer> visiting)throws Exception{
-            if(depth>8||!visiting.add(id)||!apkPackage.equals(resources.getResourcePackageName(id))||!"drawable".equals(resources.getResourceTypeName(id)))throw new IOException("PUI 图标引用无效");
+            if(depth>8||!visiting.add(id)||!apkPackage.equals(resources.getResourcePackageName(id))||!"drawable".equals(resources.getResourceTypeName(id)))throw new IOException("La referencia al icono PUI no es válida");
             try(XmlResourceParser xml=resources.getXml(id)){
                 int nodes=0,pathChars=0;boolean root=false;
                 for(int event=xml.next();event!=XmlPullParser.END_DOCUMENT;event=xml.next())if(event==XmlPullParser.START_TAG){
-                    String tag=xml.getName();if(++nodes>128||xml.getDepth()>8||!Arrays.asList("inset","vector","group","path","clip-path").contains(tag))throw new IOException("PUI 图标使用不支持的动态资源");
-                    if(!root){if(!tag.equals("vector")&&!tag.equals("inset"))throw new IOException("PUI 图标格式无效");root=true;}
-                    String path=xml.getAttributeValue("http://schemas.android.com/apk/res/android","pathData");if(path!=null&&(pathChars+=path.length())>65536)throw new IOException("PUI 图标路径大小超限");
+                    String tag=xml.getName();if(++nodes>128||xml.getDepth()>8||!Arrays.asList("inset","vector","group","path","clip-path").contains(tag))throw new IOException("El icono PUI usa un recurso animado no compatible");
+                    if(!root){if(!tag.equals("vector")&&!tag.equals("inset"))throw new IOException("El formato del icono PUI no es válido");root=true;}
+                    String path=xml.getAttributeValue("http://schemas.android.com/apk/res/android","pathData");if(path!=null&&(pathChars+=path.length())>65536)throw new IOException("La ruta del icono PUI supera el tamaño permitido");
                     if(tag.equals("inset")){
                         int referenced=xml.getAttributeResourceValue("http://schemas.android.com/apk/res/android","drawable",0);
                         if(referenced!=0)validateXml(referenced,apkPackage,depth+1,visiting);
                     }
                 }
-                if(!root)throw new IOException("PUI 图标内容为空");
+                if(!root)throw new IOException("El contenido del icono PUI está vacío");
             }finally{visiting.remove(id);}
         }
         @Override public void close(){resources.getAssets().close();}

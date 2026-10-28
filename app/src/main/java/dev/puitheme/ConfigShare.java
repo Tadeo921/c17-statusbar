@@ -26,12 +26,12 @@ public final class ConfigShare {
 
     /** Write {@code json} to a new snapshot and return the content URI to hand out. */
     public static Uri prepare(Context context, String json) throws IOException {
-        if (context == null || !ConfigTransfer.PACKAGE_NAME.equals(context.getPackageName())) throw new IOException("无法分享配置");
+        if (context == null || !ConfigTransfer.PACKAGE_NAME.equals(context.getPackageName())) throw new IOException("No se pudo compartir la configuración.");
         byte[] bytes = json == null ? new byte[0] : json.getBytes(StandardCharsets.UTF_8);
-        if (bytes.length == 0 || bytes.length > ConfigTransfer.MAX_BYTES) throw new IOException("配置为空或超过 256 KB");
+        if (bytes.length == 0 || bytes.length > ConfigTransfer.MAX_BYTES) throw new IOException("La configuración está vacía o supera los 256 KB.");
         synchronized (LOCK) {
             File directory = new File(context.getCacheDir(), "config-shares");
-            if (!directory.isDirectory() && !directory.mkdirs()) throw new IOException("无法创建分享文件");
+            if (!directory.isDirectory() && !directory.mkdirs()) throw new IOException("No se pudo crear el archivo para compartir.");
             long now = System.currentTimeMillis();
             File[] old = directory.listFiles((folder, name) -> name.matches("[0-9a-f]{32}\\.json"));
             if (old != null) {

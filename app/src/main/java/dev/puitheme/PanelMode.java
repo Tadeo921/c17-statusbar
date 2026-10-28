@@ -60,7 +60,7 @@ public final class PanelMode {
         if (!classic() || key == null) return "";
         if (key.startsWith("notification_big_clock_") || key.equals(NotificationGroupStack.MASTER)
                 || key.equals(StatusBarShadeIconSettings.MASTER))
-            return "经典模式下暂停，切回分离模式后按已保存配置恢复";
+            return "Pausado en modo clásico. Se restaurará la configuración guardada al volver al modo separado.";
         return "";
     }
     public static Bundle snapshot() {

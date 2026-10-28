@@ -54,7 +54,7 @@ private val legendGilded = ColorFilter.colorMatrix(ColorMatrix(floatArrayOf(
     .212f, .417f, .081f, 0f, 13f,
     0f, 0f, 0f, 1f, 0f)))
 
-/** The gacha screen: a limited banner, the single-pull button pressed, "您进行了单抽". Everything after starts here. */
+/** The gacha screen: a limited banner, the single-pull button pressed, "Has realizado una tirada individual.". Everything after starts here. */
 private const val LEGEND_INTRO = 2f
 /** The orb bursts into a white-out and the reveal begins. */
 private const val LEGEND_IGNITE = 6.6f
@@ -63,11 +63,11 @@ private const val LEGEND_LANDED = 7.8f
 /** Heartbeat pulses that raise the rarity: blue, purple, gold. */
 private val legendPulses = floatArrayOf(3.4f, 4.5f, 5.6f)
 private val legendStageColors = listOf(Color(0xFF4DA3FF), Color(0xFFB36BFF), Color(0xFFFFC94D))
-private val legendStageNames = listOf("稀有", "史诗", "传说")
+private val legendStageNames = listOf("Raro", "Épico", "Legendario")
 private val legendStageTags = listOf("RARE", "EPIC", "LEGEND")
 /** The voice-over, shown as film subtitles in the lower letterbox bar. */
-private val legendCaptions = listOf(Triple(3.45f, 4.35f, "这不是故障。"), Triple(4.55f, 5.45f, "每一次点亮屏幕，它都在悄悄积蓄光芒。"),
-    Triple(5.65f, 6.55f, "现在——它醒了。"))
+private val legendCaptions = listOf(Triple(3.45f, 4.35f, "Esto no es un fallo."), Triple(4.55f, 5.45f, "Cada vez que enciendes la pantalla, acumula luz en silencio."),
+    Triple(5.65f, 6.55f, "Ahora… ha despertado."))
 
 /**
  * 鎏金传说 (hidden, 5%): a gold hairline draws a sigil out of the dark, the sigil collapses into an anamorphic flare,
@@ -329,7 +329,7 @@ internal class LegendEgg(icon: ImageBitmap, measurer: TextMeasurer, private val 
         val plateTop = Offset(c.x - plate.width / 2f, topLeft.y + 18f * density)
         drawRoundRect(Color(0xFF120D05), plateTop, plate, CornerRadius(3f * density), alpha = alpha)
         drawRoundRect(legendGold, plateTop, plate, CornerRadius(3f * density), alpha = alpha, style = Stroke(.8f * density))
-        val label = layout("隐藏款", 11.sp, FontWeight.Bold, letterSpacing = 3.sp)
+        val label = layout("Objeto secreto", 11.sp, FontWeight.Bold, letterSpacing = 3.sp)
         centred(label, c.x, plateTop.y + (plate.height - label.size.height) / 2f, Brush.verticalGradient(listOf(legendPale, legendGold),
             plateTop.y, plateTop.y + plate.height), alpha)
         // Name plate: divider, name, and six rarity diamonds lighting in turn.
@@ -404,7 +404,7 @@ internal class LegendEgg(icon: ImageBitmap, measurer: TextMeasurer, private val 
         val show = eggIn(t, LEGEND_LANDED + .5f, .8f) * fade * settle
         if (show <= 0f) return
         val top = dy + 12f * density
-        val title = layout("鎏金传说", 34.sp, FontWeight.Bold, FontFamily.Serif, 6.sp)
+        val title = layout("Leyenda dorada", 34.sp, FontWeight.Bold, FontFamily.Serif, 6.sp)
         val metal = Brush.verticalGradient(listOf(legendPale, legendBright, legendGold, legendDeep, legendGold), top, top + title.size.height)
         centred(title, cx + 1.5f * density, top + 2f * density, Color(0xAA000000), show)
         centred(title, cx, top, metal, show)
@@ -471,7 +471,7 @@ internal class LegendEgg(icon: ImageBitmap, measurer: TextMeasurer, private val 
         val words = eggWindow(t, .3f, 1.35f, .05f, .2f) * fade
         if (words > 0f) {
             val cursor = if (((t * 4f).toInt() and 1) == 0) "▌" else " "
-            val warning = layout("检测到异常信号".take(typed) + cursor, 15.sp, FontWeight.Medium, FontFamily.Monospace, 2.sp)
+            val warning = layout("Señal anómala detectada".take(typed) + cursor, 15.sp, FontWeight.Medium, FontFamily.Monospace, 2.sp)
             centred(warning, center.x, center.y + 120f * density, Color(0xFF9FB4C8), words)
         }
         val crack = eggWindow(t, .85f, 1.45f, .3f, .2f) * fade
@@ -644,7 +644,7 @@ internal class LegendEgg(icon: ImageBitmap, measurer: TextMeasurer, private val 
             Color.Transparent), w / 2f - bandW / 2f, w / 2f + bandW / 2f), Offset(w / 2f - bandW / 2f, bandTop), Size(bandW, bandH), alpha = words)
         drawLine(Color.White, Offset(w / 2f - bandW / 2f, bandTop), Offset(w / 2f + bandW / 2f, bandTop), density, alpha = .7f * words)
         drawLine(Color.White, Offset(w / 2f - bandW / 2f, bandTop + bandH), Offset(w / 2f + bandW / 2f, bandTop + bandH), density, alpha = .7f * words)
-        val upgrade = layout("稀有度提升", 12.sp, FontWeight.Medium, letterSpacing = 6.sp)
+        val upgrade = layout("Aumenta la rareza", 12.sp, FontWeight.Medium, letterSpacing = 6.sp)
         centred(upgrade, center.x, bandTop - 22f * density, Color.White, .75f * words)
         val tag = layout(legendStageTags[index], 10.sp, FontWeight.Bold, letterSpacing = 10.sp)
         centred(tag, center.x + 5f * density, bandTop + 4f * density, Color.White, .8f * words)
@@ -773,7 +773,7 @@ internal class LegendEgg(icon: ImageBitmap, measurer: TextMeasurer, private val 
 
     /**
      * The opening looks like an ordinary wish screen: a full key-visual banner, the single pull pressed, a ticket spent
-     * and "您进行了单抽". A plain blue light drops in, and nobody expects what comes next.
+     * and "Has realizado una tirada individual.". A plain blue light drops in, and nobody expects what comes next.
      */
     private fun DrawScope.gachaIntro(t: Float, fade: Float, w: Float, h: Float) {
         if (t > LEGEND_INTRO + .3f) return
@@ -829,23 +829,23 @@ internal class LegendEgg(icon: ImageBitmap, measurer: TextMeasurer, private val 
         drawRoundRect(Brush.linearGradient(legendMetal, top, top + Offset(panel.width, panel.height)), top, panel, radius, alpha = .8f * show,
             style = Stroke(1.4f * density))
         val left = top.x + 20f * density
-        val tag = layout("限定祈愿", 12.sp, FontWeight.Bold, letterSpacing = 3.sp)
+        val tag = layout("Deseo limitado", 12.sp, FontWeight.Bold, letterSpacing = 3.sp)
         drawRoundRect(Color(0xFFFF4D6D), Offset(left, top.y + 20f * density), Size(tag.size.width + 18f * density, tag.size.height + 6f * density),
             CornerRadius(4f * density), alpha = show)
         centred(tag, left + 9f * density + tag.size.width / 2f, top.y + 23f * density, Color.White, show)
-        val title = layout("星辉\n之约", 40.sp, FontWeight.Black, FontFamily.Serif, 6.sp)
+        val title = layout("Pacto\nestelar", 40.sp, FontWeight.Black, FontFamily.Serif, 6.sp)
         val titleTop = top.y + 58f * density
         drawText(title, Color(0x88000000), Offset(left + 2f * density, titleTop + 3f * density), show)
         drawText(title, Brush.verticalGradient(listOf(Color.White, legendBright, legendGold), titleTop, titleTop + title.size.height),
             Offset(left, titleTop), show)
-        val sub = layout("Status C17 · 限定卡池", 12.sp, FontWeight.Medium)
+        val sub = layout("Status C17 · Banner limitado", 12.sp, FontWeight.Medium)
         drawText(sub, Color(0xDDFFFFFF), Offset(left, titleTop + title.size.height + 8f * density), show)
-        val up = layout("UP  隐藏款 5%", 11.sp, FontWeight.Bold)
+        val up = layout("UP · Objeto secreto · 5%", 11.sp, FontWeight.Bold)
         val upTop = titleTop + title.size.height + 32f * density
         drawRoundRect(Brush.horizontalGradient(listOf(legendGold, legendDeep), left, left + up.size.width + 16f * density), Offset(left, upTop),
             Size(up.size.width + 16f * density, up.size.height + 6f * density), CornerRadius(10f * density), alpha = show)
         drawText(up, Color(0xFF2A1A04), Offset(left + 8f * density, upTop + 3f * density), show)
-        val clock = layout("距结束  13天 07:42:${(59 - (t * 1f).toInt()).toString().padStart(2, '0')}", 11.sp, FontWeight.Medium)
+        val clock = layout("Termina en 13 días · 07:42:${(59 - (t * 1f).toInt()).toString().padStart(2, '0')}", 11.sp, FontWeight.Medium)
         drawText(clock, Color(0xAAFFFFFF), Offset(left, top.y + panel.height - clock.size.height - 16f * density), show)
         for (i in 0 until 3) {
             drawCircle(if (i == 0) Color.White else Color(0x66FFFFFF), (if (i == 0) 4f else 3f) * density,
@@ -885,14 +885,14 @@ internal class LegendEgg(icon: ImageBitmap, measurer: TextMeasurer, private val 
                 CornerRadius(16f * density), alpha = show)
             drawRoundRect(Color.White, single + Offset(3f * density, 3f * density), Size(buttonW - 6f * density, buttonH * .42f),
                 CornerRadius(13f * density), alpha = .18f * show)
-            val label = layout("单抽", 20.sp, FontWeight.Black, letterSpacing = 4.sp)
+            val label = layout("Una tirada", 20.sp, FontWeight.Black, letterSpacing = 4.sp)
             centred(label, singleCenter.x, single.y + 9f * density, Color(0xFF2A1A04), show)
             val cost = layout("✦ × 1", 12.sp, FontWeight.Bold)
             centred(cost, singleCenter.x, single.y + 38f * density, Color(0xFF5A3D0E), show)
         }
         drawRoundRect(Color(0xFF2A2F45), ten, Size(buttonW, buttonH), CornerRadius(16f * density), alpha = show)
         drawRoundRect(Color(0x66FFFFFF), ten, Size(buttonW, buttonH), CornerRadius(16f * density), alpha = show, style = Stroke(density))
-        val tenLabel = layout("十连", 20.sp, FontWeight.Black, letterSpacing = 4.sp)
+        val tenLabel = layout("Diez tiradas", 20.sp, FontWeight.Black, letterSpacing = 4.sp)
         centred(tenLabel, ten.x + buttonW / 2f, ten.y + 9f * density, Color(0x88FFFFFF), show)
         val tenCost = layout("✦ × 10", 12.sp, FontWeight.Bold)
         centred(tenCost, ten.x + buttonW / 2f, ten.y + 38f * density, Color(0x66FFFFFF), show)
@@ -914,9 +914,9 @@ internal class LegendEgg(icon: ImageBitmap, measurer: TextMeasurer, private val 
                 density, alpha = strip * open)
             drawLine(Brush.horizontalGradient(listOf(Color.Transparent, legendGold, Color.Transparent)), Offset(0f, bandTop + bandH),
                 Offset(w, bandTop + bandH), density, alpha = strip * open)
-            val words = layout("您进行了单抽", 20.sp, FontWeight.Bold, letterSpacing = 4.sp)
+            val words = layout("Has realizado una tirada individual.", 20.sp, FontWeight.Bold, letterSpacing = 4.sp)
             centred(words, w / 2f, bandTop + 12f * density, Color.White, strip)
-            val note = layout("消耗 星辉券 × 1", 11.sp, FontWeight.Normal, letterSpacing = 2.sp)
+            val note = layout("Usa 1 cupón estelar", 11.sp, FontWeight.Normal, letterSpacing = 2.sp)
             centred(note, w / 2f, bandTop + 12f * density + words.size.height + 2f * density, legendBright.copy(alpha = .8f), strip)
         }
     }

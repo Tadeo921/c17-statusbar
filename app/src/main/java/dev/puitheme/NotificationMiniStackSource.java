@@ -10,20 +10,20 @@ import java.util.Collections;
  * free notice and of the feature switch, and is never part of the hook settings, mirror or JSON export: an imported
  * "on" configuration therefore cannot stand in for the user having seen the declaration. */
 public final class NotificationMiniStackSource {
-    public static final String PROJECT = "OplusX", AUTHOR = "xxxxawl", FEATURE = "启用小堆叠（同应用）";
+    public static final String PROJECT = "OplusX", AUTHOR = "xxxxawl", FEATURE = "Activar miniagrupación (misma aplicación)";
     public static final String URL = "https://www.coolapk.com/u/18956155";
-    public static final String TITLE = "功能来源声明";
+    public static final String TITLE = "Aviso sobre el origen de esta función";
     /** The full declaration: first use, inside the page, and the About credit. */
-    public static final String DECLARATION = "功能参考 OplusX「启用小堆叠（同应用）」。感谢 OplusX 作者 xxxxawl 提供实现参考。点击查看作者酷安主页。";
+    public static final String DECLARATION = "Esta función toma como referencia «Activar miniagrupación (misma aplicación)» de OplusX. Gracias a xxxxawl, autor de OplusX, por la referencia de implementación. Toca para ver su perfil en Coolapk.";
     /** Next to the 通知栏 entry. */
-    public static final String SHORT = "同应用通知小堆叠 · 参考 OplusX / xxxxawl";
+    public static final String SHORT = "Miniagrupación de notificaciones por aplicación · basada en OplusX / xxxxawl";
     /** The page's permanent source line. */
-    public static final String INSIDE = "功能参考 OplusX · 作者 xxxxawl";
-    public static final String LINK = "查看作者酷安主页";
+    public static final String INSIDE = "Referencia de la función: OplusX · autor xxxxawl";
+    public static final String LINK = "Ver perfil del autor en Coolapk";
     /** The reference's own stack code builds on this; credited separately so its origin is not attributed to one author. */
-    public static final String TECHNICAL_ORIGIN = "OplusX 的通知堆叠基础来自 VivoGroupDeck test21。";
-    public static final String NOTICE = DECLARATION + "\n\n本功能只呈现系统已形成的原生通知组：收起时显示完整的第一条，后面最多露出两层真实通知；"
-            + "不重新分组、不排序，也不增加下拉手势。确认只记录你已看过本声明，不会自动重启系统界面。";
+    public static final String TECHNICAL_ORIGIN = "La base de agrupación de notificaciones de OplusX procede de VivoGroupDeck test21.";
+    public static final String NOTICE = DECLARATION + "\n\nEsta función solo muestra grupos de notificaciones que el sistema ya creó: al contraerse, muestra completa la primera y deja ver hasta dos capas de notificaciones reales."
+            + "No vuelve a agrupar ni ordenar las notificaciones y no añade gestos de deslizamiento. Confirmar solo registra que has leído este aviso; no reinicia automáticamente SystemUI.";
     private static final String PREFERENCES = "app_mini_stack_source";
     private static final String ACKNOWLEDGED_VERSION = "acknowledged_version";
     private static final int VERSION = 1;

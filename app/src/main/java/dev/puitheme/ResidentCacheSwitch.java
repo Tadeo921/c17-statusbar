@@ -39,7 +39,7 @@ public final class ResidentCacheSwitch {
         final Context context = application == null ? host : application;
         Handler main = new Handler(Looper.getMainLooper());
         if (!BUSY.compareAndSet(false, true)) {
-            main.post(() -> { if (!request.detached) callback.completed(new Result(false, "已有缓存操作正在执行，请稍后再试。")); });
+            main.post(() -> { if (!request.detached) callback.completed(new Result(false, "Ya hay una operación de caché en curso. Inténtalo más tarde.")); });
             return request;
         }
         WORK.execute(() -> {
@@ -49,14 +49,14 @@ public final class ResidentCacheSwitch {
                 SharedPreferences preferences = StatusBarSettings.preferences(context);
                 SharedPreferences confirmed = new ActivationGuardPreferences(preferences, () -> true, () -> {}).withPersistence(context, () -> {});
                 if (!confirmed.edit().putBoolean(ResidentCache.INSTALLED, installed).putBoolean(ResidentCache.RUNNING, running).commit()) {
-                    result = new Result(false, "缓存设置保存失败，请重试。");
+                    result = new Result(false, "No se pudo guardar la configuración de caché. Inténtalo de nuevo.");
                 } else {
                     context.getContentResolver().notifyChange(Uri.parse(StatusBarSettings.CONTENT_URI), null);
-                    result = new Result(true, action == Action.CACHE_ON ? "缓存已启动，正在向系统界面确认实际状态。"
-                            : action == Action.CACHE_STOP ? "缓存已关闭，文件保留。" : "缓存已卸载，系统界面会删除自己的缓存文件。");
+                    result = new Result(true, action == Action.CACHE_ON ? "La caché se activó; se está comprobando su estado real en SystemUI."
+                            : action == Action.CACHE_STOP ? "La caché está desactivada; los archivos se conservaron." : "La caché se desinstaló; SystemUI eliminará sus propios archivos de caché.");
                 }
             } catch (RuntimeException failure) {
-                result = new Result(false, "缓存设置保存失败，请重试。");
+                result = new Result(false, "No se pudo guardar la configuración de caché. Inténtalo de nuevo.");
             }
             BUSY.set(false);
             final Result completed = result;

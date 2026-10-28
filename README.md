@@ -1,69 +1,51 @@
-# Status C17 · 1.8.3
+# Status C17 Â· adaptaciÃ³n comunitaria al espaÃ±ol
 
-面向 ColorOS 17 的 SystemUI 定制模块，主要适配依据为 OnePlus 13。可调整状态栏、通知栏、控制中心、流体云及锁屏外观，设置应用提供 COUI 与 Miuix 两种界面风格。使用 LibXposed API 101，包名为 `dev.puitheme.iosstatusbar`。
+> **Aviso:** Esta adaptaciÃ³n no es oficial. La traducciÃ³n de la documentaciÃ³n y de los textos de interfaz se preparÃ³ con ayuda de inteligencia artificial (IA) y revisiÃ³n parcial. Puede contener errores o cadenas sin traducir. No representa al desarrollador original.
 
-**正式版 1.8.3。** 本次更新对比正式版 1.8.2，完整新增、优化与修复分为16个功能板块，见 [1.8.3 完整更新日志](docs/RELEASE-1.8.3.zh-CN.md)。
+**Proyecto original:** [SANWU5/c17-statusbar](https://github.com/SANWU5/c17-statusbar) Â· **Autor original acreditado:** aiingjie  
+**VersiÃ³n de referencia:** 1.8.3 Â· **Licencia declarada:** GPL-3.0-only
 
-[下载 APK](https://github.com/SANWU5/c17-statusbar/releases) · [English](README.en.md) · [更新记录](CHANGELOG.md) · [图标包规范与示例](https://github.com/SANWU5/c17-icon-packs)
+Status C17 es un mÃ³dulo de personalizaciÃ³n de SystemUI para ColorOS 17, adaptado principalmente tomando como referencia un OnePlus 13. Permite personalizar la barra de estado, las notificaciones, el Centro de control, Fluid Cloud y la pantalla de bloqueo. La aplicaciÃ³n de ajustes ofrece interfaces COUI y Miuix y utiliza LibXposed API 101.
 
-## 功能
+## Estado de la traducciÃ³n
 
-| 功能 | 可设置内容 |
-| --- | --- |
-| 状态栏排序与间距 | 时间、通知图标、运营商、网速、Wi-Fi、蜂窝、电池及逐个系统提示可放在左侧、右侧或跟随系统；支持拖动、跨区移动、撤销及草稿保存。各元素物理左右间距独立，Wi-Fi与网络制式可共用位置。排序仍为实验性。 |
-| 状态栏时钟与字体 | 单排／双排时钟、时间格式预设与预览、等宽数字、数字间距、冒号居中。系统、苹方、导入及在线字体可按七类文字范围分别应用，字号和粗细在各功能中保留。 |
-| 网络文字、信号与电池 | 16种制式文字、原生角标、主信号单排及双排布局；网速刷新、位置与大小；上下行箭头可独立显示和配色。保留系统及已有PUI电池样式，并跟随系统百分比模式。 |
-| 图标管理 | 套装或逐目标／状态选图，覆盖系统提示、网络、电池、快捷开关、亮度／音量、页脚及已适配媒体／设备静态图。支持25%–200%大小、浅深背景色、逐状态颜色、透明度、图库配色预设、预览与删除；支持的快捷开关可使用图案包动画。 |
-| 通知大时钟 | 横竖屏分别设置，支持原生字体、字距与时间动画控制、锁屏质感、玻璃、字内背景透出、遮罩、描边与立体光照；竖屏有回弹模糊和点击启动应用。 |
-| 文字组件与天气 | 竖屏左右两组组件，独立外观、位置、换位与点击操作；天气、日期、电量、信号及网络预设和条件模板。天气读取系统已定位城市缓存，不依赖锁屏组件是否加载。 |
-| 通知图标与堆叠 | 应用标识可跟随桌面当前图标包及系统图标外形；支持逐应用替换。同应用小堆叠与整列堆叠独立，可隐藏数量及被遮挡后卡，保留系统滑动、展开和清除操作。 |
-| 控制中心与音乐卡片 | 2×1磁贴铺满、顶部按钮显示控制、磁贴配色与渐变范围；音乐封面主色／自定义背景及过渡。统一圆角覆盖磁贴、按压层、详情小按钮和亮度／音量滑块。 |
-| 流体云展开卡片 | 纯色、原生渐变、填充透明度、媒体色跟随和颜色过渡；音乐、出行、外卖、快递、倒计时等13类业务分别控制。 |
-| 摄像头区域胶囊 | 底色、模糊、边框、跑马灯、向内光晕、封面与圆角、回弹幅度及实时音乐频谱；可常驻显示，手动收起和任务结束仍正常处理。 |
-| 锁屏与AOD | 亮屏锁屏和AOD分别设置填充、遮罩、提亮与媒体色；已适配通知白色玻璃背景、底部胶囊着色、顶部壁纸模糊和小锁隐藏。 |
-| 下拉壁纸 | 横竖屏分别设置通知中心、控制中心及经典下拉图片，支持裁剪、模糊、明暗和大时钟区域效果。此功能为实验性，尚未完整适配。 |
-| 缓存与附属优化 | 内置字体／图标资源缓存；可选Root附属模块按需优化系统界面与控制中心插件，复用有效结果，提供手动／自动规则、运行记录及网页控制中心。 |
-| 应用界面与鸣谢 | COUI／Miuix切换，10组配色、Material 3／Catppuccin、深色背景、界面字号、滚动渐隐及Android13+可选液态玻璃底栏；鸣谢墙与多主题彩蛋。 |
-| 配置与诊断 | 按功能页导入、导出、分享，保留未选页面；搜索定位与按页恢复。独立诊断页查看运行状态、结论和日志，可筛选、搜索、导出及分享报告。 |
-| 显示与动画修复 | 改进网络切换可见性、首次测量、下拉裁剪、胶囊让位、显秒恢复、网速裁切、字体缓存和大时钟测量，保留原生交互与动画。 |
+Este fork conserva el historial del proyecto original y organiza una adaptaciÃ³n al espaÃ±ol. La traducciÃ³n del cÃ³digo fuente se estÃ¡ incorporando por etapas; **no se afirma que todos los archivos estÃ©n traducidos ni que exista un APK traducido compilado y verificado por este fork**. Los cambios necesitan revisiÃ³n y pruebas en un dispositivo compatible.
 
-### 图标与字体
+Algunos identificadores internos, claves de configuraciÃ³n y marcadores de plantillas deben conservarse sin traducir para evitar incompatibilidades.
 
-图标管理位于 **其他 → 图标管理**，可导入 **v3 ZIP／未加密单卷RAR4或RAR5**，或从GitHub获取。静态素材支持透明PNG及受限VectorDrawable；动态图案只用于已适配的快捷开关。可预览所选范围，缺失或未适配的状态保留系统图案。[制作与范围规范](https://github.com/SANWU5/c17-icon-packs) · [颜色预设](docs/ICON-COLOR-PRESETS.zh-CN.md)
+## Funciones del proyecto original
 
-公开版内置原创 **C17示例库**，不附带PUI图标套装。可自行导入有权使用的v3图标包；原有PUI兼容映射和已有PUI电池样式继续保留。独立iOS27部分测试包不属于内置图库，也不代表完整iPhone界面。
+- PersonalizaciÃ³n de la barra de estado, reloj, red, seÃ±al y baterÃ­a.
+- GestiÃ³n de iconos, fuentes, colores, notificaciones y componentes de texto.
+- Ajustes del Centro de control, reproductor multimedia, Fluid Cloud y cÃ¡psula de cÃ¡mara.
+- Opciones para pantalla de bloqueo, Always-On Display y fondos del panel desplegable.
+- ImportaciÃ³n/exportaciÃ³n de configuraciones, diagnÃ³sticos y registros.
+- Funciones auxiliares opcionales de optimizaciÃ³n mediante Root.
 
-“文字字体”同样位于“其他”。七类范围为状态栏时钟、下拉页时钟、网络制式文字、网速、下拉替换文字、锁屏替换文字、通知大时钟与附文；不包含系统锁屏主时钟或普通通知正文。[字体目录与许可](docs/FONT-CATALOG.zh-CN.md)包含10种按需下载的可变字体，也支持导入TTF、OTF及TTC。
+Algunas funciones son experimentales o dependen de la ROM. Haz una copia de seguridad antes de modificar componentes del sistema.
 
-## 安装与升级
+## Descargas e instalaciÃ³n
 
-1. 从 [GitHub Releases](https://github.com/SANWU5/c17-statusbar/releases) 获取APK，更新前导出需要保留的配置。
-2. 同签名覆盖安装，在兼容的LSPosed管理器中启用模块并勾选 **SystemUI**。
-3. 重启系统界面或手机加载新代码。日常参数修改会通知系统界面，无需每次重启。
+Las versiones publicadas por el proyecto original estÃ¡n en [GitHub Releases](https://github.com/SANWU5/c17-statusbar/releases). Esas versiones **no son compilaciones de este fork** y pueden no incluir traducciÃ³n al espaÃ±ol.
 
-旧签名升级路径见 [参数与升级说明](docs/PARAMETER-UPGRADE-1.6.0.zh-CN.md)。适配主要依据ColorOS17实机，不把应用最低Android版本视为所有ROM均支持。
+El mÃ³dulo original se utiliza mediante un gestor compatible con LSPosed y requiere habilitar el mÃ³dulo para SystemUI. La compatibilidad concreta depende del dispositivo y de la ROM.
 
-- 旧v1／v2图标包、库优先级与PUI主题导入入口退役，需要在新图标管理重新选择；其他模块配置保留。
-- 普通配置文件只包含设置，不包含字体、图标或壁纸文件；换机需另行导入资源。应用界面配色、字号独立于模块配置。
-- 更新APK不会自动替换已安装的Root附属模块，请在 **关于 → 附属优化模块** 单独更新。附属模块为可选功能，不作为普通外观设置的前提。
-- 状态栏排序和下拉壁纸仍为实验性。偶发抽动、图标消失、收回抖动及不同原生材质的效果需按实际场景继续验证。
+## CompilaciÃ³n
 
-## 配置与维护
+El proyecto usa JDK 17, Gradle Wrapper y Android SDK. En Windows, abre una terminal en la raÃ­z del cÃ³digo fuente y ejecuta:
 
-配置按状态栏、通知栏、控制中心、锁屏及其他分类，支持全局搜索和按页恢复默认。滑块提供建议范围，合法手工数值在范围内直接保存；超出建议范围的数值先进入20秒确认试用，取消或超时恢复原值。统一圆角硬限制为0–30dp。
+```bat
+gradlew.bat assembleDebug
+```
 
-主页可启用安全模式，暂停修改并保留参数；**关于 → 配置管理** 可备份、分享、导入或确认删除配置，**关于 → 问题诊断** 可查看和导出日志。隐藏桌面图标位于关于页最下方，可从支持模块设置入口的LSPosed管理器重新进入并恢复。桌面默认名称为Status C17，也可在界面设置恢复旧名称。
+Una compilaciÃ³n correcta no sustituye las pruebas en un dispositivo real.
 
-## 作者与支持
+## CrÃ©ditos y licencia
 
-作者 **aiingjie** · GitHub [sanwu5](https://github.com/sanwu5) · 酷安 **konwo** · 反馈、合作和捐赠联系 **QQ 2726344450**。
+Se conservan los crÃ©ditos y la licencia del proyecto original. Consulta [LICENSE](LICENSE), [COPYRIGHT.md](COPYRIGHT.md) y [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Los recursos de terceros conservan sus propias licencias.
 
-模块及全部功能永久免费，捐赠完全自愿，不影响功能使用，请勿购买付费转售版本。收款码仅在应用内主动点击后展示。
-
-[微信收款码](docs/donation/wechat.png) · [支付宝收款码](docs/donation/alipay.jpg)
-
-## 构建与许可
-
-使用JDK17、Gradle wrapper及Android SDK37。Java保持Java8字节码，Kotlin为JVM11；应用minSdk26／targetSdk35。构建入口见 [Windows构建说明](docs/WINDOWS-BUILD.zh-CN.md) 和 [Compose构建说明](docs/COMPOSE-BUILD.zh-CN.md)。构建检查不等同全部实机视觉、帧率或耗电验收。
-
-项目软件采用 [GPL-3.0-only](LICENSE)，版权见 [COPYRIGHT.md](COPYRIGHT.md)。字体、已有PUI电池资源及第三方组件保留各自来源与权利，见 [第三方声明](THIRD_PARTY_NOTICES.md) 和 [苹方来源](FONT.md)。签名私钥、私人配置、手机原始资料与私有开发记录不随公开源码分发。
+- Proyecto original: [SANWU5/c17-statusbar](https://github.com/SANWU5/c17-statusbar).
+- La adaptaciÃ³n aquÃ­ descrita usa IA para apoyar la traducciÃ³n y requiere revisiÃ³n humana.
+- DocumentaciÃ³n original en chino: [README.zh-CN.md](README.zh-CN.md).
+- DocumentaciÃ³n original en inglÃ©s: [README.en.md](README.en.md).
+- Notas de traducciÃ³n: [TRADUCCION-ES.md](TRADUCCION-ES.md).

@@ -296,8 +296,8 @@ fun UiColorPair(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                UiColorChip("浅色背景", light, enabled, Modifier.weight(1f), onLight)
-                UiColorChip("深色背景", dark, enabled, Modifier.weight(1f), onDark)
+                UiColorChip("Fondo claro", light, enabled, Modifier.weight(1f), onLight)
+                UiColorChip("Fondo oscuro", dark, enabled, Modifier.weight(1f), onDark)
             }
         },
     )
@@ -375,7 +375,7 @@ fun UiInputDialog(
     integer: Boolean = false,
     allowNegative: Boolean = true,
     pattern: Boolean = false,
-    confirmLabelForValue: (String) -> String = { "确定" },
+    confirmLabelForValue: (String) -> String = { "Aceptar" },
     preview: ((String) -> CharSequence)? = null,
     presets: List<Pair<String, String>> = emptyList(),
     onDismiss: () -> Unit,
@@ -422,15 +422,15 @@ fun UiInputDialog(
                 if (shown.isNotEmpty()) UiPreviewLine(shown)
                 if (presets.isNotEmpty()) UiPresetChips(presets, value) { value = it; error = null }
                 if (numeric) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (allowNegative) C17TextButton(text = "正 / 负", modifier = Modifier.weight(1f), onClick = {
+                    if (allowNegative) C17TextButton(text = "Positivo / negativo", modifier = Modifier.weight(1f), onClick = {
                         value = when { value.startsWith("-") -> value.removePrefix("-"); value.startsWith("+") -> "-" + value.removePrefix("+"); else -> "-$value" }
                         error = null
                     })
-                    C17TextButton(text = if (scientific) "小数键盘" else "科学计数", modifier = Modifier.weight(1f), onClick = { scientific = !scientific })
+                    C17TextButton(text = if (scientific) "Teclado decimal" else "Notación científica", modifier = Modifier.weight(1f), onClick = { scientific = !scientific })
                 }
                 if (valueSummary.isNotEmpty()) Text(valueSummary, fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 if (description.isNotEmpty()) Text(description, fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                if (numeric && scientific) Text("科学计数示例：1.2e3 = 1200；可直接粘贴完整数值。", fontSize = 12.sp,
+                if (numeric && scientific) Text("Ejemplo de notación científica: 1.2e3 = 1200. Puedes pegar el valor completo directamente.", fontSize = 12.sp,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
             }
             UiDialogError(error)
@@ -442,11 +442,11 @@ fun UiInputDialog(
 /** One line of preview. Text that carries sketched icons (spans) is drawn by a TextView, which can place them inline. */
 @Composable
 private fun UiPreviewLine(shown: CharSequence) {
-    val error = shown.startsWith("格式有误")
+    val error = shown.startsWith("Formato incorrecto")
     val color = if (error) MiuixTheme.colorScheme.error else MiuixTheme.colorScheme.primary
     val sketched = shown is android.text.Spanned && shown.getSpans(0, shown.length, android.text.style.ReplacementSpan::class.java).isNotEmpty()
     if (!sketched) {
-        Text("预览：$shown", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = color)
+        Text("Vista previa: $shown", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = color)
         return
     }
     val argb = color.toArgb()
@@ -461,17 +461,17 @@ private fun UiPreviewLine(shown: CharSequence) {
         },
         update = { view ->
             view.setTextColor(argb)
-            view.text = android.text.SpannableStringBuilder("预览：").append(shown)
+            view.text = android.text.SpannableStringBuilder("Vista previa:").append(shown)
         },
     )
 }
 
-/** "预设": ready-made values for a field, one tap fills the input (the preview and the check still apply). */
+/** "Preajustes": ready-made values for a field, one tap fills the input (the preview and the check still apply). */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun UiPresetChips(presets: List<Pair<String, String>>, current: String, onPick: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("预设", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+        Text("Preajuste", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             presets.forEach { (format, name) ->
@@ -491,7 +491,7 @@ private fun UiPresetChips(presets: List<Pair<String, String>>, current: String, 
 fun UiConfirmDialog(
     title: String,
     summary: String,
-    confirmLabel: String = "确认",
+    confirmLabel: String = "Confirmar",
     delaySeconds: Int = 0,
     expiresAt: Long = 0,
     linkLabel: String = "",
@@ -526,7 +526,7 @@ fun UiConfirmDialog(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-                Text(summary + if (expiresAt > 0) "\n${trialRemaining} 秒后自动恢复" else "",
+                Text(summary + if (expiresAt > 0) "\nSe restaurará automáticamente en ${trialRemaining} segundos." else "",
                     fontSize = 14.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 // An outbound link keeps the dialog open: returning from the browser still shows the same choice.
                 if (onLink != null && linkLabel.isNotEmpty()) Text(linkLabel, Modifier.padding(top = 8.dp)
@@ -535,7 +535,7 @@ fun UiConfirmDialog(
             }
             UiDialogActions(
                 onDismiss = onDismiss,
-                confirmLabel = if (remaining > 0) "$confirmLabel（${remaining}秒）" else confirmLabel,
+                confirmLabel = if (remaining > 0) "$confirmLabel (${remaining} s)" else confirmLabel,
                 confirmEnabled = remaining == 0,
                 onConfirm = {
                     if (remaining == 0) onConfirm()
@@ -576,9 +576,9 @@ fun UiChoiceDialog(
                         onClick = { if (disabledReason.isEmpty()) { onChoice(value); onDismiss() } },
                     )
                 }
-                if (values.isEmpty()) Text(text = "暂无可选项")
+                if (values.isEmpty()) Text(text = "No hay opciones disponibles.")
             }
-            C17TextButton(text = "取消", onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+            C17TextButton(text = "Cancelar", onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -602,7 +602,7 @@ fun UiColorDialog(
     val confirm = {
         val parsed = parseArgb(hex)
         if (parsed == null) {
-            error = "请输入 #RRGGBB 或 #AARRGGBB 格式的颜色"
+            error = "Introduce un color en formato #RRGGBB o #AARRGGBB."
         } else {
             onConfirm(parsed, customAlpha)
             onDismiss()
@@ -620,8 +620,8 @@ fun UiColorDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 C17SwitchPreference(
-                    title = "自定义透明度",
-                    summary = "关闭后跟随系统透明度",
+                    title = "Transparencia personalizada",
+                    summary = "Si se desactiva, seguirá la transparencia del sistema.",
                     checked = customAlpha,
                     onCheckedChange = {
                         customAlpha = it
@@ -648,7 +648,7 @@ fun UiColorDialog(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = "颜色值",
+                    label = "Valor del color",
                     isError = error != null,
                     errorMessage = error,
                     singleLine = true,
@@ -676,7 +676,7 @@ private fun UiDialogError(error: String?) {
 @Composable
 private fun UiDialogActions(
     onDismiss: () -> Unit,
-    confirmLabel: String = "保存",
+    confirmLabel: String = "Guardar",
     confirmEnabled: Boolean = true,
     onConfirm: () -> Unit,
 ) {
@@ -684,7 +684,7 @@ private fun UiDialogActions(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        C17TextButton(text = "取消", onClick = onDismiss, modifier = Modifier.weight(1f))
+        C17TextButton(text = "Cancelar", onClick = onDismiss, modifier = Modifier.weight(1f))
         C17TextButton(
             text = confirmLabel,
             onClick = onConfirm,
@@ -717,7 +717,7 @@ fun C17Navigation(page: Int, safeInsets: PaddingValues = PaddingValues(), onPage
     if (LocalC17Coui.current) {
         val density = LocalDensity.current
         val measurer = rememberTextMeasurer()
-        val labels = listOf("主页", "配置", "关于")
+        val labels = listOf("Inicio", "Configuración", "Acerca de")
         val style = MiuixTheme.textStyles.main.copy(
             fontSize = CouiNavigationBarDefaults.LabelFontSize, fontWeight = FontWeight.Medium)
         val labelHeight = remember(style, density.fontScale, density.density, measurer) {
@@ -743,7 +743,7 @@ fun C17Navigation(page: Int, safeInsets: PaddingValues = PaddingValues(), onPage
         }
         return
     }
-    val labels = arrayOf("主页", "配置", "关于")
+    val labels = arrayOf("Inicio", "Configuración", "Acerca de")
     val icons = arrayOf(MiuixIcons.Home, MiuixIcons.Settings, MiuixIcons.Info)
     Column(
         modifier = Modifier.fillMaxWidth().background(MiuixTheme.colorScheme.surfaceContainer),

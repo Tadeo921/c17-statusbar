@@ -65,15 +65,15 @@ public final class StatusBarLayoutSettings {
         return key;
     }
     public static String label(String token) {
-        if (CLOCK.equals(token)) return "时间";
-        if (NOTIFICATION.equals(token)) return "通知图标";
-        if (CARRIER.equals(token)) return "运营商";
-        if (SPEED.equals(token)) return "网速";
+        if (CLOCK.equals(token)) return "Hora";
+        if (NOTIFICATION.equals(token)) return "Iconos de notificación";
+        if (CARRIER.equals(token)) return "Operador";
+        if (SPEED.equals(token)) return "Velocidad de red";
         if (WIFI.equals(token)) return "Wi-Fi";
-        if (MOBILE.equals(token)) return "蜂窝信号";
-        if (BATTERY.equals(token)) return "电池";
-        if (SYSTEM.equals(token)) return "系统提示";
-        if (LABEL.equals(token)) return "网络制式";
+        if (MOBILE.equals(token)) return "Señal móvil";
+        if (BATTERY.equals(token)) return "Batería";
+        if (SYSTEM.equals(token)) return "Avisos del sistema";
+        if (LABEL.equals(token)) return "Tipo de red";
         throw new IllegalArgumentException("Unknown status-bar element");
     }
     /** The saved master controls region/order only; margins have no additional switch. */

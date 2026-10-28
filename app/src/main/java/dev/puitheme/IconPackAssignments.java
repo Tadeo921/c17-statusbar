@@ -17,9 +17,9 @@ public final class IconPackAssignments {
     public static final class Assignment {
         public final String targetRole,packId,sourceRole;
         public Assignment(String targetRole,String packId,String sourceRole){
-            if(!validTarget(targetRole))throw new IllegalArgumentException("目标系统图标无效");
-            if(!IconPackManifest.validRevision(packId))throw new IllegalArgumentException("图标来源库无效");
-            if(!IconPackManifest.validKey(sourceRole))throw new IllegalArgumentException("来源图案标识无效");
+            if(!validTarget(targetRole))throw new IllegalArgumentException("El icono de destino del sistema no es válido.");
+            if(!IconPackManifest.validRevision(packId))throw new IllegalArgumentException("La biblioteca de origen del icono no es válida.");
+            if(!IconPackManifest.validKey(sourceRole))throw new IllegalArgumentException("El identificador del diseño de origen no es válido.");
             this.targetRole=targetRole;this.packId=packId;this.sourceRole=sourceRole;
         }
     }
@@ -46,51 +46,51 @@ public final class IconPackAssignments {
         return Collections.unmodifiableList(roles);
     }
     public static String unavailableTargetReason(String role){
-        if("wifi.none".equals(role))return "当前系统在 Wi-Fi 未连接时隐藏图标，此项暂不参与绘制";
+        if("wifi.none".equals(role))return "El sistema oculta el icono cuando el Wi-Fi no está conectado; este elemento no se dibuja por ahora.";
         if(role!=null&&role.startsWith("hint.")&&role.endsWith(".off")&&!"hint.bluetooth.off".equals(role))
-            return "当前仅替换这个图标的显示状态，此项暂不参与绘制";
+            return "Por ahora solo se reemplaza el estado visual de este icono; este elemento no se dibuja.";
         return "";
     }
     public static String label(String role){
-        if(role==null)return "未选择图标";
+        if(role==null)return "No se ha seleccionado ningún icono.";
         if(role.startsWith("hint.")){
             String slot=role.substring(5),state="";
-            if(slot.endsWith(".on")){slot=slot.substring(0,slot.length()-3);state=" · 开启";}
-            else if(slot.endsWith(".off")){slot=slot.substring(0,slot.length()-4);state=" · 关闭";}
-            if("bluetooth".equals(slot)&&!state.isEmpty())state=role.endsWith(".on")?" · 已连接":" · 未连接";
+            if(slot.endsWith(".on")){slot=slot.substring(0,slot.length()-3);state=" · Activado";}
+            else if(slot.endsWith(".off")){slot=slot.substring(0,slot.length()-4);state=" · Desactivado";}
+            if("bluetooth".equals(slot)&&!state.isEmpty())state=role.endsWith(".on")?" · Conectado":" · Desconectado";
             return NativeStatusIcons.priorityLabel(slot)+state;
         }
-        if(role.startsWith("wifi."))return "Wi-Fi · "+("none".equals(role.substring(5))?"未连接":"信号 "+role.substring(5));
-        if(role.startsWith("cellular."))return "蜂窝信号 · "+("none".equals(role.substring(9))?"未连接":"信号 "+role.substring(9));
-        if(role.startsWith("battery.charging."))return "电池充电 · "+role.substring(17)+"%";
-        if(role.startsWith("battery."))return "电池 · "+role.substring(8)+"%";
+        if(role.startsWith("wifi."))return "Wi-Fi · "+("none".equals(role.substring(5))?"Desconectado":"señal "+role.substring(5));
+        if(role.startsWith("cellular."))return "Señal móvil · "+("none".equals(role.substring(9))?"Desconectado":"señal "+role.substring(9));
+        if(role.startsWith("battery.charging."))return "Batería cargando · "+role.substring(17)+"%";
+        if(role.startsWith("battery."))return "Batería · "+role.substring(8)+"%";
         return role;
     }
     public static List<Assignment> rules(String json)throws IOException{
-        if(json==null||json.length()>MAX_JSON_LENGTH)throw new IOException("逐项图标设置过长");
+        if(json==null||json.length()>MAX_JSON_LENGTH)throw new IOException("La configuración individual de iconos es demasiado larga.");
         try{
-            JSONArray array=new JSONArray(json);if(array.length()>MAX_ASSIGNMENTS)throw new IOException("最多设置128项图标");
+            JSONArray array=new JSONArray(json);if(array.length()>MAX_ASSIGNMENTS)throw new IOException("Puedes configurar hasta 128 iconos.");
             List<Assignment> result=new ArrayList<>();Set<String> targets=new HashSet<>();
             for(int i=0;i<array.length();i++){
-                Object value=array.get(i);if(!(value instanceof JSONObject))throw new IOException("逐项图标设置格式错误");
+                Object value=array.get(i);if(!(value instanceof JSONObject))throw new IOException("El formato de la configuración individual de iconos no es válido.");
                 JSONObject item=(JSONObject)value;Object target=item.opt("targetRole"),pack=item.opt("packId"),source=item.opt("sourceRole");
-                if(item.length()!=3||!(target instanceof String)||!(pack instanceof String)||!(source instanceof String))throw new IOException("逐项图标设置字段无效");
+                if(item.length()!=3||!(target instanceof String)||!(pack instanceof String)||!(source instanceof String))throw new IOException("Hay un campo no válido en la configuración individual de iconos.");
                 Assignment assignment=new Assignment((String)target,(String)pack,(String)source);
-                if(!targets.add(assignment.targetRole))throw new IOException("同一目标图标只能设置一次");
+                if(!targets.add(assignment.targetRole))throw new IOException("Cada icono de destino solo se puede configurar una vez.");
                 result.add(assignment);
             }
             return Collections.unmodifiableList(result);
-        }catch(JSONException|IllegalArgumentException malformed){throw new IOException("逐项图标设置无效："+malformed.getMessage(),malformed);}
+        }catch(JSONException|IllegalArgumentException malformed){throw new IOException("La configuración individual de iconos no es válida:"+malformed.getMessage(),malformed);}
     }
     public static String validationError(String json){try{rules(json);return null;}catch(IOException invalid){return invalid.getMessage();}}
     public static String encode(List<Assignment> assignments)throws IOException{
-        if(assignments==null||assignments.size()>MAX_ASSIGNMENTS)throw new IOException("最多设置128项图标");
+        if(assignments==null||assignments.size()>MAX_ASSIGNMENTS)throw new IOException("Puedes configurar hasta 128 iconos.");
         try{
             JSONArray array=new JSONArray();
-            for(Assignment assignment:assignments){if(assignment==null)throw new IOException("逐项图标设置无效");
+            for(Assignment assignment:assignments){if(assignment==null)throw new IOException("La configuración individual de iconos no es válida.");
                 array.put(new JSONObject().put("targetRole",assignment.targetRole).put("packId",assignment.packId).put("sourceRole",assignment.sourceRole));}
             String json=array.toString();rules(json);return json;
-        }catch(JSONException malformed){throw new IOException("逐项图标设置格式错误",malformed);}
+        }catch(JSONException malformed){throw new IOException("El formato de la configuración individual de iconos no es válido.",malformed);}
     }
     public static String put(String json,String targetRole,String packId,String sourceRole)throws IOException{
         Assignment replacement=new Assignment(targetRole,packId,sourceRole);List<Assignment> current=new ArrayList<>(rules(json));

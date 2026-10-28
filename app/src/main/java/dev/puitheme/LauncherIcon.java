@@ -14,7 +14,7 @@ import android.content.pm.PackageManager;
 public final class LauncherIcon {
     public static final String LAUNCHER_ALIAS="dev.puitheme.MainActivity";
     public static final String LEGACY_ALIAS="dev.puitheme.LegacyLauncher";
-    public static final String LEGACY_NAME="更好的C17状态栏", NAME="Status C17";
+    public static final String LEGACY_NAME="C17 Statusbar mejorado", NAME="Status C17";
     private static final String PREFS="launcher_name", LEGACY_KEY="legacy";
     public static final String SETTINGS_ALIAS="dev.puitheme.SettingsActivity";
     public static final String SETTINGS_CATEGORY="de.robv.android.xposed.category.MODULE_SETTINGS";
@@ -40,7 +40,7 @@ public final class LauncherIcon {
             boolean current=enabled(manager,launcher,info),old=enabled(manager,legacy,legacyInfo);
             boolean hidden=!current&&!old;
             return new Result(true,hidden,old||hidden&&chosenLegacy(context),"");
-        }catch(RuntimeException | PackageManager.NameNotFoundException unavailable){return new Result(false,false,"无法读取桌面图标状态，请重试");}
+        }catch(RuntimeException | PackageManager.NameNotFoundException unavailable){return new Result(false,false,"No se pudo leer el estado del icono del lanzador. Inténtalo de nuevo.");}
     }
     /** The name the settings page shows for this app: the chosen launcher name. */
     public static String displayName(Context context) {
@@ -57,8 +57,8 @@ public final class LauncherIcon {
      * always an icon; a hidden icon stays hidden and only remembers the choice. */
     public static synchronized Result setLegacyName(Context context,boolean legacy) {
         Result before=read(context);if(!before.success)return before;
-        if(before.hidden){remember(context,legacy);return new Result(true,true,legacy,"已记住名称，显示桌面图标时使用“"+(legacy?LEGACY_NAME:NAME)+"”");}
-        if(before.legacyName==legacy){remember(context,legacy);return new Result(true,false,legacy,"桌面名称已是“"+(legacy?LEGACY_NAME:NAME)+"”");}
+        if(before.hidden){remember(context,legacy);return new Result(true,true,legacy,"Nombre guardado; se usará al mostrar el icono: «"+(legacy?LEGACY_NAME:NAME)+"»");}
+        if(before.legacyName==legacy){remember(context,legacy);return new Result(true,false,legacy,"El nombre del lanzador ya es «"+(legacy?LEGACY_NAME:NAME)+"»");}
         try {
             PackageManager manager=context.getPackageManager();
             manager.setComponentEnabledSetting(new ComponentName(ModuleDiagnostics.PACKAGE_NAME,legacy?LEGACY_ALIAS:LAUNCHER_ALIAS),
@@ -66,12 +66,12 @@ public final class LauncherIcon {
             manager.setComponentEnabledSetting(new ComponentName(ModuleDiagnostics.PACKAGE_NAME,legacy?LAUNCHER_ALIAS:LEGACY_ALIAS),
                     PackageManager.COMPONENT_ENABLED_STATE_DISABLED,PackageManager.DONT_KILL_APP);
             Result after=read(context);
-            if(!after.success||after.legacyName!=legacy||after.hidden)return new Result(false,after.hidden,after.legacyName,"桌面名称尚未确认，请重试");
+            if(!after.success||after.legacyName!=legacy||after.hidden)return new Result(false,after.hidden,after.legacyName,"No se ha confirmado el nombre del lanzador. Inténtalo de nuevo.");
             // Remembered only once the launcher shows it, so a failed switch never comes back later when the icon is shown again.
             remember(context,legacy);
-            return new Result(true,false,legacy,"桌面名称已改为“"+(legacy?LEGACY_NAME:NAME)+"”，启动器可能稍后刷新");
+            return new Result(true,false,legacy,"El nombre del lanzador se cambió a «"+(legacy?LEGACY_NAME:NAME)+"». Es posible que el lanzador tarde en actualizarse.");
         }catch(RuntimeException unavailable){
-            Result after=read(context);return new Result(false,after.hidden,after.legacyName,"无法更改桌面名称，请重试");
+            Result after=read(context);return new Result(false,after.hidden,after.legacyName,"No se pudo cambiar el nombre del lanzador. Inténtalo de nuevo.");
         }
     }
     public static boolean isHidden(Context context) {
@@ -86,9 +86,9 @@ public final class LauncherIcon {
                 ComponentName settings=new ComponentName(ModuleDiagnostics.PACKAGE_NAME,SETTINGS_ALIAS);
                 ActivityInfo info=manager.getActivityInfo(settings,PackageManager.MATCH_DISABLED_COMPONENTS);
                 if(!info.exported||!ACTIVITY.equals(info.targetActivity)||!enabled(manager,settings,info))
-                    return new Result(false,before.hidden,"模块设置入口不可用，未更改桌面图标");
+                    return new Result(false,before.hidden,"El acceso a los ajustes del módulo no está disponible; el icono no se modificó.");
             }
-            if(before.hidden==hidden)return new Result(true,hidden,before.legacyName,hidden?"桌面图标已隐藏":"桌面图标已显示");
+            if(before.hidden==hidden)return new Result(true,hidden,before.legacyName,hidden?"El icono del lanzador está oculto.":"El icono del lanzador está visible.");
             boolean legacy=before.legacyName;
             if(hidden) {
                 for(String alias:new String[]{LAUNCHER_ALIAS,LEGACY_ALIAS})
@@ -97,10 +97,10 @@ public final class LauncherIcon {
             } else manager.setComponentEnabledSetting(new ComponentName(ModuleDiagnostics.PACKAGE_NAME,legacy?LEGACY_ALIAS:LAUNCHER_ALIAS),
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED,PackageManager.DONT_KILL_APP);
             Result after=read(context);
-            if(!after.success||after.hidden!=hidden)return new Result(false,after.success?after.hidden:before.hidden,"桌面图标状态尚未确认，请重试");
-            return new Result(true,hidden,after.legacyName,hidden?"桌面图标已隐藏，可从 LSPosed 的模块设置恢复":"桌面图标已恢复，启动器可能稍后刷新");
+            if(!after.success||after.hidden!=hidden)return new Result(false,after.success?after.hidden:before.hidden,"No se ha confirmado el estado del icono del lanzador. Inténtalo de nuevo.");
+            return new Result(true,hidden,after.legacyName,hidden?"El icono está oculto. Puedes recuperarlo desde los ajustes del módulo en LSPosed.":"El icono se restauró. Es posible que el lanzador tarde en actualizarse.");
         }catch(RuntimeException | PackageManager.NameNotFoundException unavailable){
-            Result after=read(context);return new Result(false,after.success?after.hidden:before.hidden,"无法更改桌面图标，请重试");
+            Result after=read(context);return new Result(false,after.success?after.hidden:before.hidden,"No se pudo cambiar el icono del lanzador. Inténtalo de nuevo.");
         }
     }
     private static boolean enabled(PackageManager manager,ComponentName component,ActivityInfo info) {

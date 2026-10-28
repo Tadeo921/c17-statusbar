@@ -28,7 +28,7 @@ import java.util.zip.ZipOutputStream;
  */
 public final class RootPerformanceModule {
     public static final String ID = "c17_performance";
-    public static final String DISPLAY_NAME = "Status C17 附属模块";
+    public static final String DISPLAY_NAME = "Módulo complementario de Status C17";
     public static final long VERSION_CODE = 8L;
     static final String LEGACY_ID = "c17_resident_cache";
     private static final String[] ASSETS = {"module.prop", "skip_mount", "customize.sh", "service.sh", "action.sh", "uninstall.sh", "common.sh", "webui.sh",
@@ -61,67 +61,67 @@ public final class RootPerformanceModule {
         public final boolean runtimeAot;
         /** Activation confirms this installed script ran this boot; optimization can still wait or fail. */
         public String homeStatus() {
-            if (!root) return "待查询";
-            if (!installed && !pending) return "未安装";
+            if (!root) return "Pendiente de consulta";
+            if (!installed && !pending) return "No instalado";
             boolean active = installed && !pending && !disabled && !remove && !outdated && currentBoot
                     && recordVersionCode == moduleVersionCode && recordVersionCode >= VERSION_CODE
                     && ("boot".equals(trigger) || "auto".equals(trigger) || "run".equals(trigger))
                     && !"unknown".equals(lastState);
-            if (active && "running".equals(lastState)) return "优化中";
-            return active ? "已激活" : "已安装";
+            if (active && "running".equals(lastState)) return "Optimizando";
+            return active ? "Activado" : "Instalado";
         }
         public String verificationMessage() {
-            if (recordVersionCode < VERSION_CODE) return "旧记录未核对当前系统编译状态";
-            if (!currentBoot) return "历史核对记录：" + verified + "/" + packages + " 个组件，本次开机尚未确认";
-            if (recordVersionCode != moduleVersionCode) return "旧模块的核对记录，新版本尚未确认";
-            if ("verified".equals(verification)) return "已核对系统当前编译状态：" + verified + "/" + packages + " 个组件";
-            if ("partial".equals(verification)) return "已核对 " + verified + "/" + packages + " 个组件，其余尚未确认";
-            return "系统当前编译状态尚未确认";
+            if (recordVersionCode < VERSION_CODE) return "El registro antiguo no se ha contrastado con el estado de compilación actual";
+            if (!currentBoot) return "Registro de verificación histórico: " + verified + "/" + packages + " componentes; no se ha confirmado en este arranque";
+            if (recordVersionCode != moduleVersionCode) return "Registro de verificación del módulo anterior; la versión nueva aún no está confirmada";
+            if ("verified".equals(verification)) return "Estado de compilación actual del sistema verificado: " + verified + "/" + packages + " componentes";
+            if ("partial".equals(verification)) return "Verificados " + verified + "/" + packages + " componentes; el resto aún no está confirmado";
+            return "El estado de compilación actual del sistema aún no está confirmado";
         }
         public String errorMessage() {
             switch (error) {
                 case "none": return "";
-                case "compile_failed": return "系统没有完成预编译（存储不足或系统正忙），下次开机会重试";
-                case "no_package": return "没有找到系统界面";
-                case "boot_timeout": return "等待系统启动完成超时，下次开机会重试";
-                case "boot_incomplete": return "系统启动尚未完成，自动任务已延期";
-                case "busy": return "上一次预编译仍在进行";
-                case "device_interactive": return "自动优化等待息屏或连续无操作 10 分钟，当前条件未满足";
-                case "idle_unknown": return "无法可靠确认无操作时长，等待息屏后再优化";
-                case "device_hot": return "该次优化温度条件未满足；当前自动规则为电池温度低于 55℃（55℃及以上延期），手动不受温度限制";
-                case "battery_low": return "该次优化电量条件未满足；当前自动规则为电量高于 15%（15%及以下延期），充电与否不影响，手动不受电量限制";
-                case "power_unknown": return "该次优化无法确认电池电量；当前仅自动优化要求电量高于 15%，手动不检查电量";
-                case "thermal_unknown": return "该次优化无法确认温度；当前自动只检查电池温度，不检查 Thermal Service，手动不检查温度";
-                case "screen_unknown": return "自动优化暂时无法确认息屏状态，已延期";
-                case "timeout_unavailable": return "系统不支持可靠的编译超时控制，本次未开始执行";
-                case "art_cancel_unavailable": return "系统不支持可靠取消编译任务，本次未开始执行";
-                case "art_unverified": return "无法确认当前编译结果是否有效，请刷新运行记录";
-                case "compile_timeout": return "编译等待超时，任务已请求取消，下次开机会重试";
-                case "compile_cancel_failed": return "未能确认上次系统编译任务已结束，本次开机暂停新任务；重启后重新检查";
-                case "interrupted": return "操作已中断，已尝试取消系统任务，请查看运行记录";
-                case "restore_failed": return "恢复系统编译方式失败，失败记录已保留，请查看运行记录";
-                case "restore_timeout": return "恢复等待超时，失败记录已保留，请查看运行记录";
-                case "restore_cancel_failed": return "未能确认系统恢复任务已取消，失败记录已保留";
-                case "fingerprint_write_failed": case "status_write_failed": return "无法写入运行记录";
-                case "path_link_rejected": case "data_path_rejected": return "模块目录存在异常链接，操作已停止";
-                case "migration_failed": return "旧模块记录迁移未完成，已有记录已保留";
-                case "module_id_rejected": return "模块身份不符，操作已停止";
-                case "module_path_rejected": return "模块安装位置不符，操作已停止";
-                case "module_version_rejected": return "模块版本记录异常，操作已停止";
-                case "mode_rejected": return "运行模式不受支持，操作已停止";
-                case "root_required": return "未获得 Root 权限，操作未执行";
-                case "module_inactive": return "附属模块已停用或待卸载，优化未执行";
-                case "data_create_failed": return "无法创建模块运行记录目录";
-                case "unexpected_directory": return "卸载发现异常目录，记录已保留，请查看运行记录";
-                case "uninstall_failed": return "卸载清理未完成，记录已保留，请查看运行记录";
-                case "uninstall_incomplete": return "卸载仍有残留记录，请查看运行记录";
-                default: return "部分步骤未完成，请查看运行记录后重试";
+                case "compile_failed": return "El sistema no completó la precompilación (puede faltar almacenamiento o estar ocupado); se volverá a intentar en el próximo arranque";
+                case "no_package": return "No se encontró la interfaz del sistema";
+                case "boot_timeout": return "Se agotó el tiempo de espera del inicio del sistema; se volverá a intentar en el próximo arranque";
+                case "boot_incomplete": return "El inicio del sistema aún no terminó; la tarea automática se aplazó";
+                case "busy": return "La precompilación anterior sigue en curso";
+                case "device_interactive": return "La optimización automática espera a que la pantalla esté apagada o no haya actividad durante 10 minutos; todavía no se cumplen las condiciones";
+                case "idle_unknown": return "No se pudo confirmar de forma fiable el tiempo de inactividad; se esperará a que se apague la pantalla";
+                case "device_hot": return "No se cumplió la condición de temperatura: la regla automática exige una temperatura de batería inferior a 55 °C (se aplaza a partir de 55 °C); la optimización manual no tiene este límite";
+                case "battery_low": return "No se cumplió la condición de batería: la regla automática exige más del 15 % (se aplaza al 15 % o menos), tanto si está cargando como si no; la optimización manual no tiene este límite";
+                case "power_unknown": return "No se pudo comprobar la carga de la batería; solo la optimización automática exige más del 15 %, la manual no comprueba este valor";
+                case "thermal_unknown": return "No se pudo comprobar la temperatura; la optimización automática solo comprueba la temperatura de la batería, no Thermal Service, y la manual no la comprueba";
+                case "screen_unknown": return "No se pudo comprobar si la pantalla está apagada; la optimización automática se aplazó";
+                case "timeout_unavailable": return "El sistema no admite un control fiable del tiempo límite de compilación; esta tarea no se inició";
+                case "art_cancel_unavailable": return "El sistema no permite cancelar tareas de compilación de forma fiable; esta tarea no se inició";
+                case "art_unverified": return "No se pudo confirmar si el resultado de compilación actual es válido; actualiza el registro de ejecución";
+                case "compile_timeout": return "Se agotó el tiempo de espera de la compilación; se solicitó cancelar la tarea y se volverá a intentar en el próximo arranque";
+                case "compile_cancel_failed": return "No se pudo confirmar que la compilación anterior del sistema haya terminado; se suspenden nuevas tareas en este arranque y se volverá a comprobar tras reiniciar";
+                case "interrupted": return "La operación se interrumpió; se intentó cancelar la tarea del sistema. Consulta el registro de ejecución";
+                case "restore_failed": return "No se pudo restaurar el modo de compilación del sistema; se conservó el registro del error. Consulta el registro de ejecución";
+                case "restore_timeout": return "Se agotó el tiempo de espera al restaurar el sistema; se conservó el registro del error. Consulta el registro de ejecución";
+                case "restore_cancel_failed": return "No se pudo confirmar la cancelación de la tarea de restauración del sistema; se conservó el registro del error";
+                case "fingerprint_write_failed": case "status_write_failed": return "No se pudo escribir el registro de ejecución";
+                case "path_link_rejected": case "data_path_rejected": return "Se detectó un enlace anómalo en la carpeta del módulo; se detuvo la operación";
+                case "migration_failed": return "No se completó la migración de los registros del módulo anterior; se conservaron los registros existentes";
+                case "module_id_rejected": return "La identidad del módulo no coincide; se detuvo la operación";
+                case "module_path_rejected": return "La ubicación de instalación del módulo no coincide; se detuvo la operación";
+                case "module_version_rejected": return "El registro de versión del módulo es anómalo; se detuvo la operación";
+                case "mode_rejected": return "El modo de ejecución no es compatible; se detuvo la operación";
+                case "root_required": return "No se concedieron permisos Root; no se ejecutó la operación";
+                case "module_inactive": return "El módulo complementario está desactivado o pendiente de desinstalación; no se ejecutó la optimización";
+                case "data_create_failed": return "No se pudo crear la carpeta de registros del módulo";
+                case "unexpected_directory": return "La desinstalación detectó una carpeta anómala; se conservaron los registros. Consulta el registro de ejecución";
+                case "uninstall_failed": return "La limpieza de la desinstalación no se completó; se conservaron los registros. Consulta el registro de ejecución";
+                case "uninstall_incomplete": return "Quedan registros residuales tras la desinstalación. Consulta el registro de ejecución";
+                default: return "Algunos pasos no se completaron. Consulta el registro de ejecución e inténtalo de nuevo";
             }
         }
         Snapshot(Map<String, String> fields, boolean root) {
             this.root = root;
             String found = fields.get("manager");
-            manager = "KernelSU".equals(found) || "Magisk".equals(found) || "APatch".equals(found) ? found : "未识别";
+            manager = "KernelSU".equals(found) || "Magisk".equals(found) || "APatch".equals(found) ? found : "No reconocido";
             installed = "1".equals(fields.get("installed")); pending = "1".equals(fields.get("pending"));
             disabled = "1".equals(fields.get("disabled")); remove = "1".equals(fields.get("remove"));
             legacy = "1".equals(fields.get("legacy"));
@@ -144,7 +144,7 @@ public final class RootPerformanceModule {
             String scheduling = fields.get("last_priority");
             priority = "background".equals(scheduling) || "compatibility".equals(scheduling) ? scheduling : "unknown";
             String version = fields.get("module_version");
-            moduleVersion = version != null && version.matches("[a-zA-Z0-9._+-]{1,64}") ? version : "未知";
+            moduleVersion = version != null && version.matches("[a-zA-Z0-9._+-]{1,64}") ? version : "Desconocido";
             outdated = (installed || pending) && moduleVersionCode < VERSION_CODE;
             bootUUID = uuid(fields.get("boot")); recordBoot = uuid(fields.get("last_boot"));
             currentBoot = !bootUUID.isEmpty() && bootUUID.equals(recordBoot);
@@ -174,12 +174,12 @@ public final class RootPerformanceModule {
         }
         public String diagnosticMessage() {
             switch (diagnostic) {
-                case "uuid_missing": return "系统没有提供可跟踪的任务编号";
-                case "cancel_pending": return "系统收到取消请求，但尚未确认任务退出";
-                case "cancel_unrecognized": return "系统取消返回不符合已核验协议";
-                case "final_unrecognized": return "系统最终结果缺失或无法识别";
-                case "active_unknown": return "存在未确认任务，已暂停新任务";
-                case "client_failed": return "系统包管理器暂时没有应答，已自动重试，未留下需要等待的任务";
+                case "uuid_missing": return "El sistema no proporcionó un identificador de tarea que se pueda rastrear";
+                case "cancel_pending": return "El sistema recibió la solicitud de cancelación, pero aún no confirmó que la tarea haya terminado";
+                case "cancel_unrecognized": return "La respuesta de cancelación del sistema no coincide con el protocolo verificado";
+                case "final_unrecognized": return "Falta el resultado final del sistema o no se pudo reconocer";
+                case "active_unknown": return "Hay una tarea sin confirmar; se suspendieron las nuevas tareas";
+                case "client_failed": return "El gestor de paquetes del sistema no respondió temporalmente; se reintentó automáticamente y no quedó ninguna tarea pendiente de espera";
                 default: return "";
             }
         }
@@ -218,13 +218,13 @@ public final class RootPerformanceModule {
     public static Action activeAction() { return BUSY.get() ? activeAction : null; }
     /** Pure home presentation policy; a busy install/remove is never mistaken for compilation. */
     public static String homeStatus(Snapshot snapshot, boolean writeBusy, boolean error, Action action) {
-        if (writeBusy && action != Action.RUN && action != Action.AUTOMATIC) return "处理中";
-        if (error || snapshot == null || !snapshot.root) return "待查询";
-        if (snapshot.remove) return "待卸载";
-        if (snapshot.disabled) return "已停用";
-        if (snapshot.pending) return "待重启";
-        if (snapshot.outdated) return "待更新";
-        if (writeBusy && (action == Action.RUN || action == Action.AUTOMATIC) && snapshot.installed) return "优化中";
+        if (writeBusy && action != Action.RUN && action != Action.AUTOMATIC) return "En curso";
+        if (error || snapshot == null || !snapshot.root) return "Pendiente de consulta";
+        if (snapshot.remove) return "Pendiente de desinstalación";
+        if (snapshot.disabled) return "Desactivado";
+        if (snapshot.pending) return "Pendiente de reinicio";
+        if (snapshot.outdated) return "Pendiente de actualización";
+        if (writeBusy && (action == Action.RUN || action == Action.AUTOMATIC) && snapshot.installed) return "Optimizando";
         return snapshot.homeStatus();
     }
     public static Subscription observe(Callback callback) {
@@ -243,7 +243,7 @@ public final class RootPerformanceModule {
         final Context context = application == null ? host : application;
         Handler main = new Handler(Looper.getMainLooper());
         if (!BUSY.compareAndSet(false, true)) {
-            main.post(() -> { if (!request.detached) callback.completed(new Result(false, "已有模块操作正在执行，请稍后刷新状态。", latest == null ? null : latest.snapshot)); });
+            main.post(() -> { if (!request.detached) callback.completed(new Result(false, "Ya hay una operación del módulo en curso; actualiza el estado más tarde.", latest == null ? null : latest.snapshot)); });
             return request;
         }
         activeAction = action;
@@ -254,7 +254,7 @@ public final class RootPerformanceModule {
                 if (action == Action.INSTALL) zip = packageAssets(context);
                 result = run(command(action, zip == null ? null : zip.getCanonicalPath()), action);
             } catch (IOException | RuntimeException failure) {
-                result = new Result(false, "无法完成模块操作，请检查 Root 授权后刷新真实状态。", latest == null ? null : latest.snapshot);
+                result = new Result(false, "No se pudo completar la operación del módulo; comprueba la autorización Root y actualiza el estado.", latest == null ? null : latest.snapshot);
             } finally {
                 if (zip != null && !zip.delete()) zip.deleteOnExit();
             }
@@ -392,16 +392,16 @@ public final class RootPerformanceModule {
             }, "C17ModuleOutput"); reader.setDaemon(true); reader.start();
             if (!process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
-                return new Result(false, "Root 操作等待超时，完成状态尚未确认；请在授权后刷新状态。", null);
+                return new Result(false, "Se agotó el tiempo de espera de la operación Root; el resultado aún no está confirmado. Autoriza el acceso y actualiza el estado.", null);
             }
             reader.join(1000L);
             return parse(process.exitValue(), output.text(), action);
         } catch (IOException missingRoot) {
-            return new Result(false, "未获得 Root 权限，请在 Root 管理器中允许本应用。", null);
+            return new Result(false, "No se concedieron permisos Root; permite esta aplicación en el administrador Root.", null);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             if (process != null) process.destroyForcibly();
-            return new Result(false, "操作结果尚未确认，请刷新状态。", null);
+            return new Result(false, "El resultado de la operación aún no está confirmado; actualiza el estado.", null);
         } finally {
             if (process != null) {
                 try { process.getInputStream().close(); } catch (IOException ignored) { }
@@ -444,40 +444,40 @@ public final class RootPerformanceModule {
         Snapshot snapshot = complete ? new Snapshot(fields, true) : null;
         boolean success = exit == 0 && complete && done;
         String message = success ? action == Action.CHECK ? checkMessage(snapshot)
-                : action == Action.REMOVE ? "已请求卸载，重启后尝试恢复系统编译方式并移除；是否恢复成功请以运行记录为准。"
-                : action == Action.INSTALL ? "安装已提交，已自动开始检查；适宜时只编译需要优化的组件，延期与完成结果会记录。无需手动重启系统界面，已有进程在自然重新加载时使用新编译结果。"
-                : action == Action.RUN ? "手动优化已提交，立即检查并按需编译，不受屏幕、充电、电量或温度限制；仍保留超时、可靠取消与防重叠。完成或失败后更新记录，无需手动重启系统界面。"
-                : action == Action.AUTOMATIC ? "已提交按需检查；仅在需要编译且息屏或连续无操作 10 分钟时执行。"
-                : action == Action.ENABLE ? "已启用并自动检查编译状态，后续开机也会按设备条件运行。" : "已停用，开机不再预编译；已完成的预编译由系统管理。"
-                : exit == 21 ? "未获得 Root 权限，请在管理器中允许本应用。" : exit == 20 ? "模块路径存在异常，操作已停止。"
-                : exit == 25 ? "未找到支持的 Root 管理器命令，请先安装 KernelSU、Magisk 或 APatch。"
-                : exit == 26 ? "没有找到附属模块，请先安装或更新模块。" : exit == 27 ? "模块已停用或待卸载，无法立即运行。"
-                : "操作未完成，请检查最新运行记录并刷新状态。";
+                : action == Action.REMOVE ? "Se solicitó la desinstalación. Tras reiniciar, se intentará restaurar el modo de compilación del sistema y eliminar el módulo; consulta el registro para confirmar el resultado."
+                : action == Action.INSTALL ? "La instalación se inició y la comprobación comenzó automáticamente. Cuando las condiciones sean adecuadas, solo se compilarán los componentes que lo necesiten; se registrarán los aplazamientos y resultados. No hace falta reiniciar manualmente SystemUI: los procesos existentes usarán los resultados al recargarse de forma natural."
+                : action == Action.RUN ? "Se inició la optimización manual. Se comprobará el estado y se compilará solo lo necesario, sin restricciones de pantalla, carga, batería o temperatura. Se mantienen los límites de tiempo, la cancelación fiable y la prevención de tareas simultáneas. El registro se actualizará al finalizar; no hace falta reiniciar SystemUI manualmente."
+                : action == Action.AUTOMATIC ? "Se solicitó una comprobación bajo demanda; solo se ejecutará la compilación si es necesaria y la pantalla está apagada o no hay actividad durante 10 minutos."
+                : action == Action.ENABLE ? "Se activó y se comprobó automáticamente el estado de compilación; también se ejecutará en futuros arranques según las condiciones del dispositivo." : "Se desactivó. Ya no habrá precompilación al arrancar; el sistema administrará las compilaciones ya realizadas."
+                : exit == 21 ? "No se concedieron permisos Root; permite esta aplicación en el administrador." : exit == 20 ? "La ruta del módulo es anómala; se detuvo la operación."
+                : exit == 25 ? "No se encontró un comando compatible de administración Root. Instala KernelSU, Magisk o APatch."
+                : exit == 26 ? "No se encontró el módulo complementario; instálalo o actualízalo." : exit == 27 ? "El módulo está desactivado o pendiente de desinstalación; no se puede ejecutar ahora."
+                : "La operación no se completó; consulta el registro de ejecución más reciente y actualiza el estado.";
         return new Result(success, message, snapshot);
     }
     private static String checkMessage(Snapshot snapshot) {
         if ("failed".equals(snapshot.lastState) && (snapshot.error.startsWith("restore_") || "uninstall".equals(snapshot.trigger)))
-            return (!snapshot.installed && !snapshot.pending ? "附属模块未安装。" : "") + snapshot.errorMessage() + "。"
+            return (!snapshot.installed && !snapshot.pending ? "El módulo complementario no está instalado." : "") + snapshot.errorMessage() + "."
                     + (!snapshot.installed && !snapshot.pending && snapshot.error.startsWith("restore_")
-                    ? "可重新安装附属模块后再次请求卸载恢复。" : "");
-        if (snapshot.remove) return "模块已标记卸载，重启后尝试恢复系统编译方式并移除；恢复失败会保留运行记录。";
-        if (snapshot.disabled) return "附属模块已停用，开机不再预编译。";
-        if (snapshot.pending && "unknown".equals(snapshot.lastState)) return "管理器已接收模块，开机注册待更新；安装后会自动检查，无需手动重启系统界面。";
-        if (!snapshot.installed && !snapshot.pending) return snapshot.legacy ? "尚未安装附属模块。旧的缓存备份模块仍在，安装附属模块时会自动移除它。" : "尚未安装附属模块。";
-        String record = snapshot.currentBoot ? "本次开机：" : "历史记录（尚未确认本次开机执行）：";
-        String update = snapshot.outdated ? " 旧版模块可读取，请更新 Status C17 附属模块以使用新的自动与手动规则。" : "";
+                    ? "Puedes volver a instalar el módulo complementario y volver a solicitar su desinstalación y restauración." : "");
+        if (snapshot.remove) return "El módulo está marcado para desinstalarse. Tras reiniciar, se intentará restaurar el modo de compilación del sistema y eliminarlo; si falla, se conservará el registro de ejecución.";
+        if (snapshot.disabled) return "El módulo complementario está desactivado; no se realizará la precompilación al arrancar.";
+        if (snapshot.pending && "unknown".equals(snapshot.lastState)) return "El administrador recibió el módulo, pero el registro de arranque está pendiente de actualizarse. Se comprobará automáticamente tras la instalación; no hace falta reiniciar SystemUI manualmente.";
+        if (!snapshot.installed && !snapshot.pending) return snapshot.legacy ? "El módulo complementario aún no está instalado. El antiguo módulo de copia de seguridad de caché sigue presente y se eliminará automáticamente al instalar el nuevo." : "El módulo complementario aún no está instalado.";
+        String record = snapshot.currentBoot ? "Este arranque: " : "Registro histórico (no se ha confirmado la ejecución en este arranque): ";
+        String update = snapshot.outdated ? " Hay disponible una versión antigua del módulo; actualiza el módulo complementario de Status C17 para usar las nuevas reglas automáticas y manuales." : "";
         boolean modern = snapshot.recordVersionCode >= VERSION_CODE;
-        String counts = "本轮编译 " + snapshot.compiled + " 个、复用 " + snapshot.reused + " 个。";
-        String proof = " " + snapshot.verificationMessage() + "。";
+        String counts = "Compilados en esta ronda: " + snapshot.compiled + "; reutilizados: " + snapshot.reused + ".";
+        String proof = " " + snapshot.verificationMessage() + ".";
         switch (snapshot.lastState) {
-            case "ok": return record + (modern ? counts + proof : "已预编译 " + snapshot.compiled + "/" + snapshot.packages + " 个组件。")
-                    + " 无需手动重启系统界面，已有进程在自然重新加载时使用新结果。" + update;
-            case "current": return record + (modern ? counts + proof : "版本没有变化，继续使用上次的预编译；当前实际编译状态尚未核对。") + update;
-            case "waiting": return record + ("run".equals(snapshot.trigger) ? "手动优化已提交，不等待环境条件；正在准备任务。" : "自动优化等待启动完成、息屏或连续无操作 10 分钟、电量高于 15% 和电池温度低于 55℃；充电与否不影响。") + update;
-            case "running": return record + "正在检查或预编译，稍后刷新查看。" + (modern ? " " + counts : "") + update;
-            case "deferred": return record + ("run".equals(snapshot.trigger) ? "手动优化本次未执行：" : "自动优化已延期：") + snapshot.errorMessage() + "。待处理 " + snapshot.deferred + " 个组件，下次开机或手动优化时重新检查。" + proof + update;
-            case "failed": return record + "优化未完成：" + snapshot.errorMessage() + (modern ? "。" + counts + proof : "") + update;
-            default: return "已安装，尚无运行记录；后续开机会自动检查，也可点“立即优化”。" + update;
+            case "ok": return record + (modern ? counts + proof : "Precompilados: " + snapshot.compiled + "/" + snapshot.packages + " componentes.")
+                    + " No hace falta reiniciar SystemUI manualmente; los procesos existentes usarán los nuevos resultados al recargarse de forma natural." + update;
+            case "current": return record + (modern ? counts + proof : "La versión no ha cambiado y se mantiene la precompilación anterior; el estado real de compilación aún no se ha comprobado.") + update;
+            case "waiting": return record + ("run".equals(snapshot.trigger) ? "Se solicitó la optimización manual; no espera a las condiciones del entorno y la tarea se está preparando." : "La optimización automática espera a que termine el arranque, a que la pantalla se apague o no haya actividad durante 10 minutos, a que la batería supere el 15 % y a que su temperatura sea inferior a 55 °C. La carga no influye.") + update;
+            case "running": return record + "Comprobando o precompilando; actualiza el estado más tarde." + (modern ? " " + counts : "") + update;
+            case "deferred": return record + ("run".equals(snapshot.trigger) ? "La optimización manual no se ejecutó: " : "La optimización automática se aplazó: ") + snapshot.errorMessage() + ". Componentes pendientes: " + snapshot.deferred + "; se volverán a comprobar en el próximo arranque o en la siguiente optimización manual." + proof + update;
+            case "failed": return record + "La optimización no se completó: " + snapshot.errorMessage() + (modern ? "." + counts + proof : "") + update;
+            default: return "Está instalado, pero aún no hay registros de ejecución. Se comprobará automáticamente en próximos arranques o puedes pulsar «Optimizar ahora»." + update;
         }
     }
     private static boolean requiredField(String key) {

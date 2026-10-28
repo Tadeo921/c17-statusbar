@@ -132,7 +132,7 @@ internal fun ThanksWallDialog(app: ModernMainActivity) {
         onPrimaryContainer = palette.ink, surface = palette.surface,
         surfaceContainer = palette.container, onSurface = palette.ink, onSurfaceVariantSummary = palette.muted)
     MiuixTheme(colors = goldScheme) {
-      C17OverlayDialog(show = true, title = "鸣谢墙", summary = "感谢每一位伙伴",
+      C17OverlayDialog(show = true, title = "Muro de agradecimientos", summary = "Gracias a todas las personas que colaboran",
         titleColor = palette.ink, summaryColor = palette.muted, backgroundColor = palette.surface,
         modifier = Modifier.heightIn(max = (window.height * .88f).coerceAtMost(760.dp)),
         insideMargin = DpSize(18.dp, 18.dp), outsideMargin = DpSize(16.dp, 12.dp),
@@ -170,17 +170,17 @@ private fun WallBody(app: ModernMainActivity, wall: ThanksWall.Wall, featured: L
                     if (others.isNotEmpty()) WallHeader(wall, others.size)
                 }
                 if (others.isNotEmpty()) DanmakuWall(app, wall, others, lanes, chipHeight, active, interactions, onPerson)
-                Text((if (wall.revision > 0) "第 ${wall.revision} 版 · ${wall.updatedAt}" else "内置名单") + " · " + app.thanksStatus,
+                Text((if (wall.revision > 0) "Versión ${wall.revision} · ${wall.updatedAt}" else "Lista integrada") + " · " + app.thanksStatus,
                     fontSize = 12.sp, lineHeight = 17.sp, color = palette.muted,
                     modifier = Modifier.onSizeChanged { metadataHeight = it.height }.padding(start = 4.dp, top = 2.dp))
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            C17TextButton(text = if (app.thanksRefreshing) "正在刷新" else "刷新", enabled = !app.thanksRefreshing,
+            C17TextButton(text = if (app.thanksRefreshing) "Actualizando…" else "Actualizar", enabled = !app.thanksRefreshing,
                 modifier = Modifier.weight(1f).heightIn(min = 48.dp), onClick = { app.refreshThanks() },
                 colors = ButtonDefaults.textButtonColors(color = palette.soft, disabledColor = palette.soft.copy(alpha = .55f),
                     textColor = palette.ink, disabledTextColor = palette.muted))
-            C17TextButton(text = "关闭", modifier = Modifier.weight(1f).heightIn(min = 48.dp), onClick = { app.thanksOpen = false },
+            C17TextButton(text = "Cerrar", modifier = Modifier.weight(1f).heightIn(min = 48.dp), onClick = { app.thanksOpen = false },
                 colors = ButtonDefaults.textButtonColorsPrimary(color = palette.goldFill, disabledColor = palette.goldFill.copy(alpha = .55f),
                     textColor = palette.onGold, disabledTextColor = palette.muted))
         }
@@ -199,11 +199,11 @@ private fun SupporterDetailDialog(app: ModernMainActivity, detail: SupporterDeta
         Column(Modifier.widthIn(max = 400.dp).fillMaxWidth().heightIn(max = (window.height * .82f).coerceAtMost(640.dp))
             .clip(shape).background(palette.surface)
             .border(.75.dp, palette.gold.copy(alpha = .28f), shape).padding(24.dp)
-            .semantics { paneTitle = "鸣谢详情" },
+            .semantics { paneTitle = "Detalles de agradecimientos" },
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp)) {
             Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                Text(if (detail.person.featured) "特别鸣谢" else "谢谢你的支持", fontSize = 12.sp,
+                Text(if (detail.person.featured) "Agradecimientos especiales" else "¡Gracias por tu apoyo!", fontSize = 12.sp,
                     fontWeight = FontWeight.Medium, color = palette.gold)
                 PortraitFrame(app, detail.wall, detail.person, 100.dp)
                 Text(detail.person.name, Modifier.fillMaxWidth().semantics { heading() }, fontSize = 23.sp,
@@ -216,7 +216,7 @@ private fun SupporterDetailDialog(app: ModernMainActivity, detail: SupporterDeta
                         lineHeight = 21.sp, color = if (palette.dark) Color(0xFFE4D4B7) else Color(0xFF856C43), textAlign = TextAlign.Center)
                 }
             }
-            C17TextButton(text = "返回鸣谢墙", modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), onClick = onDismiss,
+            C17TextButton(text = "Volver al muro de agradecimientos", modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), onClick = onDismiss,
                 colors = ButtonDefaults.textButtonColors(color = palette.soft, textColor = palette.ink))
         }
     }
@@ -229,8 +229,8 @@ private fun WallHeader(wall: ThanksWall.Wall, count: Int) {
     val palette = wallPalette()
     Column(Modifier.padding(start = 4.dp, top = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("感谢每一位伙伴", Modifier.semantics { heading() }, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = palette.ink)
-            Text("$count 位", Modifier.clip(CircleShape).background(palette.gold.copy(alpha = .14f))
+            Text("Gracias a todas las personas que colaboran", Modifier.semantics { heading() }, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = palette.ink)
+            Text("$count personas", Modifier.clip(CircleShape).background(palette.gold.copy(alpha = .14f))
                 .padding(horizontal = 9.dp, vertical = 2.dp), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = palette.gold)
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -305,7 +305,7 @@ private fun FeaturedCard(app: ModernMainActivity, wall: ThanksWall.Wall, person:
         }
         .border(1.dp, Brush.linearGradient(listOf(palette.goldBright.copy(alpha = .85f), palette.gold.copy(alpha = .35f),
             palette.goldBright.copy(alpha = .75f))), shape)
-        .clickable(onClickLabel = "查看特别鸣谢详情", role = Role.Button, onClick = onClick)
+        .clickable(onClickLabel = "Ver detalles de los agradecimientos especiales", role = Role.Button, onClick = onClick)
         .padding(horizontal = 18.dp, vertical = 16.dp)) {
         val availableWidth = maxWidth
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -315,7 +315,7 @@ private fun FeaturedCard(app: ModernMainActivity, wall: ThanksWall.Wall, person:
                     .padding(start = 9.dp, end = 13.dp, top = 5.dp, bottom = 5.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Box(Modifier.size(12.dp).drawBehind { drawPath(sparklePath(size.width / 2f, size.height / 2f, size.width / 2f), palette.onGold) })
-                    Text("特别鸣谢", Modifier.semantics { heading() }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = palette.onGold)
+                    Text("Agradecimientos especiales", Modifier.semantics { heading() }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = palette.onGold)
                 }
             }
             val dedication: @Composable () -> Unit = {
@@ -422,7 +422,7 @@ private fun DanmakuChip(app: ModernMainActivity, wall: ThanksWall.Wall, person: 
     val palette = wallPalette()
     Row(Modifier.height(height).widthIn(min = ThanksChipGeometry.MIN_WIDTH.dp).clip(CircleShape)
         .background(groupTint(group, .10f)).border(.75.dp, groupTint(group, .30f), CircleShape)
-        .clickable(interactionSource = interactions, indication = null, onClickLabel = "查看鸣谢详情", role = Role.Button, onClick = onClick)
+        .clickable(interactionSource = interactions, indication = null, onClickLabel = "Ver detalles de agradecimientos", role = Role.Button, onClick = onClick)
         .semantics(mergeDescendants = true) { contentDescription = person.name }
         .padding(start = ThanksChipGeometry.AVATAR_INSET.dp, end = ThanksChipGeometry.END_PADDING.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ThanksChipGeometry.TEXT_GAP.dp)) {

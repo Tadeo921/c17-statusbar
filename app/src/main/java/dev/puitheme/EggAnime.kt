@@ -406,7 +406,7 @@ internal class AnimeEgg(icon: ImageBitmap, measurer: TextMeasurer) : EggScene(ic
         val cx = w / 2f
         val tagShow = eggEase((t - (SHATTER + 1f)) / .35f) * fade
         if (tagShow > 0f) {
-            val tag = layout("樱花晴空 · 怪盗已登场", 17.sp, FontWeight.Black)
+            val tag = layout("Cielo de sakura · el ladrón ya ha aparecido", 17.sp, FontWeight.Black)
             val top = h * .6f + 58f * density
             val slide = (1f - tagShow) * w
             rotate(-5f, Offset(cx, top)) {
@@ -415,7 +415,7 @@ internal class AnimeEgg(icon: ImageBitmap, measurer: TextMeasurer) : EggScene(ic
                 drawRect(phantomInk, Offset(cx - stripW / 2f + slide, top - 8f * density), Size(stripW, stripH), alpha = tagShow)
                 drawRect(phantomRed, Offset(cx - stripW / 2f + slide - 6f * density, top - 16f * density),
                     Size(58f * density, 18f * density), alpha = tagShow)
-                val label = layout("预告函", 11.sp, FontWeight.Black)
+                val label = layout("Carta de aviso", 11.sp, FontWeight.Black)
                 centred(label, cx - stripW / 2f + slide + 23f * density, top - 15f * density, Color.White, tagShow)
                 centred(tag, cx + slide + 10f * density, top, Color.White, tagShow)
             }

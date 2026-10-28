@@ -76,14 +76,14 @@ public final class SystemUiRestart {
                     result = classify(process.exitValue(), output.text(), false);
                 }
             } catch (IOException missingRoot) {
-                result = new Result(State.ROOT_REQUIRED, "无法获得 Root 权限。请确认设备已 Root，并在 Root 管理器中允许本应用。" );
+                result = new Result(State.ROOT_REQUIRED, "No se pudo obtener acceso root. Comprueba que el dispositivo tenga root y permite esta aplicación en el gestor correspondiente." );
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
                 if (process != null) process.destroyForcibly();
-                result = new Result(State.FAILED, "重启操作已中断，请重新检测系统 UI 状态。" );
+                result = new Result(State.FAILED, "La operación de reinicio se interrumpió. Vuelve a comprobar el estado de SystemUI." );
             } catch (RuntimeException unavailable) {
                 if (process != null) process.destroyForcibly();
-                result = new Result(State.FAILED, "无法执行系统 UI 重启，请检查 Root 授权后重试。" );
+                result = new Result(State.FAILED, "No se pudo reiniciar SystemUI. Revisa la autorización root e inténtalo de nuevo." );
             } finally {
                 if (process != null) {
                     try { process.getInputStream().close(); } catch (IOException ignored) { }
@@ -98,21 +98,21 @@ public final class SystemUiRestart {
     }
 
     static Result classify(int exit, String output, boolean timedOut) {
-        if (timedOut) return new Result(State.TIMEOUT, "Root 授权或重启等待超时，请检查授权并重新检测系统 UI 状态。" );
+        if (timedOut) return new Result(State.TIMEOUT, "Se agotó el tiempo de espera de la autorización root o del reinicio. Comprueba los permisos y vuelve a revisar SystemUI." );
         String text = output == null ? "" : output;
         if (exit == 0) for (String line : text.split("\\R")) {
             if (line.trim().matches("C17_OK:[1-9][0-9]*( [1-9][0-9]*)*"))
-                return new Result(State.RESTARTED, "系统 UI 已重启，正在重新检测模块激活状态。" );
+                return new Result(State.RESTARTED, "SystemUI se reinició. Comprobando de nuevo si el módulo está activo." );
         }
         String lower = text.toLowerCase(Locale.ROOT);
         if (exit == 21 || text.contains("C17_ERROR:NOT_ROOT") || lower.contains("permission denied")
                 || lower.contains("not allowed") || lower.contains("access denied"))
-            return new Result(State.ROOT_REQUIRED, "未获得 Root 权限。请在 Root 管理器中允许本应用后重试。" );
+            return new Result(State.ROOT_REQUIRED, "No se obtuvo acceso root. Permite esta aplicación en el gestor de root e inténtalo de nuevo." );
         if (exit == 22 || text.contains("C17_ERROR:NOT_RUNNING"))
-            return new Result(State.NOT_RUNNING, "未找到正在运行的 SystemUI，请检查系统 UI 状态后重试。" );
+            return new Result(State.NOT_RUNNING, "No se encontró un proceso SystemUI en ejecución. Comprueba su estado e inténtalo de nuevo." );
         if (exit == 24 || text.contains("C17_ERROR:NOT_RESTARTED"))
-            return new Result(State.FAILED, "已请求重启，但未确认新的 SystemUI 进程。请重新检测，必要时手动重启手机。" );
-        return new Result(State.FAILED, "系统 UI 重启失败，请检查 Root 授权后重试。" );
+            return new Result(State.FAILED, "Se solicitó el reinicio, pero no se confirmó un nuevo proceso SystemUI. Vuelve a comprobarlo y, si es necesario, reinicia el teléfono manualmente." );
+        return new Result(State.FAILED, "No se pudo reiniciar SystemUI. Revisa la autorización root e inténtalo de nuevo." );
     }
 
     private static final class BoundedOutput {

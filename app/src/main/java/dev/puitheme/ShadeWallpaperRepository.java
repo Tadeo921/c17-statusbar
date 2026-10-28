@@ -73,10 +73,10 @@ public final class ShadeWallpaperRepository {
     private static byte[] readSource(Context context, Uri source) throws IOException {
         try (InputStream input = context.getContentResolver().openInputStream(source);
              ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
-            if (input == null) throw new IOException("无法读取图片");
+            if (input == null) throw new IOException("No se pudo leer la imagen");
             byte[] buffer = new byte[8192]; int count;
             while ((count = input.read(buffer)) != -1) {
-                if (bytes.size() + count > MAX_SOURCE_BYTES) throw new IOException("图片最多 24 MB");
+                if (bytes.size() + count > MAX_SOURCE_BYTES) throw new IOException("La imagen puede ocupar hasta 24 MB");
                 bytes.write(buffer, 0, count);
             }
             return bytes.toByteArray();
@@ -95,7 +95,7 @@ public final class ShadeWallpaperRepository {
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
         if (!NotificationIconRepository.supported(bounds.outMimeType) || bounds.outWidth <= 0 || bounds.outHeight <= 0
-                || bounds.outWidth > 32768 || bounds.outHeight > 32768) throw new IOException("请选择 PNG、JPEG 或 WebP 图片");
+                || bounds.outWidth > 32768 || bounds.outHeight > 32768) throw new IOException("Selecciona una imagen PNG, JPEG o WebP");
         Bitmap decoded;
         if (Build.VERSION.SDK_INT >= 28) {
             decoded = ImageDecoder.decodeBitmap(ImageDecoder.createSource(ByteBuffer.wrap(data)), (decoder, info, imageSource) -> {
@@ -111,7 +111,7 @@ public final class ShadeWallpaperRepository {
                 bounds.inSampleSize *= 2;
             decoded = BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
         }
-        if (decoded == null) throw new IOException("图片无法加载");
+        if (decoded == null) throw new IOException("No se pudo cargar la imagen");
         return decoded;
     }
     static int[] boundedSize(int width, int height, int maxEdge, long maxPixels) {
@@ -124,7 +124,7 @@ public final class ShadeWallpaperRepository {
     }
     /** The picture, turned and cut as the user chose ({@code crop} null: the whole picture), made into the private PNG SystemUI reads. */
     public static PreparedWallpaper prepare(Context context, Uri source, String scene, Crop crop) throws Exception {
-        if (!ShadeWallpaperSettings.validScene(scene)) throw new IOException("无效的下拉场景");
+        if (!ShadeWallpaperSettings.validScene(scene)) throw new IOException("La escena del panel desplegable no es válida");
         byte[] data = readSource(context, source);
         Bitmap decoded = null, turned = null, normalized = null;
         try {
@@ -142,7 +142,7 @@ public final class ShadeWallpaperRepository {
             if (cutting) {
                 from.set(Math.round(crop.left * whole.getWidth()), Math.round(crop.top * whole.getHeight()),
                         Math.round(crop.right * whole.getWidth()), Math.round(crop.bottom * whole.getHeight()));
-                if (from.width() < 1 || from.height() < 1) throw new IOException("裁剪区域无效");
+                if (from.width() < 1 || from.height() < 1) throw new IOException("La zona de recorte no es válida");
             }
             int[] size = normalizedSize(from.width(), from.height());
             normalized = Bitmap.createBitmap(size[0], size[1], Bitmap.Config.ARGB_8888);
@@ -160,20 +160,20 @@ public final class ShadeWallpaperRepository {
         File temporary = null; boolean ready = false;
         try {
             // Fully transparent images are rejected; partially transparent pixels preserve the native background.
-            if (!hasVisiblePixels(normalized)) throw new IOException("图片完全透明，请选择可见的图片");
+            if (!hasVisiblePixels(normalized)) throw new IOException("La imagen es completamente transparente; selecciona una imagen visible");
             synchronized (LOCK) {
                 File parent = directory(context, scene);
-                if (!parent.isDirectory() && !parent.mkdirs()) throw new IOException("壁纸目录无法创建");
+                if (!parent.isDirectory() && !parent.mkdirs()) throw new IOException("No se pudo crear la carpeta de fondos");
                 File[] abandoned = parent.listFiles(file -> file.isFile() && file.getName().startsWith("pending-") && file.getName().endsWith(".png"));
                 if (abandoned != null) for (File file : abandoned) if (!PENDING.contains(file)) file.delete();
                 temporary = File.createTempFile("pending-", ".png", parent);
                 PENDING.add(temporary);
             }
             try (FileOutputStream output = new FileOutputStream(temporary)) {
-                if (!normalized.compress(Bitmap.CompressFormat.PNG, 100, output)) throw new IOException("图片保存失败");
+                if (!normalized.compress(Bitmap.CompressFormat.PNG, 100, output)) throw new IOException("No se pudo guardar la imagen");
                 output.getFD().sync();
             }
-            if (temporary.length() > MAX_ASSET_BYTES) throw new IOException("归一化后的图片过大");
+            if (temporary.length() > MAX_ASSET_BYTES) throw new IOException("La imagen normalizada es demasiado grande");
             String revision = digest(temporary);
             File target = new File(directory(context, scene), revision + ".png");
             ready = true;
@@ -236,11 +236,11 @@ public final class ShadeWallpaperRepository {
     static void deleteFiles(File parent) throws IOException {
         if (!parent.exists()) return;
         File[] files = parent.listFiles();
-        if (files == null) throw new IOException("壁纸目录无法读取");
+        if (files == null) throw new IOException("No se pudo leer la carpeta de fondos");
         IOException failure = null;
         for (File file : files) if (file.isFile() && file.getName().endsWith(".png")) {
             if (!file.delete() && file.exists()) {
-                if (failure == null) failure = new IOException("壁纸删除失败，请重试");
+                if (failure == null) failure = new IOException("No se pudo eliminar el fondo; inténtalo de nuevo");
             }
         }
         if (failure != null) throw failure;
@@ -260,13 +260,13 @@ public final class ShadeWallpaperRepository {
         /** Revision-addressed publishing cannot overwrite pixels being read by SystemUI. */
         public String commit(BooleanSupplier canCommit, BooleanSupplier save, Runnable restore) throws Exception {
             synchronized (LOCK) {
-                if (closed || !canCommit.getAsBoolean()) throw new IOException("页面状态已变化，壁纸未导入");
+                if (closed || !canCommit.getAsBoolean()) throw new IOException("El estado de la pantalla cambió; no se importó el fondo");
                 boolean published = false, attempted = false;
                 try {
                     if (!target.isFile()) { android.system.Os.rename(temporary.getAbsolutePath(), target.getAbsolutePath()); published = true; }
-                    if (!canCommit.getAsBoolean()) throw new IOException("页面状态已变化，壁纸未导入");
+                    if (!canCommit.getAsBoolean()) throw new IOException("El estado de la pantalla cambió; no se importó el fondo");
                     attempted = true;
-                    if (!save.getAsBoolean() || !canCommit.getAsBoolean()) throw new IOException("壁纸配置保存失败");
+                    if (!save.getAsBoolean() || !canCommit.getAsBoolean()) throw new IOException("No se pudo guardar la configuración del fondo");
                     return revision;
                 } catch (Exception failure) {
                     if (attempted) try { restore.run(); } catch (RuntimeException rollback) { failure.addSuppressed(rollback); }

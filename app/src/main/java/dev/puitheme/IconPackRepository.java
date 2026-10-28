@@ -30,22 +30,22 @@ public final class IconPackRepository {
         public Layer(String id,boolean enabled,boolean autoMatch){if(!IconPackManifest.validRevision(id))throw new IllegalArgumentException("Invalid icon pack ID");this.id=id;this.enabled=enabled;this.autoMatch=autoMatch;}
     }
     public static List<Layer> layers(String stored)throws IOException{
-        if(stored==null||stored.length()>8192)throw new IOException("图标库列表无效");
+        if(stored==null||stored.length()>8192)throw new IOException("La lista de bibliotecas de iconos no es válida");
         try{
             JSONArray json=new JSONArray(stored);
-            if(json.length()>MAX_LAYERS)throw new IOException("最多保存 32 个图标库");
+            if(json.length()>MAX_LAYERS)throw new IOException("Puedes guardar hasta 32 bibliotecas de iconos.");
             List<Layer> result=new ArrayList<>();Set<String> seen=new HashSet<>();int active=0;
             for(int i=0;i<json.length();i++){
-                Object value=json.get(i);if(!(value instanceof JSONObject))throw new IOException("图标库列表格式错误");
+                Object value=json.get(i);if(!(value instanceof JSONObject))throw new IOException("El formato de la lista de bibliotecas de iconos es incorrecto");
                 JSONObject item=(JSONObject)value;Object id=item.opt("id"),enabled=item.opt("enabled");
                 boolean legacy=item.length()==2&&!item.has("autoMatch");Object autoMatch=legacy?Boolean.TRUE:item.opt("autoMatch");
                 if(!(id instanceof String)||!IconPackManifest.validRevision((String)id)||!(enabled instanceof Boolean)
-                        ||!(autoMatch instanceof Boolean)||(!legacy&&item.length()!=3)||!seen.add((String)id))throw new IOException("图标库 ID、开关或重复项无效");
-                if(Boolean.TRUE.equals(enabled)&&++active>MAX_ACTIVE)throw new IOException("最多同时启用 16 个图标库");
+                        ||!(autoMatch instanceof Boolean)||(!legacy&&item.length()!=3)||!seen.add((String)id))throw new IOException("El ID, el estado o los duplicados de la biblioteca no son válidos");
+                if(Boolean.TRUE.equals(enabled)&&++active>MAX_ACTIVE)throw new IOException("Puedes activar hasta 16 bibliotecas de iconos a la vez");
                 result.add(new Layer((String)id,(Boolean)enabled,(Boolean)autoMatch));
             }
             return Collections.unmodifiableList(result);
-        }catch(JSONException malformed){throw new IOException("图标库列表格式错误",malformed);}
+        }catch(JSONException malformed){throw new IOException("El formato de la lista de bibliotecas de iconos es incorrecto",malformed);}
     }
     public static String layersJson(List<Layer> layers)throws IOException{
         try{
@@ -66,22 +66,22 @@ public final class IconPackRepository {
         if(context==null||!ModuleDiagnostics.PACKAGE_NAME.equals(context.getPackageName()))throw new SecurityException("Own application context required");
         File files=context.createDeviceProtectedStorageContext().getFilesDir().getCanonicalFile();
         File root=new File(files,"status-icon-packs");
-        if(!root.exists()&&!root.mkdir())throw new IOException("图标库目录无法创建");
-        if(!root.getCanonicalFile().equals(root.getAbsoluteFile())||!root.isDirectory())throw new IOException("图标库目录无效");
+        if(!root.exists()&&!root.mkdir())throw new IOException("No se pudo crear la carpeta de la biblioteca de iconos");
+        if(!root.getCanonicalFile().equals(root.getAbsoluteFile())||!root.isDirectory())throw new IOException("La carpeta de la biblioteca de iconos no es válida");
         return root;
     }
     static File createSource(Context context)throws IOException{return File.createTempFile("source-",".archive",root(context));}
     static File packDirectory(File root,String id)throws IOException{
-        if(!IconPackManifest.validRevision(id))throw new IOException("图标库 ID 无效");
+        if(!IconPackManifest.validRevision(id))throw new IOException("El ID de la biblioteca de iconos no es válido");
         File target=new File(root,id);
         if(!target.getCanonicalFile().equals(target.getAbsoluteFile())||!target.getCanonicalFile().getParentFile().equals(root.getCanonicalFile()))
-            throw new IOException("图标库路径无效");
+            throw new IOException("La ruta de la biblioteca de iconos no es válida.");
         return target;
     }
     public static List<Pack> list(Context context)throws IOException{
         synchronized(LOCK){
             File root=root(context);File[] folders=root.listFiles();List<Pack> result=new ArrayList<>();
-            if(folders==null)throw new IOException("图标库无法读取");
+            if(folders==null)throw new IOException("No se puede leer la biblioteca de iconos.");
             Arrays.sort(folders,Comparator.comparing(File::getName));
             for(File folder:folders)if(IconPackManifest.validRevision(folder.getName())&&folder.isDirectory()){
                 try{result.add(load(root,folder.getName()));}catch(IOException malformed){/* Incomplete/corrupt library never reaches SystemUI. */}
@@ -130,7 +130,7 @@ public final class IconPackRepository {
         File archive=createSource(context);
         try{
             try(InputStream input=context.getContentResolver().openInputStream(uri);FileOutputStream output=new FileOutputStream(archive)){
-                if(input==null)throw new IOException("图标包无法读取");
+                if(input==null)throw new IOException("No se puede leer el paquete de iconos.");
                 copyBounded(input,output,IconPackArchive.MAX_ARCHIVE);output.getFD().sync();
             }
             return prepare(context,archive,name);
@@ -148,17 +148,17 @@ public final class IconPackRepository {
         IconPackManifest manifest=IconPackManifest.parse(source.get("manifest.json"));
         String label=displayName(name,manifest.name);
         File staging=File.createTempFile("pending-",".pack",root);
-        if(!staging.delete()||!staging.mkdir())throw new IOException("图标包临时目录无法创建");
+        if(!staging.delete()||!staging.mkdir())throw new IOException("No se pudo crear la carpeta temporal del paquete de iconos");
         boolean ready=false;
         try{
-            File assets=new File(staging,"assets");if(!assets.mkdir())throw new IOException("图标包资源目录无法创建");
+            File assets=new File(staging,"assets");if(!assets.mkdir())throw new IOException("No se pudo crear la carpeta de recursos del paquete de iconos");
             Map<String,String> normalized=new TreeMap<>();Map<String,String> reused=new HashMap<>();int bytesTotal=0;
             for(Map.Entry<String,String> icon:manifest.icons.entrySet()){
                 String destination=reused.get(icon.getValue());
                 if(destination==null){
-                    byte[] pixels=source.get(icon.getValue());if(pixels==null)throw new IOException("图标包缺少资源："+icon.getValue());
+                    byte[] pixels=source.get(icon.getValue());if(pixels==null)throw new IOException("Falta un recurso en el paquete de iconos: "+icon.getValue());
                     byte[] png=normalize(pixels);bytesTotal+=png.length;
-                    if(bytesTotal>IconPackArchive.MAX_EXPANDED)throw new IOException("图标包图片总大小超过限制");
+                    if(bytesTotal>IconPackArchive.MAX_EXPANDED)throw new IOException("El tamaño total de las imágenes del paquete supera el límite");
                     destination="assets/"+String.format(Locale.ROOT,"icon-%03d.png",reused.size());
                     writeSynced(new File(staging,destination),png);reused.put(icon.getValue(),destination);
                 }
@@ -178,17 +178,17 @@ public final class IconPackRepository {
         BitmapFactory.decodeByteArray(data,0,data.length,bounds);
         if(!("image/png".equals(bounds.outMimeType)||"image/webp".equals(bounds.outMimeType))
                 ||bounds.outWidth<1||bounds.outHeight<1||bounds.outWidth>1024||bounds.outHeight>1024)
-            throw new IOException("图标须为 1–1024 像素的 PNG 或 WebP");
+            throw new IOException("Los iconos deben ser archivos PNG o WebP de entre 1 y 1024 píxeles");
         Bitmap original=null,scaled=null;
         try{
-            original=BitmapFactory.decodeByteArray(data,0,data.length);if(original==null)throw new IOException("图标图片无法解码");
-            if(!original.hasAlpha())throw new IOException("图标必须使用透明背景的 PNG 或 WebP");
+            original=BitmapFactory.decodeByteArray(data,0,data.length);if(original==null)throw new IOException("No se pudo decodificar la imagen del icono");
+            if(!original.hasAlpha())throw new IOException("Los iconos deben usar PNG o WebP con fondo transparente");
             int largest=Math.max(original.getWidth(),original.getHeight());
             scaled=largest>256?Bitmap.createScaledBitmap(original,Math.max(1,original.getWidth()*256/largest),Math.max(1,original.getHeight()*256/largest),true):original;
             ByteArrayOutputStream result=new ByteArrayOutputStream();
-            if(!scaled.compress(Bitmap.CompressFormat.PNG,100,result))throw new IOException("图标图片无法保存");
+            if(!scaled.compress(Bitmap.CompressFormat.PNG,100,result))throw new IOException("No se pudo guardar la imagen del icono");
             return result.toByteArray();
-        }catch(OutOfMemoryError unavailable){throw new IOException("图标图片解码内存不足",unavailable);}
+        }catch(OutOfMemoryError unavailable){throw new IOException("No hay memoria suficiente para decodificar la imagen del icono",unavailable);}
         finally{if(scaled!=null&&scaled!=original)scaled.recycle();if(original!=null)original.recycle();}
     }
     private static String revision(File staging,IconPackManifest manifest,byte[] canonical)throws Exception{
@@ -203,12 +203,12 @@ public final class IconPackRepository {
         PreparedPack(File root,File staging,Pack pack){this.root=root;this.staging=staging;this.pack=pack;}
         public Pack commit(BooleanSupplier canCommit)throws Exception{
             synchronized(LOCK){
-                if(closed||!canCommit.getAsBoolean())throw new IOException("导入状态已变化，图标包未保存");
+                if(closed||!canCommit.getAsBoolean())throw new IOException("El estado de importación cambió; no se guardó el paquete de iconos");
                 File target=packDirectory(root,pack.id);
                 if(target.isDirectory()){writeName(target,pack.name);close();return load(root,pack.id);}
                 File[] folders=root.listFiles();int count=0;
                 if(folders!=null)for(File folder:folders)if(IconPackManifest.validRevision(folder.getName()))count++;
-                if(count>=MAX_LIBRARY)throw new IOException("最多保存 32 个图标库，请先删除不使用的库");
+                if(count>=MAX_LIBRARY)throw new IOException("Puedes guardar hasta 32 bibliotecas; elimina primero las que no uses");
                 android.system.Os.rename(staging.getAbsolutePath(),target.getAbsolutePath());closed=true;return pack;
             }
         }
@@ -222,7 +222,7 @@ public final class IconPackRepository {
         synchronized(LOCK){File root=root(context);deleteManaged(root,packDirectory(root,id));}
     }
     public static int clear(Context context)throws IOException{
-        synchronized(LOCK){File root=root(context);File[] children=root.listFiles();if(children==null)throw new IOException("图标库无法读取");
+        synchronized(LOCK){File root=root(context);File[] children=root.listFiles();if(children==null)throw new IOException("No se puede leer la biblioteca de iconos.");
             int removed=0;for(File child:children)if(IconPackManifest.validRevision(child.getName())||child.getName().startsWith("pending-")||child.getName().startsWith("source-")||child.getName().equals("bundled-pui.json")){deleteManaged(root,child);removed++;}return removed;}
     }
     public static Uri manifestUri(String id){if(!IconPackManifest.validRevision(id))throw new IllegalArgumentException("Invalid icon pack ID");return Uri.parse(URI_PREFIX+id+"/manifest.json");}
@@ -245,25 +245,25 @@ public final class IconPackRepository {
     }
     private static String displayName(String value,String fallback)throws IOException{
         String name=value==null||value.trim().isEmpty()?fallback:value.trim();
-        if(name==null||name.isEmpty()||name.length()>64||name.matches("(?s).*\\p{Cntrl}.*"))throw new IOException("图标库名称需为 1–64 字符");return name;
+        if(name==null||name.isEmpty()||name.length()>64||name.matches("(?s).*\\p{Cntrl}.*"))throw new IOException("El nombre de la biblioteca debe tener entre 1 y 64 caracteres.");return name;
     }
     private static void writeName(File directory,String name)throws Exception{
         JSONObject json=new JSONObject();json.put("name",name);File pending=File.createTempFile("name-",".json",directory);
         try{writeSynced(pending,json.toString().getBytes(StandardCharsets.UTF_8));android.system.Os.rename(pending.getAbsolutePath(),new File(directory,"name.json").getAbsolutePath());}finally{pending.delete();}
     }
     static byte[] readFile(File file,int limit)throws IOException{
-        if(!file.isFile()||!file.getCanonicalFile().equals(file.getAbsoluteFile())||file.length()>limit)throw new IOException("图标库文件无效");
+        if(!file.isFile()||!file.getCanonicalFile().equals(file.getAbsoluteFile())||file.length()>limit)throw new IOException("El archivo de la biblioteca de iconos no es válido");
         try(InputStream input=new FileInputStream(file)){return IconPackArchive.readEntry(input,limit);}
     }
     private static void writeSynced(File file,byte[] bytes)throws IOException{try(FileOutputStream output=new FileOutputStream(file)){output.write(bytes);output.getFD().sync();}}
     private static void copyBounded(InputStream input,OutputStream output,int limit)throws IOException{
-        int total=0,count;byte[] buffer=new byte[8192];while((count=input.read(buffer))!=-1){total+=count;if(total>limit)throw new IOException("图标包最多 8 MB");output.write(buffer,0,count);}
+        int total=0,count;byte[] buffer=new byte[8192];while((count=input.read(buffer))!=-1){total+=count;if(total>limit)throw new IOException("El paquete de iconos puede ocupar hasta 8 MB");output.write(buffer,0,count);}
     }
     private static void deleteManaged(File root,File file)throws IOException{
         File canonicalRoot=root.getCanonicalFile(),canonical=file.getCanonicalFile();
-        if(!canonical.equals(file.getAbsoluteFile())||!canonical.toPath().startsWith(canonicalRoot.toPath())||canonical.equals(canonicalRoot))throw new IOException("图标库删除路径无效");
+        if(!canonical.equals(file.getAbsoluteFile())||!canonical.toPath().startsWith(canonicalRoot.toPath())||canonical.equals(canonicalRoot))throw new IOException("La ruta de eliminación de la biblioteca de iconos no es válida");
         if(!file.exists())return;
-        if(file.isDirectory()){File[] children=file.listFiles();if(children==null)throw new IOException("图标库目录无法读取");for(File child:children)deleteManaged(root,child);}
-        if(!file.delete())throw new IOException("图标库文件无法删除");
+        if(file.isDirectory()){File[] children=file.listFiles();if(children==null)throw new IOException("No se pudo leer la carpeta de la biblioteca de iconos");for(File child:children)deleteManaged(root,child);}
+        if(!file.delete())throw new IOException("No se pudo eliminar el archivo de la biblioteca de iconos");
     }
 }

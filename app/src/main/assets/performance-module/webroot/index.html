@@ -1,18 +1,18 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="es-AR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <title>Status C17 附属模块</title>
+  <title>Módulo complementario de Status C17</title>
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
 </head>
 <body>
   <main class="page">
-    <header class="heading"><div><p class="eyebrow">STATUS C17</p><h1>附属模块</h1></div><span class="version" id="version">附属模块</span></header>
-    <p class="demo-notice" id="demo-notice" hidden>离线演示 · 只读示例，未连接手机</p>
+    <header class="heading"><div><p class="eyebrow">STATUS C17</p><h1>Módulo complementario</h1></div><span class="version" id="version">Módulo complementario</span></header>
+    <p class="demo-notice" id="demo-notice" hidden>Demostración sin conexión · Solo lectura, sin conexión con el teléfono</p>
 
     <section class="hero" id="status-card" data-tone="neutral" aria-labelledby="status-title">
       <div class="ring" aria-hidden="true">
@@ -20,55 +20,55 @@
         <span class="ring-text" id="ring-text">—</span>
       </div>
       <div class="hero-text">
-        <p class="hero-kicker"><span class="status-dot" aria-hidden="true"></span>系统界面编译状态</p>
-        <h2 id="status-title">正在读取</h2>
-        <p class="hero-message" id="status-message">正在连接管理器…</p>
+        <p class="hero-kicker"><span class="status-dot" aria-hidden="true"></span>Estado de compilación de la interfaz del sistema</p>
+        <h2 id="status-title">Leyendo…</h2>
+        <p class="hero-message" id="status-message">Conectando con el administrador…</p>
       </div>
-      <div class="record-line"><span id="source">暂无记录</span><time id="time">—</time></div>
+      <div class="record-line"><span id="source">Todavía no hay registros</span><time id="time">—</time></div>
     </section>
 
-    <div class="section-heading"><h3>收益记录</h3><span id="benefit-since">尚无记录</span></div>
-    <section class="benefits" aria-label="收益记录">
-      <div class="tile"><span class="tile-label">累计编译</span><strong id="benefit-compiles">—</strong><small id="benefit-compiles-note">ART 实测耗时</small></div>
-      <div class="tile"><span class="tile-label">免去重编译</span><strong id="benefit-saved">—</strong><small id="benefit-saved-note">相比每次都重编</small></div>
-      <div class="tile"><span class="tile-label">系统界面</span><strong id="benefit-aot">—</strong><small id="benefit-aot-note">是否使用预编译产物</small></div>
-      <div class="tile"><span class="tile-label">运行时编译</span><strong id="benefit-jit">—</strong><small id="benefit-jit-note">JIT 线程占用</small></div>
+    <div class="section-heading"><h3>Resumen de resultados</h3><span id="benefit-since">Aún no hay registros</span></div>
+    <section class="benefits" aria-label="Resumen de resultados">
+      <div class="tile"><span class="tile-label">Compilaciones realizadas</span><strong id="benefit-compiles">—</strong><small id="benefit-compiles-note">Tiempo medido por ART</small></div>
+      <div class="tile"><span class="tile-label">Compilaciones evitadas</span><strong id="benefit-saved">—</strong><small id="benefit-saved-note">Frente a recompilar cada vez</small></div>
+      <div class="tile"><span class="tile-label">Interfaz del sistema</span><strong id="benefit-aot">—</strong><small id="benefit-aot-note">Uso de código precompilado</small></div>
+      <div class="tile"><span class="tile-label">Compilación en tiempo de ejecución</span><strong id="benefit-jit">—</strong><small id="benefit-jit-note">Uso del hilo JIT</small></div>
     </section>
-    <p class="benefit-note" id="benefit-note">耗时来自 ART 每次编译的返回值；“免去”按各组件上次编译耗时估算。没有做前后对比，不给出加速百分比。</p>
+    <p class="benefit-note" id="benefit-note">Los tiempos provienen de las respuestas de ART para cada compilación. El ahorro es una estimación basada en el tiempo de compilación anterior de cada componente; no se comparan mediciones antes y después ni se afirma un porcentaje de aceleración.</p>
 
     <div class="actions">
-      <button class="control primary" id="optimize" type="button" disabled><strong id="optimize-title">立即优化</strong><small>复用有效结果，需要时才编译</small></button>
-      <button class="control secondary" id="refresh" type="button"><strong>刷新状态</strong><small>读取真实记录</small></button>
-      <button class="control secondary" id="module-toggle" type="button" disabled><strong id="module-toggle-title">模块状态</strong><small id="module-toggle-note">读取后可操作</small></button>
+      <button class="control primary" id="optimize" type="button" disabled><strong id="optimize-title">Optimizar ahora</strong><small>Reutiliza resultados válidos y compila solo cuando hace falta</small></button>
+      <button class="control secondary" id="refresh" type="button"><strong>Actualizar estado</strong><small>Leer registros reales</small></button>
+      <button class="control secondary" id="module-toggle" type="button" disabled><strong id="module-toggle-title">Estado del módulo</strong><small id="module-toggle-note">Se podrá operar después de leer el estado</small></button>
     </div>
-    <p class="action-hint" id="action-hint" aria-live="polite">读取后可操作</p>
+    <p class="action-hint" id="action-hint" aria-live="polite">Se podrá operar después de leer el estado</p>
 
     <section class="auto-card" aria-labelledby="auto-heading">
-      <div class="auto-heading"><h3 id="auto-heading">自动规则</h3><span class="auto-tag" id="auto-tag">待确认</span></div>
-      <p>息屏或连续 10 分钟无操作 · 电量高于 15% · 电池低于 55℃，充电与否不影响。</p>
-      <button class="link" id="auto-details" type="button">查看计划与诊断 · <span id="auto-title">待确认</span></button>
+      <div class="auto-heading"><h3 id="auto-heading">Reglas automáticas</h3><span class="auto-tag" id="auto-tag">Pendiente de confirmar</span></div>
+      <p>Pantalla apagada o 10 minutos sin actividad · batería por encima del 15 % · temperatura por debajo de 55 °C. El estado de carga no influye.</p>
+      <button class="link" id="auto-details" type="button">Ver programación y diagnóstico · <span id="auto-title">Pendiente de confirmar</span></button>
     </section>
 
     <details class="details" id="details">
-      <summary>运行记录与诊断<span aria-hidden="true">＋</span></summary>
+      <summary>Registros de ejecución y diagnóstico<span aria-hidden="true">＋</span></summary>
       <div class="details-body">
         <p class="notice" id="reason" hidden></p>
         <dl>
-          <div><dt>记录</dt><dd id="record-validity">尚未读取</dd></div>
-          <div><dt>本次编译</dt><dd id="compiled">—</dd></div>
-          <div><dt>直接复用</dt><dd id="reused">—</dd></div>
-          <div><dt>延期</dt><dd id="deferred">—</dd></div>
-          <div><dt>ART 核验</dt><dd id="verified">—</dd></div>
-          <div><dt>核验结论</dt><dd id="verification">尚未核验</dd></div>
-          <div><dt>计划登记</dt><dd id="schedule">尚未读取</dd></div>
-          <div><dt>任务优先级</dt><dd id="priority">—</dd></div>
+          <div><dt>Registro</dt><dd id="record-validity">Todavía no se ha leído</dd></div>
+          <div><dt>Compilaciones de esta ejecución</dt><dd id="compiled">—</dd></div>
+          <div><dt>Resultados reutilizados</dt><dd id="reused">—</dd></div>
+          <div><dt>Aplazadas</dt><dd id="deferred">—</dd></div>
+          <div><dt>Verificación de ART</dt><dd id="verified">—</dd></div>
+          <div><dt>Resultado de la verificación</dt><dd id="verification">Aún no verificado</dd></div>
+          <div><dt>Programación registrada</dt><dd id="schedule">Todavía no se ha leído</dd></div>
+          <div><dt>Prioridad de la tarea</dt><dd id="priority">—</dd></div>
         </dl>
-        <div class="rule"><strong>自动</strong><p>需要编译时，息屏或无操作 10 分钟再处理；电量高于 15%，电池温度低于 55℃，充电与否不影响。</p></div>
-        <div class="rule"><strong>手动</strong><p>立即执行，不等待屏幕、电量、温度或充电条件；仍保留操作超时、可靠取消和防重叠。</p></div>
-        <p class="scope">仅处理系统界面和已识别控制中心插件的主 DEX；有效结果直接复用。</p>
+        <div class="rule"><strong>Automático</strong><p>Cuando haga falta compilar, esperará a que la pantalla se apague o a 10 minutos de inactividad. La batería debe superar el 15 % y estar por debajo de 55 °C; el estado de carga no influye.</p></div>
+        <div class="rule"><strong>Manual</strong><p>Se ejecuta de inmediato sin esperar condiciones de pantalla, batería, temperatura o carga. Se conservan el tiempo límite, la cancelación fiable y la prevención de tareas simultáneas.</p></div>
+        <p class="scope">Solo procesa el DEX principal de la interfaz del sistema y de los complementos reconocidos del centro de control. Los resultados válidos se reutilizan directamente.</p>
       </div>
     </details>
-    <p class="footer" id="connection">Status C17 附属模块 · 页面可见时更新状态</p>
+    <p class="footer" id="connection">Módulo complementario de Status C17 · el estado se actualiza mientras esta página está visible</p>
   </main>
 </body>
 </html>

@@ -72,8 +72,8 @@ public final class NotificationAppIconRuntime {
         if(owner!=null){Context application=owner.getApplicationContext();context=application==null?owner:application;}
         LinkedHashSet<String> sources=new LinkedHashSet<>();
         if(requested!=null)for(String pkg:requested){
-            NotificationIconOverrides.validatePackage(pkg,"图标来源应用包名格式不正确");
-            sources.add(pkg);if(sources.size()>MAX_ICONS)throw new IllegalArgumentException("最多缓存128个应用图标");
+            NotificationIconOverrides.validatePackage(pkg,"El formato del nombre de paquete de la aplicación de origen del icono no es válido.");
+            sources.add(pkg);if(sources.size()>MAX_ICONS)throw new IllegalArgumentException("Se pueden almacenar en caché hasta 128 iconos de aplicaciones.");
         }
         cache.keySet().retainAll(sources);
         if(sources.isEmpty())unregister();else register();
@@ -177,7 +177,7 @@ public final class NotificationAppIconRuntime {
         if(ownedWorker!=null)ownedWorker.shutdownNow();
     }
     private static Bitmap load(Context context,String packageName)throws Exception{
-        NotificationIconOverrides.validatePackage(packageName,"图标来源应用包名格式不正确");
+        NotificationIconOverrides.validatePackage(packageName,"El formato del nombre de paquete de la aplicación de origen del icono no es válido.");
         Drawable source=context.getPackageManager().getApplicationIcon(packageName);
         if(source==null)return null;
         source=source.mutate();

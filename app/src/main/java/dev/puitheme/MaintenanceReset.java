@@ -32,7 +32,7 @@ public final class MaintenanceReset {
             removed+=IconPackRepository.clear(context);
             ShadeWallpaperRepository.clear(context);
         } catch(IOException unavailable) {
-            return new Result(false,settings.frameworkSynced,removed,"配置已恢复默认，但导入资源未全部删除，请重试");
+            return new Result(false,settings.frameworkSynced,removed,"La configuración volvió a los valores predeterminados, pero no se eliminaron todos los recursos importados. Inténtalo de nuevo.");
         }
         return new Result(settings.localSuccess(),settings.frameworkSynced,removed,settings.message);
     }

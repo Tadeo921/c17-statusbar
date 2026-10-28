@@ -39,7 +39,7 @@ import org.json.JSONObject;
  * network failure or an invalid file keeps the list that was shown. Only the settings app reads it; SystemUI never does. */
 public final class ThanksWall {
     public static final String REPO_URL = "https://github.com/SANWU5/c17-supporters";
-    public static final String MOTTO = "感谢每一位为项目提供捐赠、反馈和帮助的伙伴。你们的支持，让项目得以持续改进，也让每一次更新更有动力。";
+    public static final String MOTTO = "Gracias a todas las personas que apoyan el proyecto con donaciones, comentarios y ayuda. Su apoyo permite mejorar el proyecto y da impulso a cada actualización.";
     /** Where the list and the avatars are read from, in order: GitHub's raw content, then a CDN mirror of the same repository. */
     static final String[] BASES = {
             "https://raw.githubusercontent.com/SANWU5/c17-supporters/main/",
@@ -151,7 +151,7 @@ public final class ThanksWall {
     }
 
     private static Result download(Context context) {
-        String failure = "无法连接名单仓库，继续显示已有名单";
+        String failure = "No se pudo conectar con el repositorio de la lista; se seguirá mostrando la lista existente.";
         for (String base : BASES) {
             try {
                 Wall wall = parse(fetchText(base + LIST));
@@ -164,11 +164,11 @@ public final class ThanksWall {
                 if (!temporary.renameTo(target)) throw new IOException("Cache not replaced");
                 prefs(context).edit().putLong(LAST_CHECK, System.currentTimeMillis()).apply();
                 Wall shown = load(context);
-                return new Result(shown, "名单已是最新（版本 " + shown.revision + "）");
+                return new Result(shown, "La lista ya está actualizada (versión " + shown.revision + "）");
             } catch (IllegalArgumentException invalid) {
-                failure = "下载到的名单格式不正确，继续显示已有名单";
+                failure = "El formato de la lista descargada no es válido; se seguirá mostrando la lista existente.";
             } catch (SocketTimeoutException timeout) {
-                failure = "连接名单仓库超时，继续显示已有名单";
+                failure = "Se agotó el tiempo de espera al conectar con el repositorio; se seguirá mostrando la lista existente.";
             } catch (IOException | SecurityException unavailable) {
                 // Try the next source.
             }
@@ -351,8 +351,8 @@ public final class ThanksWall {
 
     private static List<Group> defaultGroups() {
         List<Group> groups = new ArrayList<>();
-        groups.add(new Group("donation", "捐赠支持"));
-        groups.add(new Group("support", "其他支持"));
+        groups.add(new Group("donation", "Donaciones"));
+        groups.add(new Group("support", "Otras formas de apoyo"));
         return groups;
     }
 

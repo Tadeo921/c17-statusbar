@@ -148,7 +148,7 @@ public final class ModuleDiagnostics {
             if(!loggingEnabled(context))return;
             Bundle options=new Bundle();options.putBoolean(KEY_ENABLED,true);configure(context,options);
             JSONObject details=DiagnosticReport.change(key,previous,next);
-            JSONObject payload=event("setting","已保存配置修改",null).put("details",details);
+            JSONObject payload=event("setting","Cambios de configuración guardados",null).put("details",details);
             enqueue(payload,"setting|"+details.toString());
         }catch(Throwable ignored){ }
     }
@@ -173,7 +173,7 @@ public final class ModuleDiagnostics {
                 details.put("plugin_version",DiagnosticReport.safeBuild(plugin.versionName))
                         .put("plugin_code",Build.VERSION.SDK_INT>=28?plugin.getLongVersionCode():plugin.versionCode);
             } catch(Exception absent) { }
-            JSONObject payload=event("setting","系统界面配置应用成功",null).put("details",details);
+            JSONObject payload=event("setting","La interfaz del sistema aplicó la configuración correctamente.",null).put("details",details);
             enqueue(payload,"runtime_applied|"+details.toString());
         }catch(Throwable ignored){ }
     }
@@ -190,7 +190,7 @@ public final class ModuleDiagnostics {
                 else if(value instanceof Number && Double.isFinite(((Number)value).doubleValue()))metrics.put(key,((Number)value).doubleValue());
             }
             JSONObject details=DiagnosticReport.validateDetails(new JSONObject().put("kind","hook_stage").put("phase",phase).put("metrics",metrics));
-            JSONObject payload=event(source,"Hook阶段",failure).put("details",details);
+            JSONObject payload=event(source,"Etapa del hook",failure).put("details",details);
             enqueue(payload,safeSource(source)+"|"+details.toString()+"|"+(failure == null?"info":failure.getClass().getName()));
         }catch(Throwable ignored){ }
     }
@@ -399,13 +399,13 @@ public final class ModuleDiagnostics {
     public static String sanitizeMessage(String value) {
         if (value == null) return "";
         String limited = value.substring(0, Math.min(value.length(), 2048));
-        if (PRIVATE_WORDS.matcher(limited).find()) return "敏感内容已省略";
-        limited = URLS.matcher(limited).replaceAll("[地址]");
-        limited = PATHS.matcher(limited).replaceAll("[路径]");
-        limited = QUOTED.matcher(limited).replaceAll("[内容]");
-        limited = ASSIGNMENTS.matcher(limited).replaceAll("[参数]");
-        limited = LONG_NUMBERS.matcher(limited).replaceAll("[数字]");
-        limited = IDENTIFIERS.matcher(limited).replaceAll("[标识]");
+        if (PRIVATE_WORDS.matcher(limited).find()) return "Se omitió el contenido sensible";
+        limited = URLS.matcher(limited).replaceAll("[dirección]");
+        limited = PATHS.matcher(limited).replaceAll("[ruta]");
+        limited = QUOTED.matcher(limited).replaceAll("[contenido]");
+        limited = ASSIGNMENTS.matcher(limited).replaceAll("[parámetro]");
+        limited = LONG_NUMBERS.matcher(limited).replaceAll("[número]");
+        limited = IDENTIFIERS.matcher(limited).replaceAll("[identificador]");
         StringBuilder safe = new StringBuilder();
         for (int i = 0; i < limited.length() && safe.length() < 240; i++) {
             char valueAt = limited.charAt(i);
@@ -488,18 +488,18 @@ public final class ModuleDiagnostics {
                         Intent send = new Intent(Intent.ACTION_SEND);
                         send.setType("text/plain"); send.putExtra(Intent.EXTRA_STREAM, uri);
                         send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        send.setClipData(ClipData.newRawUri("C17 调试日志", uri));
-                        activity.startActivity(Intent.createChooser(send, "分享调试日志"));
+                        send.setClipData(ClipData.newRawUri("Registro de depuración de C17", uri));
+                        activity.startActivity(Intent.createChooser(send, "Compartir registro de depuración"));
                     } catch (Exception unavailable) {
-                        error("export", "日志分享界面启动失败", unavailable);
-                        Toast.makeText(activity, "无法打开分享界面，请尝试下载日志", Toast.LENGTH_LONG).show();
+                        error("export", "No se pudo abrir la pantalla para compartir el registro.", unavailable);
+                        Toast.makeText(activity, "No se pudo abrir la pantalla para compartir. Intenta descargar el registro.", Toast.LENGTH_LONG).show();
                     }
                 });
             } catch (Exception unavailable) {
-                error("export", "日志分享快照准备失败", unavailable);
+                error("export", "No se pudo preparar la copia del registro para compartir.", unavailable);
                 activity.runOnUiThread(() -> {
                     if (!activity.isFinishing() && !activity.isDestroyed())
-                        Toast.makeText(activity, "暂时没有可分享的日志，请开启日志后复现问题", Toast.LENGTH_LONG).show();
+                        Toast.makeText(activity, "No hay registros para compartir por ahora. Activa el registro y reproduce el problema.", Toast.LENGTH_LONG).show();
                 });
             }
         }, "C17-log-share");
@@ -508,13 +508,13 @@ public final class ModuleDiagnostics {
 
     public static void beginExport(Activity activity, int requestCode) {
         requireOwnApp(activity);
-        if (!hasLog(activity)) { Toast.makeText(activity, "暂时没有日志，请开启日志后复现问题", Toast.LENGTH_LONG).show(); return; }
+        if (!hasLog(activity)) { Toast.makeText(activity, "Todavía no hay registros. Activa el registro y reproduce el problema.", Toast.LENGTH_LONG).show(); return; }
         try {
             Intent create = new Intent(Intent.ACTION_CREATE_DOCUMENT);
             create.addCategory(Intent.CATEGORY_OPENABLE);create.setType("text/plain");
-            create.putExtra(Intent.EXTRA_TITLE, "C17-诊断日志.txt");
+            create.putExtra(Intent.EXTRA_TITLE, "C17-registro-diagnostico.txt");
             activity.startActivityForResult(create, requestCode);
-        } catch (Exception ignored) { Toast.makeText(activity, "无法打开文件保存界面", Toast.LENGTH_LONG).show(); }
+        } catch (Exception ignored) { Toast.makeText(activity, "No se pudo abrir la pantalla para guardar el archivo.", Toast.LENGTH_LONG).show(); }
     }
 
     public static void writeExport(Context context, Uri uri) throws IOException {
@@ -539,9 +539,9 @@ public final class ModuleDiagnostics {
                 byte[] previous = readTail(new File(directory, "c17.log.1"), 64 * 1024 - current.length);
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream(previous.length + current.length);
                 bytes.write(previous);bytes.write(current);
-                if (bytes.size() == 0) return "暂无日志。请开启日志后复现问题。";
+                if (bytes.size() == 0) return "No hay registros. Activa el registro y reproduce el problema.";
                 return new String(bytes.toByteArray(), StandardCharsets.UTF_8);
-            } catch (IOException ignored) { return "无法读取日志，请稍后重试。"; }
+            } catch (IOException ignored) { return "No se pudo leer el registro. Inténtalo de nuevo más tarde."; }
         }
     }
 
@@ -618,7 +618,7 @@ public final class ModuleDiagnostics {
                     lastRuntimeMessage, values, DiagnosticReport.app(context), DiagnosticReport.packages(context), loggingEnabled(context));
             String text = DiagnosticCenter.exportText(result, DiagnosticReport.device(context), DiagnosticReport.app(context),
                     DiagnosticReport.packages(context), lastHookHealth, values, System.currentTimeMillis())
-                    + "\n附录  原始事件（JSONL，供作者的分析工具使用）\n";
+                    + "\nApéndice: eventos originales (JSONL para las herramientas de análisis del autor)\n";
             report = text.getBytes(StandardCharsets.UTF_8);
             if(report.length>DiagnosticReport.MAX_REPORT_BYTES)throw new IOException("Diagnostic report exceeds limit");
         }catch(JSONException unavailable){throw new IOException("Cannot prepare diagnostic report",unavailable);}
@@ -676,7 +676,7 @@ public final class ModuleDiagnostics {
     static byte[] snapshotBytes(File directory,String version,byte[] report) throws IOException {
         if(report == null || report.length>DiagnosticReport.MAX_REPORT_BYTES)throw new IOException("Diagnostic report exceeds limit");
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        output.write(("C17 状态栏诊断日志\n版本：" + safeVersion(version) + "\n\n").getBytes(StandardCharsets.UTF_8));
+        output.write(("Registro de diagnóstico de la barra de estado C17\nVersión: " + safeVersion(version) + "\n\n").getBytes(StandardCharsets.UTF_8));
         output.write(report);
         byte[] buffer = new byte[4096];
         boolean content = false;

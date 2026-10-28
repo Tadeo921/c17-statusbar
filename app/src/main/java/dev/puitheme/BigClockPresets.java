@@ -13,68 +13,68 @@ final class BigClockPresets {
     private BigClockPresets() { }
 
     private static final String[][] WEATHER = {
-        {"（天气）", "天气 · 系统默认"},
-        {"（天气:{图标} {温度}）", "天气 · 图标与温度"},
-        {"（天气:{温度}{图标}）", "天气 · 温度与图标"},
-        {"（天气:{描述} {温度}）", "天气 · 文字与温度（无图标）"},
-        {"（天气:{描述:英文} {温度:数字}°C）", "天气 · English 与摄氏数字"},
-        {"（天气:{夜?🌙|☀️} {温度}）", "天气 · 昼夜符号与温度"},
-        {"（天气:{有数据?{描述}{温度? ·{温度}}|暂无天气}）", "天气 · 无数据时的自定义文字"},
-        {"（天气:{描述:中文}）", "仅天气文字 · 中文"},
-        {"（天气:{描述:英文}）", "仅天气文字 · English"},
-        {"（天气:{温度}）", "仅温度"},
-        {"（天气:{图标:原色}）", "仅图标 · 原色"},
-        {"（天气原色）", "天气 · 系统原色图标"},
+        {"（天气）", "Clima · predeterminado del sistema"},
+        {"（天气:{图标} {温度}）", "Clima · icono y temperatura"},
+        {"（天气:{温度}{图标}）", "Clima · temperatura e icono"},
+        {"（天气:{描述} {温度}）", "Clima · texto y temperatura (sin icono)"},
+        {"（天气:{描述:英文} {温度:数字}°C）", "Clima · texto en inglés y temperatura en °C"},
+        {"（天气:{夜?🌙|☀️} {温度}）", "Clima · símbolo de día/noche y temperatura"},
+        {"（天气:{有数据?{描述}{温度? ·{温度}}|暂无天气}）", "Clima · texto personalizado si no hay datos"},
+        {"（天气:{描述:中文}）", "Solo texto del clima · chino"},
+        {"（天气:{描述:英文}）", "Solo texto del clima · inglés"},
+        {"（天气:{温度}）", "Solo temperatura"},
+        {"（天气:{图标:原色}）", "Solo icono · color original"},
+        {"（天气原色）", "Clima · icono del sistema con color original"},
     };
 
     private static final String[][] DATE_TIME = {
-        {"（日期）", "月日"},
-        {"（日期） （周）", "月日与星期"},
-        {"（年月日） （星期）", "完整日期与星期"},
-        {"（日期） （农历日期）", "月日与农历"},
-        {"（农历）", "农历"},
-        {"（干支） （农历日期）", "干支年与农历"},
-        {"（时间）", "时分 · 24 小时"},
-        {"（上午下午） （12小时）", "时分 · 12 小时"},
-        {"（时段） （时间）", "时段与时间"},
-        {"（日期英文） （星期英文简）", "English 日期"},
-        {"（星期英文）", "English 星期"},
-        {"（天气） （日期）", "天气与日期"},
-        {"（日期） （天气）", "日期与天气"},
-        {"（格式:M月d日 {周} {时段}）", "自定义时间格式示例"},
+        {"（日期）", "Día y mes"},
+        {"（日期） （周）", "Día, mes y día de la semana"},
+        {"（年月日） （星期）", "Fecha completa y día de la semana"},
+        {"（日期） （农历日期）", "Día y mes con fecha lunar"},
+        {"（农历）", "Calendario lunar"},
+        {"（干支） （农历日期）", "Año sexagenario y fecha lunar"},
+        {"（时间）", "Hora y minutos · 24 horas"},
+        {"（上午下午） （12小时）", "Hora · formato de 12 horas"},
+        {"（时段） （时间）", "Franja horaria y hora"},
+        {"（日期英文） （星期英文简）", "Fecha en inglés"},
+        {"（星期英文）", "Día de la semana en inglés"},
+        {"（天气） （日期）", "Clima y fecha"},
+        {"（日期） （天气）", "Fecha y clima"},
+        {"（格式:M月d日 {周} {时段}）", "Ejemplo de formato horario personalizado"},
     };
 
     private static final String[][] BATTERY = {
-        {"（电池:{图标} {电量}%）", "电池 · 图标与电量"},
-        {"（电池:{电量}%{充电?⚡}）", "电池 · 电量与充电闪电"},
-        {"（电池:{电量}%{状态? {状态}}）", "电池 · 电量与充电状态文字"},
-        {"（电池:{电量<=20?🪫|🔋} {电量}%）", "电池 · 低电量换符号"},
-        {"（电池:{条:5:█:░} {电量}%）", "电池 · 电量条"},
-        {"（电池:{图标}）", "仅电池图标"},
-        {"（电池）", "电池电量（含图标）"},
+        {"（电池:{图标} {电量}%）", "Batería · icono y porcentaje"},
+        {"（电池:{电量}%{充电?⚡}）", "Batería · porcentaje y rayo de carga"},
+        {"（电池:{电量}%{状态? {状态}}）", "Batería · porcentaje y texto de carga"},
+        {"（电池:{电量<=20?🪫|🔋} {电量}%）", "Batería · icono para nivel bajo"},
+        {"（电池:{条:5:█:░} {电量}%）", "Batería · barra de nivel"},
+        {"（电池:{图标}）", "Solo icono de batería"},
+        {"（电池）", "Nivel de batería (con icono)"},
     };
 
     private static final String[][] SIGNAL = {
-        {"（信号:{图标}）", "信号 · 仅图标"},
-        {"（信号:{条:4:●:○}）", "信号 · 圆点格数"},
-        {"（信号:{无服务?无服务|{格数}/{总格}格}）", "信号 · 格数，无服务时提示"},
-        {"（信号:{图标} {状态}）", "信号 · 图标与特殊状态"},
-        {"（蜂窝信号）", "蜂窝信号（含图标）"},
+        {"（信号:{图标}）", "Señal · solo icono"},
+        {"（信号:{条:4:●:○}）", "Señal · niveles con puntos"},
+        {"（信号:{无服务?无服务|{格数}/{总格}格}）", "Señal · niveles y aviso sin servicio"},
+        {"（信号:{图标} {状态}）", "Señal · icono y estado especial"},
+        {"（蜂窝信号）", "Señal móvil (con icono)"},
     };
 
     private static final String[][] NETWORK = {
-        {"（网络:{图标} {类型}）", "网络 · 图标与类型"},
-        {"（网络:{类型}{受限?'（受限）'}）", "网络 · 类型，受限时标注"},
-        {"（网络:{制式?{制式}|{类型}}）", "网络 · 蜂窝优先显示 5G / 4G"},
-        {"（网络:{WiFi?Wi-Fi {条:4:●:○}|{类型}}）", "网络 · Wi-Fi 信号点"},
-        {"（网络:{图标}）", "仅网络图标"},
-        {"（网络状态）", "网络状态（含图标）"},
+        {"（网络:{图标} {类型}）", "Red · icono y tipo"},
+        {"（网络:{类型}{受限?'（受限）'}）", "Red · tipo e indicación de restricción"},
+        {"（网络:{制式?{制式}|{类型}}）", "Red móvil · priorizar 5G / 4G"},
+        {"（网络:{WiFi?Wi-Fi {条:4:●:○}|{类型}}）", "Red · niveles de señal Wi-Fi"},
+        {"（网络:{图标}）", "Solo icono de red"},
+        {"（网络状态）", "Estado de red (con icono)"},
     };
 
     private static final String[][] COMBINED = {
-        {"（电池:{电量}%） · （网络:{类型}）", "电量 · 网络"},
-        {"（信号:{图标}） （网络:{图标}） （电池:{图标}）", "状态图标三件套"},
-        {"信号（蜂窝信号） 网络（网络状态） 电量（电池）", "信号、网络与电量（文字说明）"},
+        {"（电池:{电量}%） · （网络:{类型}）", "Batería · red"},
+        {"（信号:{图标}） （网络:{图标}） （电池:{图标}）", "Trío de iconos de estado"},
+        {"信号（蜂窝信号） 网络（网络状态） 电量（电池）", "Señal, red y batería (descripción de texto)"},
     };
 
     static String[][] entries(boolean right) {
@@ -110,7 +110,7 @@ final class BigClockPresets {
     static CharSequence preview(String input, long now) {
         if (input == null || input.isEmpty()) return "";
         String error = BigClockWidgetsSettings.textValidationError(input);
-        if (error != null) return "格式有误：" + error;
+        if (error != null) return "Formato no válido: " + error;
         return BigClockTextContent.resolvePreview(input, now, java.util.TimeZone.getDefault(), sampleWeather(), sampleSystem());
     }
 }

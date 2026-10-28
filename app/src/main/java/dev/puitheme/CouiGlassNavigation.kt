@@ -53,11 +53,11 @@ internal fun CouiGlassNavigationBar(selectedIndex: Int, onItemClick: (Int) -> Un
     val density = LocalDensity.current
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val selected = selectedIndex.coerceIn(0, 2)
-    val labels = remember { listOf("主页", "配置", "关于") }
+    val labels = remember { listOf("Inicio", "Configuración", "Acerca de") }
     val icons = remember { listOf(Icons.Outlined.Home, Icons.Outlined.Settings, Icons.Outlined.Info) }
     val measurer = rememberTextMeasurer()
     val labelStyle = COUITheme.textStyles.footnote1.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium)
-    val labelHeight = with(density) { measurer.measure("主页", style = labelStyle).size.height.toDp() }
+    val labelHeight = with(density) { measurer.measure("Inicio", style = labelStyle).size.height.toDp() }
     val barHeight = maxOf(64.dp, 24.dp + labelHeight + 20.dp)
     val shape = remember { RoundedCornerShape(28.dp) }
     val indicatorShape = remember { RoundedCornerShape(23.dp) }

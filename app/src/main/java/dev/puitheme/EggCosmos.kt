@@ -242,7 +242,7 @@ internal class CosmosEgg(icon: ImageBitmap, measurer: TextMeasurer) : EggScene(i
         val title = layout("STATUS C17", 34.sp, FontWeight.Light, letterSpacing = 10.sp)
         centred(title, w / 2f, top, Brush.horizontalGradient(listOf(cosmosCyan, Color.White, cosmosViolet, cosmosPink),
             w / 2f - title.size.width / 2f, w / 2f + title.size.width / 2f), show)
-        val sub = layout("穿越星河 · 与你相遇", 16.sp, FontWeight.Normal, letterSpacing = 4.sp)
+        val sub = layout("Atravesar la galaxia · encontrarnos", 16.sp, FontWeight.Normal, letterSpacing = 4.sp)
         centred(sub, w / 2f, top + title.size.height + 8f * density, Color(0xFFDDE6FF), eggIn(t, 3.7f, .6f) * fade)
         val thanks = layout(EGG_THANKS, 13.sp, FontWeight.Normal)
         centred(thanks, w / 2f, top + title.size.height + sub.size.height + 16f * density, cosmosGold, eggIn(t, 4f, .6f) * fade)

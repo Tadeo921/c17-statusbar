@@ -217,7 +217,7 @@ internal class PixelEgg(icon: ImageBitmap, measurer: TextMeasurer) : EggScene(ic
         val name = layout("STATUS C17", 22.sp, FontWeight.Bold, FontFamily.Monospace)
         centred(name, cx + px, top + title.size.height + px, Color.Black, .7f * show)
         centred(name, cx, top + title.size.height, Color.White, show)
-        val sub = layout("恭喜通关 · 获得 1UP", 15.sp, FontWeight.Bold)
+        val sub = layout("¡Nivel completado · has conseguido 1UP!", 15.sp, FontWeight.Bold)
         val subTop = top + title.size.height + name.size.height + 8f * density
         centred(sub, cx, subTop, pixelGold, eggIn(t, 2f, .3f) * fade)
         val thanks = layout(EGG_THANKS, 13.sp, FontWeight.Bold)

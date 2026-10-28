@@ -59,14 +59,14 @@ final class ResidentCache {
             try {
                 Context storage = context.createDeviceProtectedStorageContext();
                 folder = new File((storage == null ? context : storage).getFilesDir(), FOLDER);
-            } catch (RuntimeException unavailable) { lastError = "无法打开系统界面存储"; return; }
+            } catch (RuntimeException unavailable) { lastError = "No se pudo abrir el almacenamiento de SystemUI"; return; }
         }
         boolean wasRunning = running, first = !initialized;
         installed = true; running = !paused; initialized = true;
         final File store = folder;
         if (running && (first || !wasRunning)) worker.execute(() -> {
             if (!running || released) return;
-            if (!store.isDirectory() && !store.mkdirs()) lastError = "无法创建缓存目录";
+            if (!store.isDirectory() && !store.mkdirs()) lastError = "No se pudo crear la carpeta de caché";
         });
     }
 
@@ -111,24 +111,24 @@ final class ResidentCache {
         worker.execute(() -> {
             try {
                 if (!running || released) return;
-                if (!store.isDirectory() && !store.mkdirs()) throw new IOException("无法创建缓存目录");
+                if (!store.isDirectory() && !store.mkdirs()) throw new IOException("No se pudo crear la carpeta de caché");
                 File temporary = new File(store, target.getName() + ".new");
                 long used=0L;File[] existing=store.listFiles();if(existing!=null)for(File file:existing)if(file.isFile()&&!file.equals(temporary))used+=file.length();
                 try (ParcelFileDescriptor source = moduleContext.getContentResolver().openFileDescriptor(library?FontRepository.libraryUri(revision):Uri.parse(StatusBarSettings.FONT_URI), "r")) {
-                    if (source == null) throw new IOException("字体不可用");
+                    if (source == null) throw new IOException("La fuente no está disponible");
                     try (InputStream input = new FileInputStream(source.getFileDescriptor()); OutputStream output = new FileOutputStream(temporary)) {
                         byte[] buffer = new byte[64 * 1024];
                         long total = 0;
                         for (int read; (read = input.read(buffer)) != -1; ) {
                             total += read;
-                            if (total > MAX_FONT_BYTES) throw new IOException("字体过大");
-                            if(used+total>MAX_TOTAL_BYTES)throw new IOException("缓存已满（上限 96 MB）");
+                            if (total > MAX_FONT_BYTES) throw new IOException("La fuente es demasiado grande");
+                            if(used+total>MAX_TOTAL_BYTES)throw new IOException("La caché está llena (límite: 96 MB)");
                             output.write(buffer, 0, read);
                         }
                     }
                 }
-                if(library&&!revision.equals(FontFileValidator.sha256(temporary,MAX_FONT_BYTES,null)))throw new IOException("字体缓存校验失败");
-                if (!temporary.renameTo(target)) throw new IOException("无法写入缓存");
+                if(library&&!revision.equals(FontFileValidator.sha256(temporary,MAX_FONT_BYTES,null)))throw new IOException("Falló la verificación de la caché de fuentes");
+                if (!temporary.renameTo(target)) throw new IOException("No se pudo escribir en la caché");
                 writes++; lastError = "";
                 // Independent scopes can keep different revisions; caching one must not evict the others.
             } catch (IOException | RuntimeException failure) {
@@ -170,8 +170,8 @@ final class ResidentCache {
     /** v3 has a separate namespace and validates cached/provider bytes before publication to a decoder. */
     byte[] iconV3Entry(String libraryId,String path,String expectedHash,Source source,int max)throws IOException{
         if(!IconManagementSettings.validPackId(libraryId)||!("manifest.json".equals(path)||IconManagementManifest.validAsset(path))
-                ||max<1||max>IconManagementArchive.MAX_ENTRY)throw IconManagementJson.error("v3 缓存请求无效");
-        boolean manifest="manifest.json".equals(path);if(!manifest&&!IconManagementSettings.validPackId(expectedHash))throw IconManagementJson.error("v3 资源必须有摘要");
+                ||max<1||max>IconManagementArchive.MAX_ENTRY)throw IconManagementJson.error("La solicitud de caché v3 no es válida");
+        boolean manifest="manifest.json".equals(path);if(!manifest&&!IconManagementSettings.validPackId(expectedHash))throw IconManagementJson.error("Los recursos v3 deben incluir un resumen");
         File store=folder;boolean use=running&&!released&&store!=null;
         File cached=use?new File(store,"icon-v3-"+libraryId+'-'+digest(path)+'-'+(manifest?"manifest":expectedHash)+".data"):null;
         if(cached!=null&&cached.isFile())try{byte[] bytes=IconManagementRepository.read(cached,max);validateIconV3(bytes,manifest,expectedHash);hits++;return bytes;}
@@ -236,14 +236,14 @@ final class ResidentCache {
     private void keep(File store, File target, byte[] bytes) {
         if (!running || released) return;
         try {
-            if (!store.isDirectory() && !store.mkdirs()) throw new IOException("无法创建缓存目录");
+            if (!store.isDirectory() && !store.mkdirs()) throw new IOException("No se pudo crear la carpeta de caché");
             long used = 0;
             File[] files = store.listFiles();
             if (files != null) for (File file : files) used += file.length();
-            if (used + bytes.length > MAX_TOTAL_BYTES) throw new IOException("缓存已满（上限 96 MB）");
+            if (used + bytes.length > MAX_TOTAL_BYTES) throw new IOException("La caché está llena (límite: 96 MB)");
             File temporary = new File(store, target.getName() + ".new");
             try (OutputStream output = new FileOutputStream(temporary)) { output.write(bytes); }
-            if (!temporary.renameTo(target)) { temporary.delete(); throw new IOException("无法写入缓存"); }
+            if (!temporary.renameTo(target)) { temporary.delete(); throw new IOException("No se pudo escribir en la caché"); }
             writes++; lastError = "";
         } catch (IOException | RuntimeException failure) {
             lastError = failure.getMessage() == null ? failure.getClass().getSimpleName() : failure.getMessage();

@@ -66,26 +66,26 @@ internal fun InstalledApplicationChoices(app: ModernMainActivity, allowed: Boole
     }
     var page by remember(entries, query, systemOnly) { mutableIntStateOf(0) }
     val lastPage = ((choices.size - 1).coerceAtLeast(0)) / 16
-    C17TextField(value = query, onValueChange = { query = it }, label = "搜索全部已安装应用", singleLine = true,
+    C17TextField(value = query, onValueChange = { query = it }, label = "Buscar en todas las aplicaciones instaladas", singleLine = true,
         useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth(), insideMargin = DpSize(12.dp, 10.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        C17TextButton(text = if (!systemOnly) "✓ 非系统应用" else "非系统应用", modifier = Modifier.weight(1f), onClick = { systemOnly = false })
-        C17TextButton(text = if (systemOnly) "✓ 系统应用" else "系统应用", modifier = Modifier.weight(1f), onClick = { systemOnly = true })
+        C17TextButton(text = if (!systemOnly) "✓ Aplicaciones de terceros" else "Aplicaciones de terceros", modifier = Modifier.weight(1f), onClick = { systemOnly = false })
+        C17TextButton(text = if (systemOnly) "✓ Aplicaciones del sistema" else "Aplicaciones del sistema", modifier = Modifier.weight(1f), onClick = { systemOnly = true })
     }
     choices.drop(page * 16).take(16).forEach { choice -> key(choice.packageName) {
         C17ArrowPreference(title = choice.label, summary = choice.packageName, enabled = allowed,
             startAction = { Box(Modifier.padding(end = 12.dp)) { AppIcon(app, choice.packageName) } },
             onClick = { onChoose(choice) })
     } }
-    if (choices.isEmpty()) Text(if (loading) "正在读取可启动应用…" else if (!launchableOnly && entries.isEmpty()) "正在读取应用列表，可先填写包名。" else "没有符合条件的应用。",
+    if (choices.isEmpty()) Text(if (loading) "Leyendo aplicaciones que se pueden abrir…" else if (!launchableOnly && entries.isEmpty()) "Leyendo la lista de aplicaciones; puedes introducir primero el nombre del paquete." else "No hay aplicaciones que cumplan los criterios.",
         fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
     else {
-        Text("共 ${choices.size} 个应用 · 第 ${page + 1} / ${lastPage + 1} 页" +
-            if (launchableOnly) "，只显示可启动应用。" else "，包含没有桌面入口的应用。", fontSize = 12.sp,
+        Text("${choices.size} aplicaciones · página ${page + 1} de ${lastPage + 1}" +
+            if (launchableOnly) "; solo se muestran aplicaciones que se pueden abrir." else "; incluye aplicaciones sin acceso directo en el escritorio.", fontSize = 12.sp,
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         if (lastPage > 0) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            C17TextButton(text = "上一页", enabled = page > 0, modifier = Modifier.weight(1f), onClick = { page-- })
-            C17TextButton(text = "下一页", enabled = page < lastPage, modifier = Modifier.weight(1f), onClick = { page++ })
+            C17TextButton(text = "Anterior", enabled = page > 0, modifier = Modifier.weight(1f), onClick = { page-- })
+            C17TextButton(text = "Siguiente", enabled = page < lastPage, modifier = Modifier.weight(1f), onClick = { page++ })
         }
     }
 }
@@ -111,17 +111,17 @@ fun NotificationOverridesDialog(app: ModernMainActivity) {
         sourcePackage = rule?.sourcePackage ?: ""
         selectingTarget = rule == null; selectingSource = false; error = ""
     }
-    C17OverlayDialog(show = true, title = if (editingPackage == null) "指定应用通知图标" else "设置替换图标",
+    C17OverlayDialog(show = true, title = if (editingPackage == null) "Icono de notificación por aplicación" else "Configurar sustitución de icono",
         onDismissRequest = { app.notificationOverridesOpen = false }) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (editingPackage == null) {
-                Text("选择文字、表情或另一个应用的彩色图标。只替换状态栏小图标，通知内容和分组不变。", fontSize = 14.sp,
+                Text("Elige texto, emoji o el icono a color de otra aplicación. Solo sustituye el icono pequeño de la barra de estado; el contenido y los grupos de notificaciones no cambian.", fontSize = 14.sp,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-                    if (rules.isEmpty()) UiRow("尚未添加应用", "点击下方添加，其他应用保留原生图标")
+                    if (rules.isEmpty()) UiRow("Todavía no se ha añadido ninguna aplicación.", "Pulsa Añadir abajo; las demás aplicaciones conservarán sus iconos nativos.")
                     rules.forEach { rule -> key(rule.packageName) {
                         UiGroupCard {
-                            UiSwitchRow(app.applicationLabel(rule.packageName), if (rule.isAppIcon()) "图标来自 ${app.applicationLabel(rule.sourcePackage)}" else "替换为 ${rule.text}", rule.enabled, allowed) {
+                            UiSwitchRow(app.applicationLabel(rule.packageName), if (rule.isAppIcon()) "Icono de ${app.applicationLabel(rule.sourcePackage)}" else "Sustituir por ${rule.text}", rule.enabled, allowed) {
                                 if (rule.isAppIcon()) {
                                     val message = app.saveNotificationAppIconOverride(rule.packageName, rule.sourcePackage, it, rule.packageName)
                                     if (message.isNotEmpty()) app.toast(message)
@@ -129,52 +129,52 @@ fun NotificationOverridesDialog(app: ModernMainActivity) {
                                 else app.saveNotificationOverride(rule.packageName, rule.text, it, rule.packageName)
                             }
                             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                C17TextButton(text = "编辑", enabled = allowed, modifier = Modifier.weight(1f), onClick = { edit(rule) })
-                                C17TextButton(text = "删除", enabled = allowed, modifier = Modifier.weight(1f), onClick = { app.removeNotificationOverride(rule.packageName) })
+                                C17TextButton(text = "Editar", enabled = allowed, modifier = Modifier.weight(1f), onClick = { edit(rule) })
+                                C17TextButton(text = "Eliminar", enabled = allowed, modifier = Modifier.weight(1f), onClick = { app.removeNotificationOverride(rule.packageName) })
                             }
                         }
                         Spacer(Modifier.height(8.dp))
                     } }
                 }
-                C17TextButton(text = "添加应用", enabled = allowed && rules.size < 128,
+                C17TextButton(text = "Añadir aplicación", enabled = allowed && rules.size < 128,
                     modifier = Modifier.fillMaxWidth(), onClick = { edit(null) })
-                C17TextButton(text = "完成", modifier = Modifier.fillMaxWidth(), onClick = { app.notificationOverridesOpen = false })
+                C17TextButton(text = "Listo", modifier = Modifier.fillMaxWidth(), onClick = { app.notificationOverridesOpen = false })
             } else {
                 Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    C17TextField(value = selectedPackage, onValueChange = { selectedPackage = it; error = "" }, label = "应用包名",
+                    C17TextField(value = selectedPackage, onValueChange = { selectedPackage = it; error = "" }, label = "Nombre de paquete de la aplicación",
                         singleLine = true, useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth(), insideMargin = DpSize(12.dp, 10.dp))
-                    C17TextButton(text = if (selectingTarget) "收起通知应用列表" else "选择通知所属应用", enabled = allowed,
+                    C17TextButton(text = if (selectingTarget) "Contraer lista de aplicaciones de notificación" else "Seleccionar la aplicación propietaria de la notificación", enabled = allowed,
                         modifier = Modifier.fillMaxWidth(), onClick = { selectingTarget = !selectingTarget })
                     if (selectingTarget) {
                         InstalledApplicationChoices(app, allowed) { selectedPackage = it.packageName; selectingTarget = false; error = "" }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        C17TextButton(text = if (replacementType == NotificationIconOverrides.TYPE_TEXT) "✓ 文字与表情" else "文字与表情",
+                        C17TextButton(text = if (replacementType == NotificationIconOverrides.TYPE_TEXT) "✓ Texto y emoji" else "Texto y emoji",
                             enabled = allowed, modifier = Modifier.weight(1f), onClick = { replacementType = NotificationIconOverrides.TYPE_TEXT; error = "" })
-                        C17TextButton(text = if (replacementType == NotificationIconOverrides.TYPE_APP_ICON) "✓ 应用图标" else "应用图标",
+                        C17TextButton(text = if (replacementType == NotificationIconOverrides.TYPE_APP_ICON) "✓ Icono de aplicación" else "Icono de aplicación",
                             enabled = allowed, modifier = Modifier.weight(1f), onClick = { replacementType = NotificationIconOverrides.TYPE_APP_ICON; selectingSource = sourcePackage.isBlank(); error = "" })
                     }
                     if (replacementType == NotificationIconOverrides.TYPE_APP_ICON) {
-                        C17TextField(value = sourcePackage, onValueChange = { sourcePackage = it; error = "" }, label = "图标来源应用包名",
+                        C17TextField(value = sourcePackage, onValueChange = { sourcePackage = it; error = "" }, label = "Nombre de paquete de la aplicación de origen del icono",
                             singleLine = true, useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth(), insideMargin = DpSize(12.dp, 10.dp))
-                        C17TextButton(text = if (selectingSource) "收起图标来源应用列表" else "选择提供图标的应用", enabled = allowed,
+                        C17TextButton(text = if (selectingSource) "Contraer lista de aplicaciones de origen del icono" else "Seleccionar la aplicación que proporciona el icono", enabled = allowed,
                             modifier = Modifier.fillMaxWidth(), onClick = { selectingSource = !selectingSource })
                         if (selectingSource) InstalledApplicationChoices(app, allowed) {
                             sourcePackage = it.packageName; selectingSource = false; error = ""
                         }
-                        Text("保留来源应用图标的颜色。来源应用卸载或图标读取失败时，恢复原生通知图标。", fontSize = 13.sp,
+                        Text("Conserva los colores del icono de origen. Si la aplicación de origen se desinstala o no se puede leer su icono, se restaurará el icono de notificación nativo.", fontSize = 13.sp,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                     } else {
-                        C17TextField(value = replacement, onValueChange = { replacement = it; error = "" }, label = "替换文字或表情",
+                        C17TextField(value = replacement, onValueChange = { replacement = it; error = "" }, label = "Texto o emoji de sustitución",
                             singleLine = true, useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth(), insideMargin = DpSize(12.dp, 10.dp))
-                        Text("最多 8 个字符，可使用 ❤️、✨ 等表情。尺寸跟随原生图标或通知图标区域的大小设置。", fontSize = 13.sp,
+                        Text("Hasta 8 caracteres; puedes usar emojis como ❤️ o ✨. El tamaño sigue el del icono nativo o los ajustes del área de iconos de notificación.", fontSize = 13.sp,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                     }
                     if (error.isNotEmpty()) Text(error, fontSize = 13.sp, color = MiuixTheme.colorScheme.primary)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    C17TextButton(text = "返回", modifier = Modifier.weight(1f), onClick = { editingPackage = null })
-                    C17TextButton(text = "确定", enabled = allowed, modifier = Modifier.weight(1f), onClick = {
+                    C17TextButton(text = "Volver", modifier = Modifier.weight(1f), onClick = { editingPackage = null })
+                    C17TextButton(text = "Aceptar", enabled = allowed, modifier = Modifier.weight(1f), onClick = {
                         val old = rules.firstOrNull { it.packageName == editingPackage }
                         error = if (replacementType == NotificationIconOverrides.TYPE_APP_ICON)
                             app.saveNotificationAppIconOverride(selectedPackage.trim(), sourcePackage.trim(), old?.enabled ?: true, editingPackage)

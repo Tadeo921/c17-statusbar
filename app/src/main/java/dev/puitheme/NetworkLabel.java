@@ -32,7 +32,7 @@ final class NetworkLabel {
     }
     private static String token(String raw){return SEPARATORS.matcher(raw.toUpperCase(Locale.ROOT)).replaceAll("");}
     private static boolean absent(String value){return value.isEmpty()||value.equals("UNKNOWN")||value.equals("NONE")
-            ||value.equals("NOSERVICE")||value.equals("OUTOFSERVICE")||value.equals("无服务");}
+            ||value.equals("NOSERVICE")||value.equals("OUTOFSERVICE")||value.equals("Sin servicio");}
     static Level level(String raw) {
         if(raw==null)return null;String value=token(raw.trim());
         if(value.startsWith("TIGO5G"))value=value.substring(4);
@@ -91,7 +91,7 @@ final class NetworkLabel {
         }
         String strTrim = str.trim();
         String strReplace = strTrim.toUpperCase(Locale.ROOT).replace(" ", "").replace("_", "");
-        if (strReplace.isEmpty() || strReplace.equals("UNKNOWN") || strReplace.equals("NONE") || strReplace.equals("NOSERVICE") || strReplace.equals("OUTOFSERVICE") || strReplace.equals("无服务")) {
+        if (strReplace.isEmpty() || strReplace.equals("UNKNOWN") || strReplace.equals("NONE") || strReplace.equals("NOSERVICE") || strReplace.equals("OUTOFSERVICE") || strReplace.equals("Sin servicio")) {
             return "";
         }
         if (strReplace.startsWith("5G") || strReplace.startsWith("5.5G") || strReplace.startsWith("NR5G") || strReplace.startsWith("TIGO5G")) {

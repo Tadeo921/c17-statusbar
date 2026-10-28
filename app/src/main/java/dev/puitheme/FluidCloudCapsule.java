@@ -146,8 +146,8 @@ public final class FluidCloudCapsule {
     /** Marquee presets, in the order they are offered. "comet" and "custom" take the user's colours. */
     public static final String[] MARQUEE_PRESETS = {"rainbow", "neon", "aurora", "flame", "glacier", "sunset", "candy", "ocean", "forest",
             "lava", "galaxy", "sakura", "mint", "cyber", "gold", "silver", "lemon", "coral", "rgb", "duo", "comet", "custom"};
-    public static final String[] MARQUEE_PRESET_LABELS = {"彩虹", "霓虹", "极光", "火焰", "冰川", "日落", "糖果", "海洋", "森林",
-            "熔岩", "星空", "樱花", "薄荷", "赛博朋克", "鎏金", "银河", "柠檬", "珊瑚", "三原色", "红蓝", "单色流光", "自定义"};
+    public static final String[] MARQUEE_PRESET_LABELS = {"Arcoíris", "Neón", "Aurora", "Llamas", "Glaciar", "Atardecer", "Caramelo", "Océano", "Bosque",
+            "Lava", "Galaxia", "Cerezos en flor", "Menta", "Ciberpunk", "Oro", "Plata", "Limón", "Coral", "RGB", "Rojo y azul", "Estela", "Personalizado"};
     /** One lap of each ready-made preset (the first colour closes the lap). The two last ones are the user's. */
     private static final int[][] PRESET_COLORS = {
             {0xffff3b30, 0xffff9500, 0xffffcc00, 0xff34c759, 0xff32ade6, 0xff5856d6, 0xffff3b30},

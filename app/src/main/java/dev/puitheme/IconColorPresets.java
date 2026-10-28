@@ -15,15 +15,15 @@ public final class IconColorPresets {
     /** These local choices are available even when a legacy v3 package declares no palette. */
     public static Map<String,Preset> options(IconManagementManifest manifest){
         Map<String,Preset> result=new LinkedHashMap<>();
-        for(String mode:new String[]{"system","artwork"}){Map<String,IconManagementSettings.Appearance> colors=new LinkedHashMap<>();for(String scope:IconRoleRegistry.SCOPES)colors.put("scope:"+scope,new IconManagementSettings.Appearance(mode,0xff000000,0xffffffff,null));String id="@"+mode;result.put(id,new Preset(id,"system".equals(mode)?"跟随系统颜色":"保留素材原色",colors));}
+        for(String mode:new String[]{"system","artwork"}){Map<String,IconManagementSettings.Appearance> colors=new LinkedHashMap<>();for(String scope:IconRoleRegistry.SCOPES)colors.put("scope:"+scope,new IconManagementSettings.Appearance(mode,0xff000000,0xffffffff,null));String id="@"+mode;result.put(id,new Preset(id,"system".equals(mode)?"Seguir el color del sistema":"Conservar los colores originales del recurso",colors));}
         result.putAll(manifest.colorPresets);return Collections.unmodifiableMap(result);
     }
     static Map<String,Preset> parse(Object raw)throws IOException{
-        if(raw==null)return Collections.emptyMap();Map<String,Object> entries=IconManagementJson.object(raw);if(entries.size()>MAX_PRESETS)throw IconManagementJson.error("最多16个图库颜色预设");
+        if(raw==null)return Collections.emptyMap();Map<String,Object> entries=IconManagementJson.object(raw);if(entries.size()>MAX_PRESETS)throw IconManagementJson.error("Se permiten hasta 16 colores preestablecidos por biblioteca.");
         Map<String,Preset> result=new TreeMap<>();for(Map.Entry<String,Object> entry:entries.entrySet()){
-            String id=entry.getKey();if(!id.matches("[a-z0-9][a-z0-9_-]{0,63}"))throw IconManagementJson.error("颜色预设标识无效");
-            Map<String,Object> value=IconManagementJson.object(entry.getValue());IconManagementJson.only(value,"name","appearances");String name=IconManagementJson.text(value,"name","",64).trim();if(name.isEmpty()||name.matches("(?s).*\\p{Cntrl}.*"))throw IconManagementJson.error("颜色预设名称无效");
-            Map<String,Object> items=IconManagementJson.object(value.get("appearances"));if(items.isEmpty()||items.size()>MAX_APPEARANCES)throw IconManagementJson.error("颜色预设须含1至256项外观");
+            String id=entry.getKey();if(!id.matches("[a-z0-9][a-z0-9_-]{0,63}"))throw IconManagementJson.error("Identificador de color preestablecido no válido.");
+            Map<String,Object> value=IconManagementJson.object(entry.getValue());IconManagementJson.only(value,"name","appearances");String name=IconManagementJson.text(value,"name","",64).trim();if(name.isEmpty()||name.matches("(?s).*\\p{Cntrl}.*"))throw IconManagementJson.error("Nombre del color preestablecido no válido.");
+            Map<String,Object> items=IconManagementJson.object(value.get("appearances"));if(items.isEmpty()||items.size()>MAX_APPEARANCES)throw IconManagementJson.error("El color preestablecido debe contener entre 1 y 256 apariencias.");
             Map<String,IconManagementSettings.Appearance> colors=new TreeMap<>();for(Map.Entry<String,Object> item:items.entrySet()){IconManagementSettings.requireAppearanceKey(item.getKey());colors.put(item.getKey(),IconManagementSettings.parseAppearance(IconManagementJson.object(item.getValue()),false));}
             result.put(id,new Preset(id,name,colors));
         }return Collections.unmodifiableMap(result);

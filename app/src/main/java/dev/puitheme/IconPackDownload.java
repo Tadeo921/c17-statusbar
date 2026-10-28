@@ -37,7 +37,7 @@ public final class IconPackDownload {
             else{
                 byte[] metadata=fetch(new URL("https://api.github.com/repos/"+repository),MAX_JSON,true,cancelled,started,false);
                 JSONObject json=new JSONObject(new String(metadata,StandardCharsets.UTF_8));String branch=json.optString("default_branch","");
-                if(branch.isEmpty()||branch.length()>256||branch.matches("(?s).*\\p{Cntrl}.*"))throw new IOException("GitHub 仓库缺少默认分支");
+                if(branch.isEmpty()||branch.length()>256||branch.matches("(?s).*\\p{Cntrl}.*"))throw new IOException("El repositorio de GitHub no tiene una rama predeterminada.");
                 url=new URL("https://api.github.com/repos/"+repository+"/zipball/"+encodePath(branch));
             }
         }else{
@@ -45,7 +45,7 @@ public final class IconPackDownload {
             String host=url.getHost(),path=url.getPath().toLowerCase(Locale.ROOT);
             boolean asset=path.endsWith(".zip")||path.endsWith(".rar")||host.equals("codeload.github.com")
                     ||host.equals("api.github.com")&&path.contains("/zipball/");
-            if(!asset)throw new IOException("请输入 owner/repo、GitHub 仓库网址或 ZIP/RAR 下载网址");
+            if(!asset)throw new IOException("Introduce owner/repo, la URL de un repositorio de GitHub o la URL de descarga ZIP/RAR.");
         }
         File source=IconPackRepository.createSource(context);
         try{
@@ -71,13 +71,13 @@ public final class IconPackDownload {
             URI uri=new URI(input);String host=uri.getHost();
             if(!"https".equals(uri.getScheme())||host==null||!HOSTS.contains(host.toLowerCase(Locale.ROOT))
                     ||(uri.getPort()!=-1&&uri.getPort()!=443)||uri.getRawUserInfo()!=null||uri.getRawFragment()!=null
-                    ||input.length()>4096)throw new IOException("下载仅允许 GitHub 官方 HTTPS 来源");
+                    ||input.length()>4096)throw new IOException("Solo se permiten descargas HTTPS desde GitHub oficial.");
             return uri.toURL();
-        }catch(java.net.URISyntaxException malformed){throw new IOException("GitHub 下载网址无效",malformed);}
+        }catch(java.net.URISyntaxException malformed){throw new IOException("La URL de descarga de GitHub no es válida.",malformed);}
     }
     static URL releaseAsset(String source)throws IOException{
         try{
-            JSONObject json=new JSONObject(source);if(Boolean.TRUE.equals(json.opt("draft")))throw new IOException("图标包发布尚未公开");
+            JSONObject json=new JSONObject(source);if(Boolean.TRUE.equals(json.opt("draft")))throw new IOException("El paquete de iconos aún no tiene una versión pública.");
             JSONArray assets=json.optJSONArray("assets");URL selected=null;int score=-1,count=0;
             if(assets!=null)for(int i=0;i<assets.length();i++){
                 JSONObject asset=assets.optJSONObject(i);if(asset==null)continue;
@@ -90,10 +90,10 @@ public final class IconPackDownload {
                 int candidate=name.equals("icon-pack.zip")?3:name.equals("icon-pack.rar")?2:1;
                 if(candidate>score){selected=url;score=candidate;count=1;}else if(candidate==score)count++;
             }
-            if(selected==null)throw new IOException("最新发布中没有不超过 8 MB 的图标包 ZIP/RAR");
-            if(count>1)throw new IOException("最新发布中有多个图标包，请输入具体下载网址");
+            if(selected==null)throw new IOException("La última versión no contiene un ZIP/RAR del paquete de iconos de 8 MB o menos.");
+            if(count>1)throw new IOException("La última versión contiene varios paquetes de iconos. Introduce la URL exacta de descarga.");
             return selected;
-        }catch(JSONException malformed){throw new IOException("GitHub 发布信息无效",malformed);}
+        }catch(JSONException malformed){throw new IOException("Los datos de la versión de GitHub no son válidos.",malformed);}
     }
     private static byte[] fetch(URL start,int maximum,boolean json,BooleanSupplier cancelled,long started,boolean missingAllowed)throws IOException{
         URL url=checkedUrl(start.toString());
@@ -106,24 +106,24 @@ public final class IconPackDownload {
             try{
                 check(cancelled,started);int code=connection.getResponseCode();check(cancelled,started);
                 if(code==301||code==302||code==303||code==307||code==308){
-                    String location=connection.getHeaderField("Location");if(location==null)throw new IOException("GitHub 下载重定向无效");
+                    String location=connection.getHeaderField("Location");if(location==null)throw new IOException("La redirección de descarga de GitHub no es válida.");
                     url=checkedUrl(new URL(url,location).toString());continue;
                 }
                 if(code==404&&missingAllowed)return null;
-                if(code!=200)throw new IOException(code==403||code==429?"GitHub 请求受限，请稍后重试":"GitHub 下载失败（"+code+"）");
-                long declared=connection.getContentLengthLong();if(declared>maximum)throw new IOException("下载文件超过大小限制");
+                if(code!=200)throw new IOException(code==403||code==429?"GitHub ha limitado las solicitudes. Inténtalo más tarde.":"La descarga de GitHub ha fallado ("+code+"）");
+                long declared=connection.getContentLengthLong();if(declared>maximum)throw new IOException("El archivo descargado supera el tamaño permitido.");
                 try(InputStream input=connection.getInputStream();ByteArrayOutputStream bytes=new ByteArrayOutputStream()){
                     byte[] buffer=new byte[8192];int count;
-                    while((count=input.read(buffer))!=-1){check(cancelled,started);if(bytes.size()+count>maximum)throw new IOException("下载文件超过大小限制");bytes.write(buffer,0,count);}
-                    if(declared>=0&&declared!=bytes.size())throw new IOException("下载文件不完整");return bytes.toByteArray();
+                    while((count=input.read(buffer))!=-1){check(cancelled,started);if(bytes.size()+count>maximum)throw new IOException("El archivo descargado supera el tamaño permitido.");bytes.write(buffer,0,count);}
+                    if(declared>=0&&declared!=bytes.size())throw new IOException("La descarga está incompleta.");return bytes.toByteArray();
                 }
             }finally{if(cancelled instanceof Cancellation)((Cancellation)cancelled).detach(connection);connection.disconnect();}
         }
-        throw new IOException("GitHub 下载重定向次数过多");
+        throw new IOException("La descarga de GitHub ha redirigido demasiadas veces.");
     }
     private static String encodePath(String value)throws IOException{return java.net.URLEncoder.encode(value,"UTF-8").replace("+","%20");}
     private static void check(BooleanSupplier cancelled,long started)throws IOException{
-        if(Thread.currentThread().isInterrupted()||cancelled!=null&&cancelled.getAsBoolean())throw new InterruptedIOException("图标包下载已取消");
-        if((System.nanoTime()-started)/1000000L>DEADLINE_MS)throw new IOException("图标包下载超时，请稍后重试");
+        if(Thread.currentThread().isInterrupted()||cancelled!=null&&cancelled.getAsBoolean())throw new InterruptedIOException("Se canceló la descarga del paquete de iconos.");
+        if((System.nanoTime()-started)/1000000L>DEADLINE_MS)throw new IOException("La descarga del paquete de iconos ha agotado el tiempo de espera. Inténtalo más tarde.");
     }
 }

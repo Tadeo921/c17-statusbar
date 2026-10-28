@@ -51,7 +51,7 @@ object UiThemes {
      * Latte for the light mode and Mocha for the dark mode; the accent is Mauve, text is Text, secondary text Subtext.
      */
     val CATPPUCCIN = UiTheme(
-        "catppuccin", "Catppuccin", "浅色 Latte，深色 Mocha",
+        "catppuccin", "Catppuccin", "Claro: Latte · oscuro: Mocha",
         light = UiPalette(
             primary = Color(0xFF8839EF), onPrimary = Color(0xFFEFF1F5),
             background = Color(0xFFEFF1F5), onBackground = Color(0xFF4C4F69), onSurfaceVariant = Color(0xFF6C6F85),
@@ -73,7 +73,7 @@ object UiThemes {
      * the published tokens for the purple baseline, used unchanged for both modes.
      */
     val MATERIAL = UiTheme(
-        "material3", "Material 3", "Google 基线配色，浅色与深色",
+        "material3", "Material 3", "Paleta de referencia de Google, con modos claro y oscuro",
         light = UiPalette(
             primary = Color(0xFF6750A4), onPrimary = Color(0xFFFFFFFF),
             background = Color(0xFFFEF7FF), onBackground = Color(0xFF1D1B20), onSurfaceVariant = Color(0xFF49454F),

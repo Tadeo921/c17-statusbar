@@ -47,16 +47,16 @@ public final class ConfigTransfer {
             this.count = values.size();
             this.fontFallback = fontFallback;
             this.skippedLegacyIcons=skippedLegacyIcons;
-            String warning = fontFallback ? "当前设备缺少配置所引用的自选字体，相关范围将使用系统字体。字体文件不会随配置传输。" : "";
-            if(skippedLegacyIcons>0)warning+=(warning.isEmpty()?"":"\n")+"已跳过 "+skippedLegacyIcons+" 项旧图标字段；其余合法模块设置保留。";
+            String warning = fontFallback ? "El dispositivo no tiene las fuentes personalizadas referenciadas en la configuración; esas áreas usarán la fuente del sistema. Los archivos de fuentes no se incluyen en la transferencia." : "";
+            if(skippedLegacyIcons>0)warning+=(warning.isEmpty()?"":"\n")+"Se omitieron "+skippedLegacyIcons+" campos de iconos antiguos; se conservaron los demás ajustes válidos del módulo.";
             if(values.containsKey(IconManagementSettings.KEY))try{
                 if(!IconManagementSelection.referencedPacks(IconManagementSettings.parse((String)values.get(IconManagementSettings.KEY))).isEmpty())
-                    warning+=(warning.isEmpty()?"":"\n")+"图标库文件不会随配置传输；请在本机导入对应 v3 图标库，来源缺失时恢复默认图案。";
+                    warning+=(warning.isEmpty()?"":"\n")+"Los archivos de la biblioteca de iconos no se transfieren con la configuración. Importa localmente la biblioteca v3 correspondiente; si falta el origen, se restaurará el icono predeterminado.";
             }catch(IOException malformed){/* Prepared values were already validated. */}
             for (String scene : ShadeWallpaperSettings.SCENES) {
                 Object revision = values.get(ShadeWallpaperSettings.revisionKey(scene));
                 if (revision instanceof String && !((String) revision).isEmpty()) {
-                    warning += (warning.isEmpty() ? "" : "\n") + "下拉面板壁纸的图片文件不会随配置传输；场景配置会保留，在本机重新选择图片后生效。";
+                    warning += (warning.isEmpty() ? "" : "\n") + "Las imágenes de fondo del panel desplegable no se transfieren. Se conserva la configuración de la escena y surtirá efecto cuando vuelvas a elegir la imagen en este dispositivo.";
                     break;
                 }
             }
@@ -162,7 +162,7 @@ public final class ConfigTransfer {
             }
             snapshot.put(key, value);
         }
-        if (snapshot.isEmpty()) throw invalid("没有选择任何设置");
+        if (snapshot.isEmpty()) throw invalid("No se seleccionó ningún ajuste");
         StringBuilder json = new StringBuilder();
         json.append("{\n  \"package\": "); quote(json, PACKAGE_NAME);
         json.append(",\n  \"schema\": ").append(SCHEMA_VERSION).append(",\n  \"settings\": {\n");
@@ -175,12 +175,12 @@ public final class ConfigTransfer {
         }
         json.append("\n  }\n}\n");
         String result = json.toString();
-        if (result.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES) throw invalid("配置文件过大");
+        if (result.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES) throw invalid("El archivo de configuración es demasiado grande");
         return result;
     }
 
     public static String exportJson(SharedPreferences preferences) throws IOException {
-        if (preferences == null) throw invalid("无法读取当前设置");
+        if (preferences == null) throw invalid("No se pudieron leer los ajustes actuales");
         return exportJson(preferences.getAll());
     }
 
@@ -188,7 +188,7 @@ public final class ConfigTransfer {
     public static void write(OutputStream output, Map<String, ?> stored) throws IOException { write(output, stored, null); }
 
     public static void write(OutputStream output, Map<String, ?> stored, java.util.Collection<String> only) throws IOException {
-        if (output == null) throw invalid("无法打开保存位置");
+        if (output == null) throw invalid("No se pudo abrir la ubicación para guardar");
         byte[] bytes = exportJson(stored, only).getBytes(StandardCharsets.UTF_8);
         output.write(bytes);
     }
@@ -201,25 +201,25 @@ public final class ConfigTransfer {
         return read(input,customFontAvailable(context),hash->FontLibrary.contains(context,hash));
     }
     private static PreparedImport read(InputStream input,boolean customFontAvailable,java.util.function.Predicate<String> available)throws IOException{
-        if (input == null) throw invalid("无法读取配置文件");
+        if (input == null) throw invalid("No se pudo leer el archivo de configuración");
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096]; int count;
         while ((count = input.read(buffer)) != -1) {
             if (count == 0) {
                 int next = input.read();
                 if (next == -1) break;
-                if (output.size() == MAX_BYTES) throw invalid("配置文件超过 256 KB");
+                if (output.size() == MAX_BYTES) throw invalid("El archivo de configuración supera los 256 KB");
                 output.write(next);
                 continue;
             }
-            if (output.size() > MAX_BYTES - count) throw invalid("配置文件超过 256 KB");
+            if (output.size() > MAX_BYTES - count) throw invalid("El archivo de configuración supera los 256 KB");
             output.write(buffer, 0, count);
         }
         try {
             String json = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(output.toByteArray())).toString();
             return prepare(json, customFontAvailable,available);
-        } catch (CharacterCodingException malformed) { throw invalid("配置文件需要使用 UTF-8 编码"); }
+        } catch (CharacterCodingException malformed) { throw invalid("El archivo de configuración debe usar codificación UTF-8"); }
     }
 
     /** Strict JSON, exact types and all keys are checked before producing an applicable object. */
@@ -229,19 +229,19 @@ public final class ConfigTransfer {
     }
     public static PreparedImport prepare(String json,boolean customFontAvailable,java.util.function.Predicate<String> available)throws IOException{
         if (json == null || json.length() > MAX_BYTES || json.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES)
-            throw invalid("配置文件为空或超过 256 KB");
+            throw invalid("El archivo de configuración está vacío o supera los 256 KB");
         Map<String, Object> document = new JsonReader(json).document();
         for (String key : document.keySet())
             if (!key.equals("package") && !key.equals("schema") && !key.equals("settings"))
-                throw invalid("配置文件包含不支持的顶层字段");
-        if (!PACKAGE_NAME.equals(document.get("package"))) throw invalid("这不是 C17 状态栏配置文件");
+                throw invalid("El archivo de configuración contiene campos raíz no compatibles");
+        if (!PACKAGE_NAME.equals(document.get("package"))) throw invalid("Este no es un archivo de configuración de la barra de estado de C17");
         Object schema = document.get("schema");
         if (!(schema instanceof BigDecimal) || ((BigDecimal) schema).compareTo(BigDecimal.valueOf(SCHEMA_VERSION)) != 0)
-            throw invalid("不支持这个配置文件版本");
+            throw invalid("Esta versión del archivo de configuración no es compatible");
         Object raw = document.get("settings");
-        if (!(raw instanceof Map)) throw invalid("配置文件缺少设置对象");
+        if (!(raw instanceof Map)) throw invalid("Falta el objeto de ajustes en el archivo de configuración");
         Map<?, ?> settings = (Map<?, ?>) raw;
-        if (settings.isEmpty()) throw invalid("配置文件没有可导入的设置");
+        if (settings.isEmpty()) throw invalid("El archivo de configuración no contiene ajustes importables");
         Map<String, Object> validated = new LinkedHashMap<>();int skippedLegacyIcons=0;
         for (Map.Entry<?, ?> entry : settings.entrySet()) {
             String key = (String) entry.getKey();
@@ -251,7 +251,7 @@ public final class ConfigTransfer {
                 key = QsTileCorners.RADIUS;
             }
             Type type = TYPES.get(key);
-            if (type == null) throw invalid("配置文件包含不支持或不可移植的设置");
+            if (type == null) throw invalid("El archivo de configuración contiene ajustes no compatibles o no portátiles");
             Object value = entry.getValue();
             if (StatusBarSettings.DATA_ACTIVITY_HIDDEN.equals(key)) {
                 // Ignore the former switch's value and type without discarding the user's import.
@@ -264,36 +264,36 @@ public final class ConfigTransfer {
             }
             switch (type) {
                 case BOOLEAN:
-                    if (!(value instanceof Boolean)) throw invalid("开关设置类型不正确");
+                    if (!(value instanceof Boolean)) throw invalid("El tipo de ajuste de interruptor no es válido");
                     break;
                 case NUMBER:
-                    if (!(value instanceof BigDecimal)) throw invalid("数值设置类型不正确");
+                    if (!(value instanceof BigDecimal)) throw invalid("El tipo de ajuste numérico no es válido");
                     float number = ((BigDecimal) value).floatValue();
                     if (Float.isNaN(number) || Float.isInfinite(number)
                             || number == 0f && ((BigDecimal) value).signum() != 0)
-                        throw invalid("数值超出可保存范围");
+                        throw invalid("El valor numérico está fuera del rango permitido");
                     String numericError = SettingsCatalog.numericInputError(key, (BigDecimal) value);
                     if (numericError != null) throw invalid(numericError);
                     if (QsTileCorners.RADIUS.equals(key) && (number < 0f || number > QsTileCorners.MAX_RADIUS))
-                        throw invalid("圆角半径应为 0 到 " + (int) QsTileCorners.MAX_RADIUS + " dp");
+                        throw invalid("El radio de las esquinas debe estar entre 0 y " + (int) QsTileCorners.MAX_RADIUS + " dp");
                     if ((NativeStatusIcons.MAX.equals(key)||NotificationIconArea.MAX_COUNT.equals(key)) && (number < 0f || number != Math.floor(number)))
-                        throw invalid("图标数量应为非负整数，0 表示不显示");
+                        throw invalid("La cantidad de iconos debe ser un entero no negativo; 0 significa no mostrar ninguno.");
                     // Persist finite user values verbatim; rendering has separate physical guards.
                     value = number;
                     break;
                 case COLOR:
-                    if (!(value instanceof BigDecimal)) throw invalid("颜色设置类型不正确");
+                    if (!(value instanceof BigDecimal)) throw invalid("El tipo de ajuste de color no es válido");
                     BigDecimal color = (BigDecimal) value;
                     // Bound magnitude before intValueExact: very large JSON exponents must never
                     // cause BigDecimal to materialize an enormous integer during conversion.
                     if (color.compareTo(BigDecimal.valueOf(Integer.MIN_VALUE)) < 0
                             || color.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) > 0)
-                        throw invalid("颜色需要使用 32 位 ARGB 整数");
+                        throw invalid("El color debe expresarse como un entero ARGB de 32 bits");
                     try { value = color.signum() == 0 ? 0 : color.intValueExact(); }
-                    catch (ArithmeticException invalidColor) { throw invalid("颜色需要使用 32 位 ARGB 整数"); }
+                    catch (ArithmeticException invalidColor) { throw invalid("El color debe expresarse como un entero ARGB de 32 bits"); }
                     break;
                 default:
-                    if (!(value instanceof String)) throw invalid("文本设置类型不正确");
+                    if (!(value instanceof String)) throw invalid("El tipo de ajuste de texto no es válido");
                     value = validateString(key, (String) value);
             }
             validated.put(key, NotificationGroupStack.MASTER.equals(key)||FluidCloudStyle.FOLLOW_FOREGROUND.equals(key)
@@ -382,7 +382,7 @@ public final class ConfigTransfer {
 
     private static String validateString(String key, String value) throws IOException {
         String clockKey = NotificationBigClockSettings.portraitKey(key);
-        if (value == null || !validUnicode(value)) throw invalid("文本包含无效字符");
+        if (value == null || !validUnicode(value)) throw invalid("El texto contiene caracteres no válidos");
         if(IconManagementSettings.KEY.equals(key))return IconManagementSettings.encode(IconManagementSettings.parse(value));
         if(FontScopes.KEY.equals(key))try{return FontScopes.encode(FontScopes.parse(value));}
         catch(IllegalArgumentException malformed){throw invalid(malformed.getMessage());}
@@ -395,7 +395,7 @@ public final class ConfigTransfer {
             if(error!=null)throw invalid(error);return value;
         }
         if(BigClockWidgetsSettings.LEFT_PROVIDER.equals(key)||BigClockWidgetsSettings.RIGHT_PROVIDER.equals(key)) {
-            if(!BigClockWidgetsSettings.validProvider(value))throw invalid("组件来源格式不正确，请重新选择组件");
+            if(!BigClockWidgetsSettings.validProvider(value))throw invalid("El origen del componente no tiene un formato válido; vuelve a seleccionarlo");
             return value;
         }
         if (NativeStatusIcons.LAYOUT.equals(key)) {
@@ -411,7 +411,7 @@ public final class ConfigTransfer {
             String error=IconPackAssignments.validationError(value);
             if(error!=null)throw invalid(error);
         } else if (ShadeWallpaperSettings.STRINGS.containsKey(key)) {
-            if (!value.isEmpty() && !ShadeWallpaperSettings.validRevision(value)) throw invalid("壁纸引用无效，请重新选择图片");
+            if (!value.isEmpty() && !ShadeWallpaperSettings.validRevision(value)) throw invalid("La referencia al fondo no es válida; vuelve a seleccionar la imagen");
         } else if (IconPackRepository.LAYERS.equals(key)) {
             new JsonReader(value).arrayDocument();
             IconPackRepository.layers(value);
@@ -432,24 +432,24 @@ public final class ConfigTransfer {
         } else if (NotificationIconArea.MODE.equals(key)) {
             requireChoice(value, "native", "heart", "text", "image");
         } else if (NotificationIconArea.TEXT.equals(key)) {
-            if (value.codePointCount(0,value.length()) > 12) throw invalid("通知图标文字最多 12 个字符");
-            for(int i=0;i<value.length();i++)if(Character.isISOControl(value.charAt(i)))throw invalid("通知图标文字需要单行");
+            if (value.codePointCount(0,value.length()) > 12) throw invalid("El texto del icono de notificación admite hasta 12 caracteres");
+            for(int i=0;i<value.length();i++)if(Character.isISOControl(value.charAt(i)))throw invalid("El texto del icono de notificación debe ocupar una sola línea");
         } else if (NotificationBigClockSettings.FOOTER_PATTERN.equals(clockKey)) {
-            if (NotificationBigClockSettings.footerValidationError(value) != null) throw invalid("配置中的底部内容格式无效");
+            if (NotificationBigClockSettings.footerValidationError(value) != null) throw invalid("El formato del contenido inferior de la configuración no es válido");
         } else if (LockscreenControls.DATE_FORMAT.equals(key)) {
-            if (TimeFormat.validationError(value) != null) throw invalid("配置中的锁屏日期格式无效");
+            if (TimeFormat.validationError(value) != null) throw invalid("El formato de fecha de la pantalla de bloqueo no es válido");
         } else if (key.endsWith("_pattern")) {
-            if (TimeFormat.validationError(value) != null) throw invalid("配置中的时间格式无效");
+            if (TimeFormat.validationError(value) != null) throw invalid("El formato horario de la configuración no es válido");
         } else if (key.endsWith("_text")) {
             if (value.length() > TimeFormat.MAX_TEXT || value.indexOf('\n') >= 0 || value.indexOf('\r') >= 0)
-                throw invalid("自定义文字需要单行且不超过 120 个字符");
+                throw invalid("El texto personalizado debe ocupar una sola línea y no superar los 120 caracteres");
             for (int i = 0; i < value.length(); i++) if (Character.isISOControl(value.charAt(i)))
-                throw invalid("自定义文字包含控制字符");
+                throw invalid("El texto personalizado contiene caracteres de control");
         } else if(NetworkLabelFormats.owns(key)) {
             if(value.length()>TimeFormat.MAX_TEXT||value.indexOf('\n')>=0||value.indexOf('\r')>=0)
-                throw invalid("网络制式显示内容需要单行且不超过 120 个字符");
+                throw invalid("El texto del tipo de red debe ocupar una sola línea y no superar los 120 caracteres");
             for(int i=0;i<value.length();i++)if(Character.isISOControl(value.charAt(i)))
-                throw invalid("网络制式显示内容包含控制字符");
+                throw invalid("El texto del tipo de red contiene caracteres de control");
         } else if (NotificationBigClockSettings.FONT.equals(clockKey)) {
             requireChoice(value, NotificationBigClockSettings.FONT_VALUES);
         } else if (NotificationBigClockSettings.ALIGNMENT.equals(clockKey)||NotificationBigClockSettings.DATE_ALIGNMENT.equals(clockKey)
@@ -474,7 +474,7 @@ public final class ConfigTransfer {
 
     private static void requireChoice(String value, String... options) throws IOException {
         for (String option : options) if (option.equals(value)) return;
-        throw invalid("配置中的选项值不受支持");
+        throw invalid("El valor de opción de la configuración no es compatible");
     }
 
     private static boolean validUnicode(String value) {
@@ -534,10 +534,10 @@ public final class ConfigTransfer {
             if (text.startsWith("false", at)) { at += 5; return Boolean.FALSE; }
             if (text.startsWith("null", at)) { at += 4; return null; }
             if (c == '-' || c >= '0' && c <= '9') return number();
-            throw invalid("配置 JSON 包含不支持的数据");
+            throw invalid("El JSON de configuración contiene datos no compatibles");
         }
         private Map<String, Object> object(int depth) throws IOException {
-            if (depth > 16) throw invalid("配置 JSON 对象嵌套过深");
+            if (depth > 16) throw invalid("Los objetos JSON de la configuración están anidados demasiado profundamente");
             at++; Map<String, Object> result = new LinkedHashMap<>(); whitespace();
             if (take('}')) return result;
             while (true) {
@@ -580,44 +580,44 @@ public final class ConfigTransfer {
                     case 'r': result.append('\r'); break;
                     case 't': result.append('\t'); break;
                     case 'u':
-                        if (at > text.length() - 4) throw invalid("Unicode 转义不完整");
+                        if (at > text.length() - 4) throw invalid("La secuencia de escape Unicode está incompleta");
                         int code = 0;
                         for (int i = 0; i < 4; i++) {
                             char hex = text.charAt(at++);
                             int digit = hex >= '0' && hex <= '9' ? hex - '0'
                                     : hex >= 'a' && hex <= 'f' ? hex - 'a' + 10
                                     : hex >= 'A' && hex <= 'F' ? hex - 'A' + 10 : -1;
-                            if (digit < 0) throw invalid("Unicode 转义无效"); code = code * 16 + digit;
+                            if (digit < 0) throw invalid("La secuencia de escape Unicode no es válida"); code = code * 16 + digit;
                         }
                         result.append((char) code); break;
-                    default: throw invalid("JSON 转义无效");
+                    default: throw invalid("La secuencia de escape JSON no es válida");
                 }
             }
-            throw invalid("JSON 文本未结束");
+            throw invalid("El texto JSON está incompleto");
         }
         private BigDecimal number() throws IOException {
-            int start = at; if (take('-') && at == text.length()) throw invalid("JSON 数值不完整");
+            int start = at; if (take('-') && at == text.length()) throw invalid("El número JSON está incompleto");
             if (take('0')) {
-                if (at < text.length() && digit(text.charAt(at))) throw invalid("JSON 数值不能使用前导零");
+                if (at < text.length() && digit(text.charAt(at))) throw invalid("Los números JSON no pueden tener ceros iniciales");
             } else {
-                if (at >= text.length() || text.charAt(at) < '1' || text.charAt(at) > '9') throw invalid("JSON 数值无效");
+                if (at >= text.length() || text.charAt(at) < '1' || text.charAt(at) > '9') throw invalid("El número JSON no es válido");
                 while (at < text.length() && digit(text.charAt(at))) at++;
             }
             if (take('.')) digits();
             if (at < text.length() && (text.charAt(at) == 'e' || text.charAt(at) == 'E')) {
                 at++; if (at < text.length() && (text.charAt(at) == '+' || text.charAt(at) == '-')) at++; digits();
             }
-            if (at - start > 128) throw invalid("JSON 数值过长");
+            if (at - start > 128) throw invalid("El número JSON es demasiado largo");
             try { return new BigDecimal(text.substring(start, at)); }
-            catch (NumberFormatException invalidNumber) { throw invalid("JSON 数值无效"); }
+            catch (NumberFormatException invalidNumber) { throw invalid("El número JSON no es válido"); }
         }
         private void digits() throws IOException {
             int start = at; while (at < text.length() && digit(text.charAt(at))) at++;
-            if (at == start) throw invalid("JSON 数值不完整");
+            if (at == start) throw invalid("El número JSON está incompleto");
         }
         private static boolean digit(char c) { return c >= '0' && c <= '9'; }
         private void whitespace() { while (at < text.length() && " \t\r\n".indexOf(text.charAt(at)) >= 0) at++; }
         private boolean take(char c) { if (at < text.length() && text.charAt(at) == c) { at++; return true; } return false; }
-        private void require(char c) throws IOException { if (!take(c)) throw invalid("配置 JSON 结构不正确"); }
+        private void require(char c) throws IOException { if (!take(c)) throw invalid("La estructura JSON de la configuración no es correcta"); }
     }
 }

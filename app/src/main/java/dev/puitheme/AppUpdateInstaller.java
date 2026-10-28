@@ -47,14 +47,14 @@ public final class AppUpdateInstaller {
             throw new IllegalArgumentException("Own application and explicit Root authorization required");
         Request request=new Request();Handler main=new Handler(Looper.getMainLooper());
         if(release==null||!release.canInstall()||!rootAuthorized.getAsBoolean()) {
-            main.post(()->{if(!request.cancelled)callback.onResult(false,"需要已授权的 Root 和具有完整校验信息的正式更新");});return request;
+            main.post(()->{if(!request.cancelled)callback.onResult(false,"Se requiere acceso root autorizado y una actualización oficial con verificación completa.");});return request;
         }
         if(!ACTIVE.compareAndSet(false,true)) {
-            main.post(()->{if(!request.cancelled)callback.onResult(false,"已有更新正在处理，请稍候");});return request;
+            main.post(()->{if(!request.cancelled)callback.onResult(false,"Ya se está procesando una actualización. Espera a que termine.");});return request;
         }
         Context app=context.getApplicationContext();Context owner=app==null?context:app;
         WORK.execute(()->{
-            File temporary=null;boolean success=false;String message="更新未完成，请重试或到项目主页下载";
+            File temporary=null;boolean success=false;String message="La actualización no terminó. Inténtalo de nuevo o descárgala desde la página del proyecto.";
             try {
                 PackageManager manager=owner.getPackageManager();PackageInfo installed=packageInfo(manager,owner.getPackageName());
                 Integer newer=GitHubUpdates.compareVersion(release.version,installed.versionName);
@@ -73,14 +73,14 @@ public final class AppUpdateInstaller {
                 if(request.cancelled||!rootAuthorized.getAsBoolean())throw new IOException("Root authorization unavailable");
                 request.installing=true;stage(main,request,callback,Stage.INSTALLING);
                 success=RootAccess.installVerified(temporary,release.apkSha256,Process.myUid()/100000);
-                message=success?"更新已覆盖安装；重新打开应用后检查版本":"Root 覆盖安装未成功，原应用和配置已保留";
+                message=success?"La actualización se instaló sobre la versión existente. Vuelve a abrir la aplicación y comprueba la versión.":"La instalación mediante Root no se completó; la aplicación original y la configuración se conservaron";
             }catch(IOException | PackageManager.NameNotFoundException | RuntimeException unavailable){
-                message=request.cancelled?"更新已取消":"更新校验或安装失败，原应用和配置已保留";
+                message=request.cancelled?"Actualización cancelada":"Falló la verificación o instalación de la actualización; la aplicación original y la configuración se conservaron";
             }finally {
                 HttpURLConnection connected=request.connection;request.connection=null;
                 if(connected!=null)connected.disconnect();
                 if(temporary!=null&&temporary.exists()&&!temporary.delete())
-                    message="更新处理已结束，但临时文件清理失败；下次检查更新会重试清理";
+                    message="La actualización terminó, pero no se pudieron borrar los archivos temporales. Se volverá a intentar en la próxima comprobación";
                 request.installing=false;ACTIVE.set(false);
             }
             final boolean result=success;final String completed=message;

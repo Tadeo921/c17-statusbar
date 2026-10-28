@@ -55,13 +55,13 @@ class ModernMainActivity : ComponentActivity() {
         private set
     var runtimeActive by mutableStateOf(false)
         private set
-    var runtimeMessage by mutableStateOf("待注入")
+    var runtimeMessage by mutableStateOf("Pendiente de inyección")
         private set
     private var checkingRuntime = false
     var performanceReport by mutableStateOf<RootPerformanceModule.Snapshot?>(null)
         private set
     var performanceOpen by mutableStateOf(false)
-    var performanceMessage by mutableStateOf("待确认")
+    var performanceMessage by mutableStateOf("Pendiente de confirmar")
         private set
     var performanceDetail by mutableStateOf("")
         private set
@@ -81,7 +81,7 @@ class ModernMainActivity : ComponentActivity() {
     val lspEnabled get() = framework.connected && framework.compatible
     var rootGranted by mutableStateOf(false)
         private set
-    var rootMessage by mutableStateOf("尚未授予 Root 权限")
+    var rootMessage by mutableStateOf("Permiso Root aún no concedido")
         private set
     var checkingRoot by mutableStateOf(false)
         private set
@@ -89,7 +89,7 @@ class ModernMainActivity : ComponentActivity() {
         private set
     var checkingUpdates by mutableStateOf(false)
         private set
-    var updateMessage by mutableStateOf("手动查看 GitHub 最新正式发布")
+    var updateMessage by mutableStateOf("Consultar manualmente la última versión estable en GitHub")
         private set
     private var latestUpdate: GitHubUpdates.Result? = null
     private var updateRequest: AppUpdateInstaller.Request? = null
@@ -257,8 +257,8 @@ class ModernMainActivity : ComponentActivity() {
     private val exportLog = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         if (uri != null) work.execute {
             runCatching { ModuleDiagnostics.writeExport(this, uri) }
-                .onSuccess { runOnUiThread { toast("日志已保存") } }
-                .onFailure { runOnUiThread { toast("日志保存失败：${it.message}") } }
+                .onSuccess { runOnUiThread { toast("Registro guardado") } }
+                .onFailure { runOnUiThread { toast("No se pudo guardar el registro: ${it.message}") } }
         }
     }
 
@@ -280,8 +280,8 @@ class ModernMainActivity : ComponentActivity() {
         }
         wallpaperImportScene = savedInstanceState?.getString("wallpaper_scene")?.takeIf { ShadeWallpaperSettings.validScene(it) }
         preferences = ActivationGuardPreferences(raw, { resumed && canEdit && !destroyed }, {
-            handler.post { toast("激活模块或授予 Root 后即可保存配置") }
-        }).withPersistence(this) { handler.post { toast("设置保存失败，请稍后重新保存") } }
+            handler.post { toast("Activa el módulo o concede acceso Root para guardar la configuración.") }
+        }).withPersistence(this) { handler.post { toast("No se pudo guardar la configuración. Inténtalo de nuevo más tarde.") } }
         values = raw.all
         raw.registerOnSharedPreferenceChangeListener(listener)
         frameworkSubscription = AppFrameworkStatus.observe { status ->
@@ -471,10 +471,10 @@ class ModernMainActivity : ComponentActivity() {
     /** The mini stack's source declaration with the author's Coolapk link. "知道了" records that it was seen; when the
      *  user's own switch (or import) triggered it, that one action then continues. Nothing restarts SystemUI. */
     fun showMiniStackSource(then: (() -> Unit)?, extra: String = "", cancel: (() -> Unit)? = null) {
-        confirmation = UiConfirmation(NotificationMiniStackSource.TITLE, NotificationMiniStackSource.NOTICE + extra, "知道了",
-            linkLabel = "${NotificationMiniStackSource.LINK}（酷安 @${NotificationMiniStackSource.AUTHOR}）",
+        confirmation = UiConfirmation(NotificationMiniStackSource.TITLE, NotificationMiniStackSource.NOTICE + extra, "Entendido",
+            linkLabel = "${NotificationMiniStackSource.LINK} (CoolAPK: @${NotificationMiniStackSource.AUTHOR})",
             linkUrl = NotificationMiniStackSource.URL, cancelAction = cancel) {
-            if (!NotificationMiniStackSource.acknowledge(this)) { toast("确认记录保存失败，请重试"); cancel?.invoke(); return@UiConfirmation }
+            if (!NotificationMiniStackSource.acknowledge(this)) { toast("No se pudo guardar el registro de confirmación. Inténtalo de nuevo."); cancel?.invoke(); return@UiConfirmation }
             then?.invoke()
         }
     }
@@ -512,7 +512,7 @@ class ModernMainActivity : ComponentActivity() {
     }
     fun shareLog() { ModuleDiagnostics.share(this) }
     fun updateUiStyle(style: String) {
-        if (!ui.updateUiStyle(style)) { toast("界面设置保存失败，请重试"); return }
+        if (!ui.updateUiStyle(style)) { toast("No se pudo guardar la configuración de la interfaz. Inténtalo de nuevo."); return }
         updateNavigation()
         if (::navHost.isInitialized) navHost.requestLayout()
     }
@@ -533,15 +533,15 @@ class ModernMainActivity : ComponentActivity() {
     fun updateGlassNavigation(enabled: Boolean) {
         val target = enabled && GlassNavigationPreference.supported()
         if (target == glassNavigation) return
-        if (!GlassNavigationPreference.write(this, target)) { toast("界面设置保存失败"); return }
+        if (!GlassNavigationPreference.write(this, target)) { toast("No se pudo guardar la configuración de la interfaz."); return }
         glassNavigation = target
         // Classic mode re-measures its own height through the navHost layout listener.
         if (!target && ::navHost.isInitialized) navHost.requestLayout()
         updateNavigation()
     }
     fun acceptFreeNotice(input: String): String? {
-        if (!FreeNotice.matches(input)) return "请完整输入上面的短句，包含标点。"
-        if (!FreeNotice.accept(this, input)) return "确认记录保存失败，请重试。"
+        if (!FreeNotice.matches(input)) return "Escribe la frase corta de arriba completa, incluidos los signos de puntuación."
+        if (!FreeNotice.accept(this, input)) return "No se pudo guardar el registro de confirmación. Inténtalo de nuevo."
         freeNoticeRequired = false
         updateNavigation()
         replayFile()
@@ -555,11 +555,11 @@ class ModernMainActivity : ComponentActivity() {
     }
     fun optionUnavailableReason(key: String, option: String): String =
         if (key == StatusBarSettings.BATTERY_STYLE && option == "pui" && batteryPercentStyle !in 1..2)
-            "系统已关闭电池百分比，使用系统原生样式；开启百分比后可选 PUI" else ""
+            "El sistema ha desactivado el porcentaje de batería; se usa el estilo nativo. Activa el porcentaje para poder elegir PUI." else ""
     fun bool(key: String): Boolean = if (key.startsWith("shade_wallpaper_") && !ShadeWallpaperSettings.available()) false else StatusBarSettings.bool(values, key)
     fun save(requestedKey: String, value: Any): Boolean {
         val key = StatusBarLayoutSettings.editingKey(requestedKey, raw.all)
-        if (!resumed || !canEdit) { toast("激活模块或授予 Root 后即可保存配置"); return false }
+        if (!resumed || !canEdit) { toast("Activa el módulo o concede acceso Root para guardar la configuración."); return false }
         if (key == StatusBarSettings.SPEED_OFFSET_X &&
             StatusBarSettings.bool(raw.all, SpeedPosition.SAFE_GAP_ENABLED)) {
             toast(SettingsCatalog.unavailableReason(key, raw.all)); return false
@@ -574,7 +574,7 @@ class ModernMainActivity : ComponentActivity() {
         if (value is String) {
             val invalid = when (key) {
                 NotificationIconOverrides.RULES -> NotificationIconOverrides.validationError(value)
-                IconManagementSettings.KEY -> runCatching { IconManagementSettings.parse(value); null }.getOrElse { it.message ?: "图标管理配置无效" }
+                IconManagementSettings.KEY -> runCatching { IconManagementSettings.parse(value); null }.getOrElse { it.message ?: "La configuración de administración de iconos no es válida." }
                 else -> null
             }
             if (invalid != null) { toast(invalid); return false }
@@ -615,13 +615,13 @@ class ModernMainActivity : ComponentActivity() {
     }
     /** One transaction: a drag reorder must never publish half of the new layout. */
     fun saveLayoutOrders(orders: Map<String, Int>): Boolean {
-        if (!resumed || !canEdit || busy) { toast("激活模块或授予 Root 后即可修改"); return false }
+        if (!resumed || !canEdit || busy) { toast("Activa el módulo o concede acceso Root para modificarlo."); return false }
         if (orders.isEmpty() || orders.any { (token, order) -> token !in StatusBarLayoutSettings.TOKENS || order < 0 }) {
-            toast("状态栏顺序无效"); return false
+            toast("El orden de la barra de estado no es válido."); return false
         }
         val editor = preferences.edit()
         orders.forEach { (token, order) -> editor.putFloat(StatusBarLayoutSettings.key(token, "order"), order.toFloat()) }
-        if (!editor.commit()) { toast("状态栏顺序保存失败"); return false }
+        if (!editor.commit()) { toast("No se pudo guardar el orden de la barra de estado."); return false }
         return true
     }
     /** UI-only snapshot: neither the enable switch nor independent margins enter the draft. */
@@ -638,10 +638,10 @@ class ModernMainActivity : ComponentActivity() {
     }
     /** Publish region and order together; a prepared draft never enables status-bar sorting. */
     fun saveStatusBarOrderDraft(proposed: Map<String, Any>, expected: Map<String, Any>): Boolean {
-        if (!resumed || !canEdit || busy) { toast("激活模块或授予 Root 后即可保存排列"); return false }
+        if (!resumed || !canEdit || busy) { toast("Activa el módulo o concede acceso Root para guardar la disposición."); return false }
         val keys = StatusBarLayoutSettings.STRINGS.keys + StatusBarLayoutSettings.NUMBERS.keys.filter(StatusBarLayoutSettings::orderKey) + NativeStatusIcons.LAYOUT
         if (proposed.keys != keys.toSet() || expected.keys != keys.toSet()) {
-            toast("状态栏排列无效"); return false
+            toast("La disposición de la barra de estado no es válida."); return false
         }
         for ((key, value) in proposed) {
             val valid = if (key == NativeStatusIcons.LAYOUT) value is String && runCatching { NativeStatusIconLayout.validate(value) }.isSuccess
@@ -649,33 +649,33 @@ class ModernMainActivity : ComponentActivity() {
                 else value is Number && value.toDouble().isFinite() && value.toDouble() >= 0.0 &&
                     value.toDouble() <= Int.MAX_VALUE.toDouble() && value.toDouble() == kotlin.math.floor(value.toDouble()) &&
                     (key != StatusBarLayoutSettings.key(StatusBarLayoutSettings.LABEL, "order") || value.toDouble() <= 2.0)
-            if (!valid) { toast("状态栏排列无效"); return false }
+            if (!valid) { toast("La disposición de la barra de estado no es válida."); return false }
         }
         return synchronized(raw) {
             if (statusBarOrderValues() != expected) {
-                toast("已保存的排列发生变化，请先重新载入"); return@synchronized false
+                toast("La disposición guardada ha cambiado. Vuelve a cargarla antes de continuar."); return@synchronized false
             }
             val editor = preferences.edit()
             proposed.forEach { (key, value) ->
                 if (value is String) editor.putString(key, value) else editor.putFloat(key, (value as Number).toFloat())
             }
-            if (!editor.commit()) { toast("排列保存失败，草稿已保留"); return@synchronized false }
+            if (!editor.commit()) { toast("No se pudo guardar la disposición. Se conservó el borrador."); return@synchronized false }
             true
         }
     }
     fun tryNumber(item: SettingsCatalog.Item, value: Float) {
-        if (!resumed || !canEdit || busy) { toast("激活模块或授予 Root 后即可修改"); return }
+        if (!resumed || !canEdit || busy) { toast("Activa el módulo o concede acceso Root para modificarlo."); return }
         val trialContext = raw.all
         val confirmed = SettingEditor.storedValue(item, trialContext)
         val trialKey = StatusBarLayoutSettings.editingKey(item.key, trialContext)
         if (!NumericTrial.begin(this, raw, preferences, trialKey, value)) {
-            toast("无法开始试用，已保留原来的数值"); return
+            toast("No se pudo iniciar la prueba; se conservó el valor anterior."); return
         }
         editing = null
-        confirmation = UiConfirmation("试用${item.title}",
+        confirmation = UiConfirmation("Probar ${item.title}",
             SettingEditor.trialSummary(item, confirmed, value, trialContext),
-            "保存此数值", expiresAt = NumericTrial.deadline(), cancelAction = { NumericTrial.rollback() }) {
-                toast(if (NumericTrial.keep()) "数值已保存" else if (NumericTrial.active()) "保存失败，正在恢复原数值" else "试用已结束，原数值已恢复")
+            "Guardar este valor", expiresAt = NumericTrial.deadline(), cancelAction = { NumericTrial.rollback() }) {
+                toast(if (NumericTrial.keep()) "Valor guardado" else if (NumericTrial.active()) "No se pudo guardar. Restaurando el valor anterior." else "La prueba ha terminado; se restauró el valor anterior.")
             }
     }
     /** Reads only while the home cards are visible; the shared workers keep each read bounded. */
@@ -717,7 +717,7 @@ class ModernMainActivity : ComponentActivity() {
             performanceReadRequest = RootPerformanceModule.submit(applicationContext, RootPerformanceModule.Action.CHECK) { result ->
                 val module = result.snapshot
                 val changing = module?.pending == true || module?.lastState in listOf("waiting", "running")
-                val denied = !result.success && (result.message.contains("未获得 Root") || result.message.contains("未找到支持的 Root"))
+                val denied = !result.success && (result.message.contains("No se obtuvo acceso Root") || result.message.contains("No se encontró un método Root compatible"))
                 if (homeStatus.complete(HomeStatusRefreshPolicy.Kind.PERFORMANCE, rootTicket,
                         SystemClock.elapsedRealtime(), result.success, changing, denied)) {
                     performanceReadRequest = null; checkingPerformance = false
@@ -742,10 +742,10 @@ class ModernMainActivity : ComponentActivity() {
         if (result.success && reliable != null) PerformanceScheduler.observe(applicationContext, reliable)
         val error = !result.success || reliable == null
         val message = if (!error) result.message else when {
-            result.message.contains("未获得 Root") -> "Root 未授权"
-            result.message.contains("未找到支持的 Root") -> "未识别管理器"
-            result.message.contains("超时") -> "获取超时"
-            else -> "状态暂未确认"
+            result.message.contains("No se obtuvo acceso Root") -> "Root no autorizado"
+            result.message.contains("No se encontró un método Root compatible") -> "Administrador no reconocido"
+            result.message.contains("Tiempo de espera agotado") -> "Tiempo de espera de lectura agotado"
+            else -> "Estado aún sin confirmar"
         }
         val report = reliable ?: performanceReport
         // Snapshot has identity equality. Compare all real fields before publishing it to Compose.
@@ -794,14 +794,14 @@ class ModernMainActivity : ComponentActivity() {
     }
     fun installPerformance() {
         val updating = performanceReport?.outdated == true
-        confirmPerformance(RootPerformanceModule.Action.INSTALL, (if (updating) "更新 " else "安装 ") + RootPerformanceModule.DISPLAY_NAME,
-            "安装后按需检查。需要编译时等待息屏或连续 10 分钟无操作，电量高于 15%、电池温度低于 55℃；不支持输入时间时等待息屏。需 Root 授权。",
-            if (updating) "更新" else "安装")
+        confirmPerformance(RootPerformanceModule.Action.INSTALL, (if (updating) "Actualizar " else "Instalar ") + RootPerformanceModule.DISPLAY_NAME,
+            "Tras instalar, comprobará según sea necesario. Si hace falta compilar, esperará a que la pantalla se apague o a 10 minutos de inactividad; la batería debe superar el 15 % y estar por debajo de 55 °C. Si no se puede detectar el tiempo de inactividad, esperará a que se apague la pantalla. Requiere Root.",
+            if (updating) "Actualizar" else "Instalar")
     }
-    fun removePerformance() { confirmPerformance(RootPerformanceModule.Action.REMOVE, "卸载 " + RootPerformanceModule.DISPLAY_NAME, "请求卸载，重启时尝试恢复本模块处理过的组件的编译策略；恢复失败保留记录。需 Root 授权。", "卸载") }
-    fun enablePerformance() { confirmPerformance(RootPerformanceModule.Action.ENABLE, "启用 " + RootPerformanceModule.DISPLAY_NAME, "启用按需检查，等待息屏或连续 10 分钟无操作。自动处理要求电量高于 15%、电池温度低于 55℃。需 Root 授权。", "启用") }
-    fun disablePerformance() { confirmPerformance(RootPerformanceModule.Action.DISABLE, "停用 " + RootPerformanceModule.DISPLAY_NAME, "停止自动任务，已有编译结果保留。需 Root 授权。", "停用") }
-    fun runPerformance() { confirmPerformance(RootPerformanceModule.Action.RUN, "立即优化", "立即检查并按需处理，不受屏幕、充电、电量、电池温度或 Thermal Service 限制。仍保留操作超时、可靠取消与防重叠，缺少必要 ART 能力时无法执行。新结果随系统自然加载使用，需 Root 授权。", "开始") }
+    fun removePerformance() { confirmPerformance(RootPerformanceModule.Action.REMOVE, "Desinstalar " + RootPerformanceModule.DISPLAY_NAME, "Solicita la desinstalación y tratará de restaurar al reiniciar la estrategia de compilación de los componentes procesados por el módulo. Si falla, conservará el registro. Requiere Root.", "Desinstalar") }
+    fun enablePerformance() { confirmPerformance(RootPerformanceModule.Action.ENABLE, "Activar " + RootPerformanceModule.DISPLAY_NAME, "Activa las comprobaciones bajo demanda, que esperan a que la pantalla se apague o a 10 minutos de inactividad. El procesamiento automático requiere más del 15 % de batería y menos de 55 °C. Requiere Root.", "Activar") }
+    fun disablePerformance() { confirmPerformance(RootPerformanceModule.Action.DISABLE, "Desactivar " + RootPerformanceModule.DISPLAY_NAME, "Detiene las tareas automáticas y conserva los resultados de compilación existentes. Requiere Root.", "Desactivar") }
+    fun runPerformance() { confirmPerformance(RootPerformanceModule.Action.RUN, "Optimizar ahora", "Comprueba y procesa ahora según sea necesario, sin depender del estado de la pantalla, la carga, la batería, la temperatura o Thermal Service. Se mantienen el tiempo límite, la cancelación fiable y la prevención de tareas simultáneas. No se puede ejecutar si faltan las funciones ART necesarias. Los nuevos resultados se usarán cuando el sistema los cargue. Requiere Root.", "Iniciar") }
     fun checkActivation() {
         if (destroyed || !resumed || checkingRuntime) return
         if (homeStatus.visible()) {
@@ -834,7 +834,7 @@ class ModernMainActivity : ComponentActivity() {
     }
     fun requestRoot() {
         if (checkingRoot) return
-        checkingRoot = true; rootMessage = "正在检查 Root 授权…"
+        checkingRoot = true; rootMessage = "Comprobando autorización Root…"
         getSharedPreferences("app_migrations", MODE_PRIVATE).edit().putBoolean("root_requested", true).apply()
         rootRequest = RootAccess.check { result ->
             checkingRoot = false; rootRequest = null
@@ -849,7 +849,7 @@ class ModernMainActivity : ComponentActivity() {
     }
     fun restartSystemUi() {
         if (busy) return
-        confirmation = UiConfirmation("重启系统界面", "状态栏与通知中心会短暂重新加载，随后应用当前模块和配置。", "重启") {
+        confirmation = UiConfirmation("Reiniciar la interfaz del sistema", "La barra de estado y el centro de notificaciones se volverán a cargar brevemente y después aplicarán el módulo y la configuración actuales.", "Reiniciar") {
             busy = true; runtimeActive = false
             restartRequest = SystemUiRestart.restart { result ->
                 if (!destroyed) {
@@ -860,12 +860,12 @@ class ModernMainActivity : ComponentActivity() {
         }
     }
     /** 导入先选文件，读出内容后再问是否自定义导入项。 */
-    fun chooseImport() { if (canEdit) importConfig.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) else toast("请先激活模块或授予 Root") }
+    fun chooseImport() { if (canEdit) importConfig.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) else toast("Primero activa el módulo o concede acceso Root.") }
     /** 导出和分享先问是否自定义，再选保存位置或分享对象。 */
     fun chooseExport() { askConfigScope("export") }
     fun shareConfig() { askConfigScope("share") }
     private fun askConfigScope(kind: String) {
-        if (!canEdit) { toast("请先激活模块或授予 Root"); return }
+        if (!canEdit) { toast("Primero activa el módulo o concede acceso Root."); return }
         if (busy) return
         configScope = ConfigScopeRequest(kind)
     }
@@ -894,7 +894,7 @@ class ModernMainActivity : ComponentActivity() {
     fun confirmConfigScopeAll() { val request = configScope ?: return; configScope = null; continueConfig(request, null) }
     fun confirmConfigScopeChoice() {
         val request = configScope ?: return
-        if (request.selected.isEmpty()) { toast("请至少选择一个页面"); return }
+        if (request.selected.isEmpty()) { toast("Selecciona al menos una página."); return }
         configScope = null
         continueConfig(request, request.selected)
     }
@@ -917,43 +917,43 @@ class ModernMainActivity : ComponentActivity() {
                     busy = false
                     if (destroyed) return@runOnUiThread
                     val send = Intent(Intent.ACTION_SEND).setType("application/json")
-                        .putExtra(Intent.EXTRA_STREAM, uri).putExtra(Intent.EXTRA_SUBJECT, "C17 状态栏配置")
+                        .putExtra(Intent.EXTRA_STREAM, uri).putExtra(Intent.EXTRA_SUBJECT, "Configuración de la barra de estado C17")
                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     send.clipData = ClipData.newRawUri(ConfigShare.FILE_NAME, uri)
-                    runCatching { startActivity(Intent.createChooser(send, "分享配置")) }.onFailure { toast("无法打开分享面板") }
+                    runCatching { startActivity(Intent.createChooser(send, "Compartir configuración")) }.onFailure { toast("No se pudo abrir el panel para compartir.") }
                 }
-            } catch (error: Exception) { runOnUiThread { busy = false; toast("分享失败：${error.message}") } }
+            } catch (error: Exception) { runOnUiThread { busy = false; toast("No se pudo compartir: ${error.message}") } }
         }
     }
     /** 最后一步确认：只提交用户选的页面，其余设置保持原样。 */
     private fun reviewImport(prepared: ConfigTransfer.PreparedImport, sections: Set<String>?) {
         val chosen = if (sections == null) prepared else prepared.only(ConfigScope.keys(sections))
-        val legacyIcons = if (chosen.skippedLegacyIcons > 0) "\n旧版图标规则不会恢复，请在图标管理中重新选择 v3 套装。" else ""
+        val legacyIcons = if (chosen.skippedLegacyIcons > 0) "\nLas reglas de iconos antiguas no se restauran. Vuelve a elegir un paquete v3 en Administración de iconos." else ""
         if (chosen.count == 0) {
             pendingFile = null
-            toast(if (chosen.skippedLegacyIcons > 0) "已跳过 ${chosen.skippedLegacyIcons} 项旧版图标设置，没有其他可导入设置。$legacyIcons" else "没有可导入的设置")
+            toast(if (chosen.skippedLegacyIcons > 0) "Se omitieron ${chosen.skippedLegacyIcons} ajustes de iconos antiguos; no hay otros ajustes que importar. $legacyIcons" else "No hay ajustes para importar.")
             return
         }
-        confirmation = UiConfirmation("导入配置", "将更新 ${chosen.count} 项设置。${chosen.warning}$legacyIcons\n现有字体文件和安全模式会保留。", "导入", cancelAction = { pendingFile = null }) {
+        confirmation = UiConfirmation("Importar configuración", "Se actualizarán ${chosen.count} ajustes. ${chosen.warning}$legacyIcons\nSe conservarán los archivos de fuentes existentes y el modo seguro.", "Importar", cancelAction = { pendingFile = null }) {
             pendingFile = null
-            if (!resumed || !canEdit) { toast("权限状态已变化，请重新授权后导入"); return@UiConfirmation }
+            if (!resumed || !canEdit) { toast("El estado de los permisos ha cambiado. Vuelve a autorizar y después importa."); return@UiConfirmation }
             // An imported "on" is not the user having seen the mini stack's source declaration.
             if (NotificationMiniStackSource.importNeedsDeclaration(chosen.values(), NotificationMiniStackSource.acknowledged(this))) {
                 val rest = chosen.only(chosen.keys() - NotificationMiniStack.ENABLED)
-                showMiniStackSource({ commitImport(chosen) }, "\n\n导入的配置会开启同应用小堆叠；点“取消”则导入其余设置，小堆叠保持原状。",
-                    cancel = { if (rest.count > 0) commitImport(rest) else toast("未导入：同应用小堆叠保持原状") })
+                showMiniStackSource({ commitImport(chosen) }, "\n\nLa configuración importada activará el apilado compacto por aplicación. Pulsa «Cancelar» para importar el resto y mantener el apilado sin cambios.",
+                    cancel = { if (rest.count > 0) commitImport(rest) else toast("No importado: el apilado compacto por aplicación permanece sin cambios.") })
                 return@UiConfirmation
             }
             commitImport(chosen)
         }
     }
     private fun commitImport(chosen: ConfigTransfer.PreparedImport) {
-        if (!resumed || !canEdit) { toast("权限状态已变化，请重新授权后导入"); return }
+        if (!resumed || !canEdit) { toast("El estado de los permisos ha cambiado. Vuelve a autorizar y después importa."); return }
         busy = true
         val result = runCatching { ConfigTransfer.commit(preferences, chosen) }
-        busy = false; toast(if (result.getOrDefault(false)) "配置已导入" else "导入未完成，请重试")
+        busy = false; toast(if (result.getOrDefault(false)) "Configuración importada." else "La importación no se completó. Inténtalo de nuevo.")
     }
-    fun chooseFont() { if (canEdit && !busy) { fontScopeSelection = null; fontCatalogOpen = false; importFont.launch(arrayOf("*/*")) } else toast("请先激活模块或授予 Root") }
+    fun chooseFont() { if (canEdit && !busy) { fontScopeSelection = null; fontCatalogOpen = false; importFont.launch(arrayOf("*/*")) } else toast("Primero activa el módulo o concede acceso Root.") }
     fun chooseOpenFont() { fontScopeSelection = null; refreshFontLibrary(); fontCatalogOpen = true }
     fun refreshFontLibrary() {
         if (destroyed || maintenanceRunning) return
@@ -974,32 +974,32 @@ class ModernMainActivity : ComponentActivity() {
         val assignments = runCatching { FontScopes.parse(value(FontScopes.KEY)?.toString() ?: "{}") }.getOrDefault(emptyMap())
         val sources = assignments.values.distinct()
         if (sources.size == 1 && assignments.size == FontScopes.SCOPES.size) return fontSourceTitle(sources.first())
-        if (assignments.isNotEmpty()) return "已设置 ${assignments.size} 个范围"
+        if (assignments.isNotEmpty()) return "Se han configurado ${assignments.size} ámbitos."
         return when (value(StatusBarSettings.FONT_MODE)?.toString()) {
-            "pingfang" -> "苹方（原有选择）"
-            "custom" -> (value(StatusBarSettings.FONT_NAME)?.toString()?.takeIf { it.isNotBlank() } ?: "导入字体") + "（原有选择）"
-            else -> "跟随系统"
+            "pingfang" -> "PingFang (selección anterior)"
+            "custom" -> (value(StatusBarSettings.FONT_NAME)?.toString()?.takeIf { it.isNotBlank() } ?: "Importar fuente") + "(selección anterior)"
+            else -> "Seguir al sistema"
         }
     }
     fun fontSourceTitle(source: String): String = when {
-        source == "system" -> "跟随系统"
-        source == "pingfang" -> "苹方"
+        source == "system" -> "Seguir al sistema"
+        source == "pingfang" -> "PingFang"
         source.startsWith("custom:") -> {
             val revision = source.removePrefix("custom:")
             fontLibraryEntries.firstOrNull { it.revision == revision }?.name
-                ?: FontCatalog.forRevision(revision)?.displayName ?: "导入字体 · ${revision.take(8)}"
+                ?: FontCatalog.forRevision(revision)?.displayName ?: "Fuente importada · ${revision.take(8)}"
         }
-        else -> "原有字体选择"
+        else -> "Selección de fuente anterior"
     }
     fun fontUsage(source: String): String {
         val assignments = runCatching { FontScopes.parse(value(FontScopes.KEY)?.toString() ?: "{}") }.getOrDefault(emptyMap())
         val scopes = FontScopes.SCOPES.filter { assignments[it] == source }
-        return if (scopes.isEmpty()) "尚未分配范围" else
-            (if (bool(FeatureOptions.masterKey("font"))) "应用范围：" else "已保存范围：") + scopes.joinToString("、") { FontScopes.title(it) }
+        return if (scopes.isEmpty()) "Aún no se ha asignado ningún ámbito." else
+            (if (bool(FeatureOptions.masterKey("font"))) "Ámbitos de aplicación:" else "Ámbitos guardados:") + scopes.joinToString("、") { FontScopes.title(it) }
     }
     fun selectFontScopes(mode: String, title: String, revision: String = "") {
         if (!resumed || !canEdit || busy) return
-        val source = runCatching { FontScopes.source(mode, revision) }.getOrElse { toast("字体来源无效，请重新选择"); return }
+        val source = runCatching { FontScopes.source(mode, revision) }.getOrElse { toast("La fuente de la tipografía no es válida. Vuelve a seleccionarla."); return }
         fontCatalogOpen = false
         fontScopeSelection = FontScopeSelection(source, title)
     }
@@ -1015,19 +1015,19 @@ class ModernMainActivity : ComponentActivity() {
     fun applyFontScopes(selection: FontScopeSelection, selected: Set<String>) {
         if (!resumed || !canEdit || busy || fontScopeSelection !== selection || selected.isEmpty()) return
         val scopes = FontScopes.SCOPES.filter { it in selected }
-        if (scopes.isEmpty() || scopes.size != selected.size) { toast("作用范围无效，请重新选择"); return }
+        if (scopes.isEmpty() || scopes.size != selected.size) { toast("El ámbito de aplicación no es válido. Vuelve a seleccionarlo."); return }
         busy = true
         work.execute {
             val ready = runCatching {
                 if (selection.source.startsWith("custom:")) check(FontLibrary.contains(applicationContext, selection.source.removePrefix("custom:"))) {
-                    "字体文件已缺失，请重新导入或下载"
+                    "Falta el archivo de la fuente. Impórtala o descárgala de nuevo."
                 }
             }
             handler.post {
                 busy = false
                 if (destroyed || fontScopeSelection !== selection) return@post
-                if (ready.isFailure) { toast(ready.exceptionOrNull()?.message ?: "字体不可用"); refreshFontLibrary(); return@post }
-                if (!resumed || !canEdit || maintenanceRunning) { toast("编辑权限已变化，字体设置未改变"); return@post }
+                if (ready.isFailure) { toast(ready.exceptionOrNull()?.message ?: "La fuente no está disponible."); refreshFontLibrary(); return@post }
+                if (!resumed || !canEdit || maintenanceRunning) { toast("Los permisos de edición han cambiado. La configuración de la fuente no se ha modificado."); return@post }
                 val previous = raw.all
                 val result = runCatching {
                     val master = FeatureOptions.masterKey("font")
@@ -1042,21 +1042,21 @@ class ModernMainActivity : ComponentActivity() {
                         if (previous.containsKey(FontScopes.KEY)) restore.putString(FontScopes.KEY, previous[FontScopes.KEY] as String?) else restore.remove(FontScopes.KEY)
                         if (previous.containsKey(master)) restore.putBoolean(master, previous[master] == true) else restore.remove(master)
                         if (previous.containsKey(StatusBarSettings.FONT_MODE)) restore.putString(StatusBarSettings.FONT_MODE, previous[StatusBarSettings.FONT_MODE] as String?) else restore.remove(StatusBarSettings.FONT_MODE)
-                        check(restore.commit()) { "字体保存失败，原设置未能完整恢复，请重试" }
-                        error("作用范围未能保存，已恢复原字体设置")
+                        check(restore.commit()) { "No se pudo guardar la fuente y no fue posible restaurar por completo los ajustes originales. Inténtalo de nuevo." }
+                        error("No se pudo guardar el ámbito de aplicación; se restauró la configuración de fuente anterior.")
                     }
                 }
                 if (result.isSuccess) {
                     fontScopeSelection = null
-                    toast("${selection.title} 已应用到 ${scopes.size} 个范围")
-                } else toast(result.exceptionOrNull()?.message ?: "字体设置未保存")
+                    toast("${selection.title} se aplicó a ${scopes.size} ámbitos.")
+                } else toast(result.exceptionOrNull()?.message ?: "La configuración de la fuente no se guardó.")
             }
         }
     }
     fun renameLibraryFont(entry: FontLibrary.Entry, input: String): String? {
-        if (!resumed || !canEdit || busy) return "请先激活模块或授予 Root"
+        if (!resumed || !canEdit || busy) return "Primero activa el módulo o concede acceso Root."
         val name = FontLibrary.displayName(input)
-        if (input.isBlank()) return "请输入字体名称"
+        if (input.isBlank()) return "Introduce un nombre para la fuente."
         busy = true; fontRenameTarget = null
         work.execute {
             val result = runCatching { FontLibrary.rename(applicationContext, entry.revision, name) }
@@ -1065,7 +1065,7 @@ class ModernMainActivity : ComponentActivity() {
                     if (result.isSuccess && value(StatusBarSettings.FONT_REVISION) == entry.revision)
                         preferences.edit().putString(StatusBarSettings.FONT_NAME, name).apply()
                     busy = false; refreshFontLibrary()
-                    if (result.isFailure) toast("重命名失败：${result.exceptionOrNull()?.message}")
+                    if (result.isFailure) toast("No se pudo cambiar el nombre: ${result.exceptionOrNull()?.message}")
                 }
             }
         }
@@ -1075,7 +1075,7 @@ class ModernMainActivity : ComponentActivity() {
         if (!canEdit || busy) return
         val active = value(StatusBarSettings.FONT_REVISION) == entry.revision ||
             FontScopes.references(value(FontScopes.KEY)?.toString() ?: "{}", entry.revision)
-        confirmation = UiConfirmation("删除 ${entry.name}", if (active) "这款字体正在使用。删除后改为跟随系统，其他导入字体会保留。" else "删除这款字体，其他已导入或下载的字体会保留。", "删除") {
+        confirmation = UiConfirmation("Eliminar ${entry.name}", if (active) "Esta fuente está en uso. Al eliminarla, se volverá a la fuente del sistema; se conservarán las demás fuentes importadas." else "Eliminar esta fuente; las demás fuentes importadas o descargadas se conservarán.", "Eliminar") {
             if (!resumed || !canEdit || busy) return@UiConfirmation
             val current = value(StatusBarSettings.FONT_REVISION) == entry.revision
             val previous = raw.all
@@ -1091,13 +1091,13 @@ class ModernMainActivity : ComponentActivity() {
                             }, {
                                 val restore = raw.edit()
                                 changes.keys.forEach { key -> if (previous.containsKey(key)) restore.putString(key, previous[key] as String?) else restore.remove(key) }
-                                check(restore.commit()) { "原字体配置未能恢复" }
+                                check(restore.commit()) { "No se pudo restaurar la configuración de fuente original." }
                             })
                         } }
                         busy = false
-                        if (!destroyed) { refreshFontLibrary(); fontCatalogOpen = true; toast(if (result.isSuccess) "字体已删除" else "删除未完成：${result.exceptionOrNull()?.message}") }
+                        if (!destroyed) { refreshFontLibrary(); fontCatalogOpen = true; toast(if (result.isSuccess) "Fuente eliminada." else "No se pudo completar la eliminación: ${result.exceptionOrNull()?.message}") }
                     }
-                } catch (error: Exception) { handler.post { busy = false; if (!destroyed) { refreshFontLibrary(); fontCatalogOpen = true; toast("字体未删除：${error.message}") } } }
+                } catch (error: Exception) { handler.post { busy = false; if (!destroyed) { refreshFontLibrary(); fontCatalogOpen = true; toast("No se eliminó la fuente: ${error.message}") } } }
             }
         }
     }
@@ -1119,17 +1119,17 @@ class ModernMainActivity : ComponentActivity() {
                     if (destroyed) return@runOnUiThread
                     refreshFontLibrary()
                     if (token.asBoolean || !resumed || !canEdit) {
-                        toast("字体已入库，原字体设置保持不变")
+                        toast("Fuente añadida a la biblioteca; la configuración de fuente original no ha cambiado.")
                     } else {
                         selectFontScopes("custom", entry.displayName, entry.sha256)
-                        toast("字体已下载，请选择作用范围")
+                        toast("Fuente descargada. Selecciona el ámbito de aplicación.")
                     }
                 }
             } catch (error: Exception) {
                 runOnUiThread {
                     if (fontCancellation === token) {
                         fontCancellation = null; downloadingFont = null; busy = false
-                        toast("下载失败，原字体已保留：${error.message}")
+                        toast("Error al descargar. Se conservó la fuente original: ${error.message}")
                     }
                 }
             }
@@ -1138,21 +1138,21 @@ class ModernMainActivity : ComponentActivity() {
     fun cancelFontDownload() {
         fontCancellation?.cancel(); fontCancellation = null; downloadingFont = null; busy = false
     }
-    fun chooseNotificationIcon() { if (canEdit) importNotificationIcon.launch(arrayOf("image/png", "image/jpeg", "image/webp")) else toast("请先激活模块或授予 Root") }
+    fun chooseNotificationIcon() { if (canEdit) importNotificationIcon.launch(arrayOf("image/png", "image/jpeg", "image/webp")) else toast("Primero activa el módulo o concede acceso Root.") }
     fun chooseLog() { exportLog.launch("C17-diagnostics.txt") }
     fun clearLogHistory() {
         if (busy || maintenanceRunning) return
-        confirmation = UiConfirmation("清空日志", "删除本模块保存的历史诊断日志及分享副本，配置不受影响。", "清空") {
+        confirmation = UiConfirmation("Borrar registros", "Elimina los registros de diagnóstico históricos guardados por este módulo y sus copias compartidas. No afecta a la configuración.", "Borrar") {
             busy = true
             work.execute {
                 val result = runCatching { MaintenanceReset.clearLogs(applicationContext) }
-                handler.post { if (!destroyed) { busy = false; toast(if (result.isSuccess) "历史日志已清空" else "清空失败，请稍后重试") } }
+                handler.post { if (!destroyed) { busy = false; toast(if (result.isSuccess) "Se borraron los registros históricos." else "No se pudo borrar. Inténtalo de nuevo más tarde.") } }
             }
         }
     }
     fun deleteAllSettings() {
         if (busy || !canEdit || maintenanceRunning) return
-        confirmation = UiConfirmation("删除所有配置", "删除当前配置、恢复备份、导入字体和自定义图标，并恢复全部默认设置。免费声明确认、小堆叠来源声明确认与 Root 请求标识保留。此操作无法撤销，可先导出配置。", "删除并恢复默认") {
+        confirmation = UiConfirmation("Eliminar toda la configuración", "Elimina la configuración actual, las copias de seguridad, las fuentes importadas y los iconos personalizados y restaura todos los valores predeterminados. Se conservarán las confirmaciones de uso gratuito y procedencia del apilado, así como el identificador de solicitud Root. Esta acción no se puede deshacer; exporta antes una copia de la configuración.", "Eliminar y restaurar valores predeterminados") {
             if (!resumed || !canEdit || busy) return@UiConfirmation
             pendingFile = null; editing = null; colorEditing = null; fontCatalogOpen = false; fontScopeSelection = null; marqueePickerOpen = false
             configScope = null; exportSections = null
@@ -1167,7 +1167,7 @@ class ModernMainActivity : ComponentActivity() {
                 handler.post {
                     if (!destroyed) {
                         maintenanceRunning = false; busy = false; values = raw.all; selectedGroup = null; iconPacks = emptyList()
-                        toast(result.getOrNull()?.message ?: "删除未完成，请稍后重试；未确认的旧配置不会重新发布")
+                        toast(result.getOrNull()?.message ?: "La eliminación no se completó. Inténtalo de nuevo más tarde; no se volverá a publicar la configuración antigua no confirmada.")
                         if (resumed) { notifySettings.run(); updateNavigation() }
                     }
                 }
@@ -1175,15 +1175,15 @@ class ModernMainActivity : ComponentActivity() {
         }
     }
     private fun installUpdate(result: GitHubUpdates.Result) {
-        if (!resumed || destroyed || busy || maintenanceRunning || !rootGranted) { toast("请先授予 Root 权限"); return }
-        busy = true; updateMessage = "准备下载更新…"
+        if (!resumed || destroyed || busy || maintenanceRunning || !rootGranted) { toast("Primero concede permiso Root."); return }
+        busy = true; updateMessage = "Preparando la descarga de la actualización…"
         updateRequest = AppUpdateInstaller.install(applicationContext, result,
             { !destroyed && resumed && rootGranted && !maintenanceRunning }, object : AppUpdateInstaller.Callback {
                 override fun onStage(stage: AppUpdateInstaller.Stage) {
                     if (!destroyed) updateMessage = when (stage) {
-                        AppUpdateInstaller.Stage.DOWNLOADING -> "正在下载正式更新…"
-                        AppUpdateInstaller.Stage.VERIFYING -> "正在校验安装包…"
-                        AppUpdateInstaller.Stage.INSTALLING -> "正在覆盖安装，配置会保留…"
+                        AppUpdateInstaller.Stage.DOWNLOADING -> "Descargando la actualización estable…"
+                        AppUpdateInstaller.Stage.VERIFYING -> "Verificando el paquete de instalación…"
+                        AppUpdateInstaller.Stage.INSTALLING -> "Instalando encima de la versión existente; se conservará la configuración…"
                     }
                 }
                 override fun onResult(success: Boolean, message: String) {
@@ -1198,7 +1198,7 @@ class ModernMainActivity : ComponentActivity() {
             if (result.success) desktopIconHidden = result.hidden
             toast(result.message)
         }
-        if (hidden) confirmation = UiConfirmation("隐藏桌面图标", "隐藏后，模块和配置继续生效。可从 LSPosed 管理器的“模块设置”重新打开本应用，并在这里恢复图标。", "隐藏", action = apply)
+        if (hidden) confirmation = UiConfirmation("Ocultar icono de la aplicación", "Al ocultarlo, el módulo y la configuración seguirán activos. Puedes volver a abrir esta aplicación desde «Ajustes del módulo» en LSPosed y restaurar aquí el icono.", "Ocultar", action = apply)
         else apply()
     }
 
@@ -1225,7 +1225,7 @@ class ModernMainActivity : ComponentActivity() {
     fun refreshThanks() {
         if (thanksRefreshing || destroyed) return
         thanksRefreshing = true
-        thanksStatus = "正在检查名单更新…"
+        thanksStatus = "Comprobando actualizaciones de la lista…"
         ThanksWall.refresh(this) { result ->
             if (destroyed) return@refresh
             thanksRefreshing = false
@@ -1236,14 +1236,14 @@ class ModernMainActivity : ComponentActivity() {
 
     private fun thanksCheckedLabel(): String {
         val last = ThanksWall.lastCheck(this)
-        return if (last <= 0L) "尚未联网检查"
-            else "检查于 " + java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.ROOT).format(java.util.Date(last))
+        return if (last <= 0L) "Todavía no se ha comprobado en línea."
+            else "Comprobado el " + java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.ROOT).format(java.util.Date(last))
     }
-    fun openUrl(url: String) { runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }.onFailure { toast("没有可用的浏览器") } }
+    fun openUrl(url: String) { runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }.onFailure { toast("No hay ningún navegador disponible.") } }
     fun checkUpdates() {
         if (!resumed || destroyed || checkingUpdates || busy || maintenanceRunning) return
         checkingUpdates = true
-        updateMessage = "正在检查 GitHub 正式发布…"
+        updateMessage = "Comprobando las versiones estables de GitHub…"
         val version = runCatching { packageManager.getPackageInfo(packageName, 0).versionName ?: "" }.getOrDefault("")
         // The existing checker performs bounded HTTP work off the main thread and posts its result to it.
         GitHubUpdates.fetch(version) { result ->
@@ -1256,13 +1256,13 @@ class ModernMainActivity : ComponentActivity() {
                 !fontCatalogOpen && fontScopeSelection == null && downloadingFont == null && !busy) {
                 val details = buildString {
                     append(result.message)
-                    if (result.version.isNotEmpty()) append("\n发布版本：${result.version}")
+                    if (result.version.isNotEmpty()) append("\nVersión publicada: ${result.version}")
                     if (result.body.isNotEmpty()) append("\n\n${result.body}")
                 }
                 val download = result.newer && GitHubUpdates.isApkUrl(result.apkUrl)
                 val rootInstall = download && rootGranted && result.canInstall()
-                confirmation = UiConfirmation(if (result.newer) "发现新版本" else "更新检查", details,
-                    if (rootInstall) "下载并安装" else if (download) "下载 APK" else "查看正式发布") {
+                confirmation = UiConfirmation(if (result.newer) "Nueva versión disponible" else "Buscar actualizaciones", details,
+                    if (rootInstall) "Descargar e instalar" else if (download) "Descargar APK" else "Ver versión estable") {
                     if (rootInstall) installUpdate(result) else if (download) openUrl(result.apkUrl) else openLatestRelease()
                 }
             }
@@ -1285,14 +1285,14 @@ class ModernMainActivity : ComponentActivity() {
         if (action.first == "font") { prepareFont(action.second); return }
         if (action.first == "notification_icon") { prepareNotificationIcon(action.second); return }
         if (action.first == "icon_pack") { prepareIconPack(action.second); return }
-        if (action.first == "pui_theme") { pendingFile = null; busy = false; toast("旧版主题导入已移除，请在图标库中安装内置 PUI 套装"); return }
+        if (action.first == "pui_theme") { pendingFile = null; busy = false; toast("Se ha eliminado la importación de temas antiguos. Instala el paquete PUI integrado desde la biblioteca de iconos."); return }
         val snapshot = values
         work.execute {
             try {
                 if (action.first == "export") {
                     val keys = exportSections?.let { ConfigScope.keys(it) }
                     contentResolver.openOutputStream(action.second, "wt").use { ConfigTransfer.write(it, snapshot, keys) }
-                    runOnUiThread { pendingFile = null; exportSections = null; busy = false; toast("配置已导出") }
+                    runOnUiThread { pendingFile = null; exportSections = null; busy = false; toast("Configuración exportada.") }
                 } else {
                     val prepared = contentResolver.openInputStream(action.second).use { ConfigTransfer.read(it, this) }
                     runOnUiThread {
@@ -1302,12 +1302,12 @@ class ModernMainActivity : ComponentActivity() {
                     }
                 }
             } catch (error: Exception) {
-                runOnUiThread { pendingFile = null; exportSections = null; busy = false; toast("${if (action.first == "export") "导出" else "导入"}失败：${error.message}") }
+                runOnUiThread { pendingFile = null; exportSections = null; busy = false; toast("${if (action.first == "export") "Exportación" else "Importación"}: ${error.message}") }
             }
         }
     }
     private fun prepareFont(uri: Uri) {
-        var name = "自选字体"
+        var name = "Fuente personalizada"
         runCatching { contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null).use { cursor ->
             if (cursor != null && cursor.moveToFirst()) name = cursor.getString(0).take(120)
         } }
@@ -1324,18 +1324,18 @@ class ModernMainActivity : ComponentActivity() {
                     if (!destroyed) {
                         refreshFontLibrary()
                         if (resumed && canEdit) selectFontScopes("custom", displayName, revision)
-                        toast("字体已导入；选择作用范围并应用后生效")
+                        toast("Fuente importada. Selecciona el ámbito de aplicación y aplícalo para activarla.")
                     }
                 }
-            } catch (error: Exception) { runOnUiThread { pendingFile = null; busy = false; toast("字体导入失败：${error.message}") } }
+            } catch (error: Exception) { runOnUiThread { pendingFile = null; busy = false; toast("Error al importar la fuente: ${error.message}") } }
         }
     }
     private fun prepareNotificationIcon(uri: Uri) {
         work.execute {
             try {
                 val name = runCatching { contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null).use { cursor ->
-                    if (cursor != null && cursor.moveToFirst()) cursor.getString(0).take(120) else "自定义图片"
-                } }.getOrDefault("自定义图片")
+                    if (cursor != null && cursor.moveToFirst()) cursor.getString(0).take(120) else "Imagen personalizada"
+                } }.getOrDefault("Imagen personalizada")
                 val prepared = NotificationIconRepository.prepare(applicationContext, uri)
                 runOnUiThread {
                     try {
@@ -1349,13 +1349,13 @@ class ModernMainActivity : ComponentActivity() {
                             }, {
                                 val restore = raw.edit()
                                 keys.forEach { key -> if (previous.containsKey(key)) restore.putString(key, previous[key] as String?) else restore.remove(key) }
-                                check(restore.commit()) { "原图片配置未能恢复" }
+                                check(restore.commit()) { "No se pudo restaurar la configuración de imagen original." }
                             })
-                            pendingFile = null; busy = false; toast("通知图标图片已导入")
+                            pendingFile = null; busy = false; toast("Imagen del icono de notificación importada.")
                         }
-                    } catch (error: Exception) { pendingFile = null; busy = false; toast("图片导入失败：${error.message}") }
+                    } catch (error: Exception) { pendingFile = null; busy = false; toast("Error al importar la imagen: ${error.message}") }
                 }
-            } catch (error: Exception) { runOnUiThread { pendingFile = null; busy = false; toast("图片导入失败：${error.message}") } }
+            } catch (error: Exception) { runOnUiThread { pendingFile = null; busy = false; toast("Error al importar la imagen: ${error.message}") } }
         }
     }
     /** Open the album to choose this panel's picture; the editor opens on what was chosen. */
@@ -1410,13 +1410,13 @@ class ModernMainActivity : ComponentActivity() {
                             }, {
                                 val restore = raw.edit()
                                 if (previous is String) restore.putString(key, previous) else restore.remove(key)
-                                check(restore.commit()) { "壁纸配置恢复失败" }
+                                check(restore.commit()) { "No se pudo restaurar la configuración del fondo de pantalla." }
                             })
                             pendingFile = null; busy = false; wallpaperEdit = null
                             work.execute { ShadeWallpaperRepository.prune(applicationContext, scene, prepared.revision) }
-                            toast("${ShadeWallpaperSettings.title(scene)}壁纸已导入")
+                            toast("Se importó el fondo de pantalla de ${ShadeWallpaperSettings.title(scene)}.")
                         }
-                    } catch (error: Exception) { pendingFile = null; busy = false; toast("壁纸导入失败：${error.message}") }
+                    } catch (error: Exception) { pendingFile = null; busy = false; toast("Error al importar el fondo de pantalla: ${error.message}") }
                     finally { synchronized(wallpaperResourcesLock) { preparedWallpapers.remove(prepared) } }
                 }
                 if (!posted) {
@@ -1424,7 +1424,7 @@ class ModernMainActivity : ComponentActivity() {
                     prepared.close()
                 }
             } catch (error: Exception) {
-                handler.post { if (!destroyed) { pendingFile = null; busy = false; toast("壁纸导入失败：${error.message}") } }
+                handler.post { if (!destroyed) { pendingFile = null; busy = false; toast("Error al importar el fondo de pantalla: ${error.message}") } }
             }
         }
     }
@@ -1432,11 +1432,11 @@ class ModernMainActivity : ComponentActivity() {
         if (!resumed || !canEdit || busy || !ShadeWallpaperSettings.validScene(scene)) return
         val saved = preferences.edit().putBoolean(ShadeWallpaperSettings.enabledKey(scene), false)
             .putString(ShadeWallpaperSettings.revisionKey(scene), "").commit()
-        if (!saved) { toast("壁纸配置保存失败，图片已保留"); return }
+        if (!saved) { toast("No se pudo guardar la configuración del fondo, pero la imagen se conservó."); return }
         busy = true
         work.execute {
             val result = runCatching { ShadeWallpaperRepository.delete(applicationContext, scene) }
-            handler.post { if (!destroyed) { busy = false; toast(if (result.isSuccess) "这张壁纸已删除" else "配置已关闭，图片删除失败，请重试") } }
+            handler.post { if (!destroyed) { busy = false; toast(if (result.isSuccess) "Se eliminó este fondo de pantalla." else "Se desactivó la configuración, pero no se pudo eliminar la imagen. Inténtalo de nuevo.") } }
         }
     }
     fun openNotificationOverrides() {
@@ -1455,8 +1455,8 @@ class ModernMainActivity : ComponentActivity() {
     fun clockLaunchLabel(key: String): String {
         val selected = value(key)?.toString().orEmpty()
         val component = BigClockWidgetsSettings.launchAppKey(key)
-        if (selected.isBlank()) return if (component) "未选择应用" else "系统默认"
-        val unavailable = if (component) "所选应用不可用，请重新选择" else "系统默认（所选应用不可用）"
+        if (selected.isBlank()) return if (component) "No se ha seleccionado ninguna aplicación." else "Predeterminado del sistema"
+        val unavailable = if (component) "La aplicación seleccionada no está disponible. Vuelve a seleccionarla." else "Predeterminado del sistema (la aplicación seleccionada no está disponible)"
         return runCatching {
             if (ClockLaunchHelper.customIntent(packageManager, selected) == null) unavailable
             else packageManager.getApplicationLabel(packageManager.getApplicationInfo(selected, 0)).toString()
@@ -1502,66 +1502,66 @@ class ModernMainActivity : ComponentActivity() {
         } else false
     }
     fun saveClockLaunchApp(key: String, packageName: String): String {
-        if (!canEdit || busy) return "请先激活模块或授予 Root，并等待当前操作完成"
-        if (!clockLaunchEnabled(key)) return "请先开启对应的点击操作"
+        if (!canEdit || busy) return "Activa primero el módulo o concede acceso Root y espera a que termine la operación actual."
+        if (!clockLaunchEnabled(key)) return "Primero activa la acción de pulsación correspondiente."
         if (BigClockWidgetsSettings.launchAppKey(key)) {
             BigClockWidgetsSettings.launchAppValidationError(packageName)?.let { return it }
         }
         if (packageName.isNotEmpty() && ClockLaunchHelper.customIntent(packageManager, packageName) == null)
-            return "所选应用已卸载、被禁用或没有可启动入口"
-        return if (saveManagedString(key, packageName)) { dismissClockLaunchPicker(); "" } else "保存失败，请重试"
+            return "La aplicación seleccionada se ha desinstalado, está deshabilitada o no tiene una actividad de inicio disponible."
+        return if (saveManagedString(key, packageName)) { dismissClockLaunchPicker(); "" } else "No se pudo guardar. Inténtalo de nuevo."
     }
     private fun saveManagedString(key: String, json: String): Boolean {
-        if (!resumed || !canEdit || destroyed) { toast("激活模块或授予 Root 后即可保存配置"); return false }
+        if (!resumed || !canEdit || destroyed) { toast("Activa el módulo o concede acceso Root para guardar la configuración."); return false }
         val result = runCatching { preferences.edit().putString(key, json).commit() }.getOrDefault(false)
         values = raw.all
-        if (!result) toast("配置未能完整保存，请重试")
+        if (!result) toast("No se pudo guardar toda la configuración. Inténtalo de nuevo.")
         return result
     }
     fun saveNotificationOverride(packageName: String, text: String, enabled: Boolean, oldPackage: String? = null): String {
-        if (!resumed || !canEdit || busy) return "请先激活模块或授予 Root"
+        if (!resumed || !canEdit || busy) return "Primero activa el módulo o concede acceso Root."
         return try {
             var source = value(NotificationIconOverrides.RULES)?.toString() ?: "[]"
             if (packageName != oldPackage && NotificationIconOverrides.rules(source).any { it.packageName == packageName })
-                return "该应用已设置，请编辑现有规则"
+                return "Esta aplicación ya está configurada. Edita la regla existente."
             if (!oldPackage.isNullOrBlank() && oldPackage != packageName) source = NotificationIconOverrides.remove(source, oldPackage)
             val updated = NotificationIconOverrides.put(source, packageName, text, enabled)
-            if (saveManagedString(NotificationIconOverrides.RULES, updated)) "" else "保存失败，请重试"
-        } catch (error: Exception) { error.message ?: "应用规则无效" }
+            if (saveManagedString(NotificationIconOverrides.RULES, updated)) "" else "No se pudo guardar. Inténtalo de nuevo."
+        } catch (error: Exception) { error.message ?: "La regla de aplicación no es válida." }
     }
     fun removeNotificationOverride(packageName: String) {
         if (busy) return
         runCatching { NotificationIconOverrides.remove(value(NotificationIconOverrides.RULES)?.toString() ?: "[]", packageName) }
-            .onSuccess { saveManagedString(NotificationIconOverrides.RULES, it) }.onFailure { toast(it.message ?: "规则删除失败") }
+            .onSuccess { saveManagedString(NotificationIconOverrides.RULES, it) }.onFailure { toast(it.message ?: "No se pudo eliminar la regla.") }
     }
     fun saveNotificationAppIconOverride(packageName: String, sourcePackage: String, enabled: Boolean, previousPackage: String? = null): String {
-        if (!resumed || !canEdit || busy) return "请先激活模块或授予 Root"
+        if (!resumed || !canEdit || busy) return "Primero activa el módulo o concede acceso Root."
         return try {
             var source = value(NotificationIconOverrides.RULES)?.toString() ?: "[]"
             if (packageName != previousPackage && NotificationIconOverrides.rules(source).any { it.packageName == packageName })
-                return "该应用已设置，请编辑现有规则"
+                return "Esta aplicación ya está configurada. Edita la regla existente."
             if (!previousPackage.isNullOrBlank() && previousPackage != packageName) source = NotificationIconOverrides.remove(source, previousPackage)
             val updated = NotificationIconOverrides.putAppIcon(source, packageName, sourcePackage, enabled)
             if (enabled) packageManager.getApplicationInfo(sourcePackage, 0)
-            if (saveManagedString(NotificationIconOverrides.RULES, updated)) "" else "保存失败，请重试"
-        } catch (error: Exception) { error.message?.takeIf { it.isNotBlank() } ?: "所选应用图标不可用" }
+            if (saveManagedString(NotificationIconOverrides.RULES, updated)) "" else "No se pudo guardar. Inténtalo de nuevo."
+        } catch (error: Exception) { error.message?.takeIf { it.isNotBlank() } ?: "El icono de la aplicación seleccionada no está disponible." }
     }
     fun iconManagementRecords(): String = values[IconManagementSettings.KEY]?.toString() ?: IconManagementSettings.DEFAULT
     fun iconManagementEnabled(): Boolean = values[IconManagementSettings.ENABLED] as? Boolean ?: true
     fun setIconManagementEnabled(enabled: Boolean): String {
-        if (!resumed || !canEdit || busy || destroyed) return "请先激活模块或授予 Root"
+        if (!resumed || !canEdit || busy || destroyed) return "Primero activa el módulo o concede acceso Root."
         return runCatching {
             val previous = raw.all
             if (!preferences.edit().putBoolean(IconManagementSettings.ENABLED, enabled).commit()) {
                 val restore = raw.edit()
                 if (previous.containsKey(IconManagementSettings.ENABLED)) restore.putBoolean(IconManagementSettings.ENABLED, previous[IconManagementSettings.ENABLED] as? Boolean ?: true)
                 else restore.remove(IconManagementSettings.ENABLED)
-                check(restore.commit()) { "总开关未能保存，原值未能完整恢复" }
-                error("总开关未能保存，已保留原值")
+                check(restore.commit()) { "No se pudo guardar el interruptor principal ni restaurar por completo el valor anterior." }
+                error("No se pudo guardar el interruptor principal; se conservó el valor anterior.")
             }
             values = raw.all
             ""
-        }.getOrElse { it.message ?: "总开关未能保存" }
+        }.getOrElse { it.message ?: "No se pudo guardar el interruptor principal." }
     }
     fun iconManagementState(): IconManagementSettings.State = runCatching { IconManagementSettings.parse(iconManagementRecords()) }
         .getOrElse { IconManagementSettings.parse(IconManagementSettings.DEFAULT) }
@@ -1588,8 +1588,8 @@ class ModernMainActivity : ComponentActivity() {
         iconLibraryTarget = null
         iconManagementDestination = if (target == null) IconManagementDestination()
             else IconManagementDestination("target", target.scope, targetId = target.id)
-        toast((if (iconManagementEnabled()) "套装已应用" else "套装选择已保存，开启总开关后生效") +
-            if (target != null) "；当前目标草稿尚未保存" else "")
+        toast((if (iconManagementEnabled()) "Paquete aplicado." else "Selección del paquete guardada; se aplicará al activar el interruptor principal.") +
+            if (target != null) "; el borrador del objetivo actual aún no se ha guardado." else "")
     }
     fun closeIconManagement() {
         if (busy) return
@@ -1609,10 +1609,10 @@ class ModernMainActivity : ComponentActivity() {
                 result.onSuccess { (migration, packs) ->
                     iconPacks = packs
                     iconMigrationCompleted = migration.noticePending
-                    iconMigrationNotice = if (migration.noticePending) "图标管理已升级，旧图标库和替换设置已重置，请重新选择 v3 图标包。" +
+                    iconMigrationNotice = if (migration.noticePending) "La administración de iconos se ha actualizado. Se restablecieron la biblioteca antigua y los ajustes de sustitución; vuelve a seleccionar un paquete de iconos v3." +
                         migration.warning.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()
                         else migration.warning.takeIf { it.isNotBlank() }
-                }.onFailure { toast("图标库读取失败：${it.message}") }
+                }.onFailure { toast("No se pudo leer la biblioteca de iconos: ${it.message}") }
             } }
         }
     }
@@ -1620,12 +1620,12 @@ class ModernMainActivity : ComponentActivity() {
         work.execute {
             val result = runCatching { IconManagementMigration.acknowledge(applicationContext) }
             handler.post { if (!destroyed) {
-                if (result.isSuccess) iconMigrationNotice = null else toast("升级提示保存失败，请重试")
+                if (result.isSuccess) iconMigrationNotice = null else toast("No se pudo guardar el aviso de actualización. Inténtalo de nuevo.")
             } }
         }
     }
     private fun saveIconRecords(records: String): String {
-        if (!resumed || !canEdit || destroyed || busy) return "请先激活模块或授予 Root"
+        if (!resumed || !canEdit || destroyed || busy) return "Primero activa el módulo o concede acceso Root."
         return runCatching {
             IconManagementSettings.parse(records)
             val previous = raw.all
@@ -1633,49 +1633,49 @@ class ModernMainActivity : ComponentActivity() {
                 val restore = raw.edit()
                 if (previous.containsKey(IconManagementSettings.KEY)) restore.putString(IconManagementSettings.KEY, previous[IconManagementSettings.KEY] as String?)
                 else restore.remove(IconManagementSettings.KEY)
-                check(restore.commit()) { "图标设置保存失败，原设置未能完整恢复" }
-                error("图标设置未能保存，已保留原设置")
+                check(restore.commit()) { "No se pudo guardar la configuración de iconos ni restaurar por completo la original." }
+                error("No se pudo guardar la configuración de iconos; se conservaron los ajustes originales.")
             }
             values = raw.all
             ""
-        }.getOrElse { it.message ?: "图标设置未能保存" }
+        }.getOrElse { it.message ?: "No se pudo guardar la configuración de iconos." }
     }
     fun applyIconPack(id: String, scopes: Set<String>, clearOverrides: Boolean, presetId: String? = null): String = runCatching {
-        val pack = iconPacks.firstOrNull { it.id == id } ?: error("图标库已不存在，请重新导入")
+        val pack = iconPacks.firstOrNull { it.id == id } ?: error("La biblioteca de iconos ya no existe. Impórtala de nuevo.")
         var records = IconManagementSettings.applyPack(iconManagementRecords(), id, scopes, clearOverrides)
-        if (presetId != null) records = IconManagementSettings.applyColorPreset(records, IconColorPresets.options(pack.manifest)[presetId] ?: error("颜色预设已变化"), scopes)
+        if (presetId != null) records = IconManagementSettings.applyColorPreset(records, IconColorPresets.options(pack.manifest)[presetId] ?: error("El preajuste de color ha cambiado."), scopes)
         saveIconRecords(records)
-    }.getOrElse { it.message ?: "套装应用失败" }
+    }.getOrElse { it.message ?: "No se pudo aplicar el paquete." }
     fun applyIconColorPreset(preset: IconColorPresets.Preset, scopes: Set<String>): String = runCatching {
         saveIconRecords(IconManagementSettings.applyColorPreset(iconManagementRecords(), preset, scopes))
-    }.getOrElse { it.message ?: "颜色预设未能保存" }
+    }.getOrElse { it.message ?: "No se pudo guardar el preajuste de color." }
     fun clearIconScopePack(scope: String): String = runCatching {
         saveIconRecords(IconManagementSettings.clearScopePack(iconManagementRecords(), scope))
-    }.getOrElse { it.message ?: "范围来源未能恢复" }
+    }.getOrElse { it.message ?: "No se pudo restaurar el origen del ámbito." }
     fun applyIconTarget(targetId: String, sources: Map<String, IconManagementSettings.Override>,
         appearance: IconManagementSettings.Appearance?, stateAppearances: Map<String, IconManagementSettings.Appearance>, animationEnabled: Boolean): String = runCatching {
-        val target = IconRoleRegistry.target(targetId) ?: error("图标目标已变化，请重新选择")
-        check(target.supported) { target.reason.ifBlank { "当前目标保留系统图案" } }
+        val target = IconRoleRegistry.target(targetId) ?: error("El destino del icono ha cambiado. Vuelve a seleccionarlo.")
+        check(target.supported) { target.reason.ifBlank { "El destino actual conserva el icono del sistema." } }
         sources.values.filter { it.mode == "pack" }.forEach { source ->
-            check(iconPacks.any { it.id == source.packId && it.manifest.icons.containsKey(source.sourceRole) }) { "图案来源已缺失，请重新选择" }
+            check(iconPacks.any { it.id == source.packId && it.manifest.icons.containsKey(source.sourceRole) }) { "Falta el origen del icono. Vuelve a seleccionarlo." }
         }
         saveIconRecords(IconManagementSettings.applyTarget(iconManagementRecords(), targetId, sources, appearance, stateAppearances, animationEnabled))
-    }.getOrElse { it.message ?: "图标设置未能保存" }
+    }.getOrElse { it.message ?: "No se pudo guardar la configuración de iconos." }
     fun applyIconAppearance(key: String, appearance: IconManagementSettings.Appearance?): String = runCatching {
         saveIconRecords(IconManagementSettings.applyAppearance(iconManagementRecords(), key, appearance))
-    }.getOrElse { it.message ?: "外观设置未能保存" }
+    }.getOrElse { it.message ?: "No se pudieron guardar los ajustes de apariencia." }
     fun resetIconManagement() {
         if (!canEdit || busy) return
-        confirmation = UiConfirmation("恢复图标管理默认设置", "清除套装应用、单项图案、颜色和透明度设置，已导入的图标库保留。", "恢复默认") {
+        confirmation = UiConfirmation("Restaurar los valores predeterminados de Administración de iconos", "Elimina la aplicación de paquetes y los ajustes individuales de iconos, color y transparencia. Se conservarán las bibliotecas de iconos importadas.", "Restaurar valores predeterminados") {
             val error = saveIconRecords(IconManagementSettings.reset())
-            toast(error.ifEmpty { "图标管理已恢复默认" })
+            toast(error.ifEmpty { "Se restauraron los valores predeterminados de Administración de iconos." })
         }
     }
     fun iconLibraryNameError(name: String, excludeId: String? = null): String = runCatching {
         val key = IconManagementRepository.nameKey(name)
         if (iconPacks.any { it.id != excludeId && IconManagementRepository.nameKey(it.name) == key })
-            "已有同名图标库，请输入不同名称" else ""
-    }.getOrElse { it.message ?: "请输入有效的图标库名称" }
+            "Ya existe una biblioteca de iconos con ese nombre. Introduce otro." else ""
+    }.getOrElse { it.message ?: "Introduce un nombre válido para la biblioteca de iconos." }
     fun renameIconPack(id: String, name: String) {
         if (busy || !canEdit || !resumed) return
         val invalid = iconLibraryNameError(name, id)
@@ -1685,19 +1685,19 @@ class ModernMainActivity : ComponentActivity() {
             val result = runCatching { IconManagementRepository.rename(applicationContext, id, name) }
             handler.post { if (!destroyed) {
                 busy = false
-                result.onSuccess { pack -> iconPacks = iconPacks.map { if (it.id == id) pack else it }; toast("名称已保存") }
-                    .onFailure { toast("重命名失败：${it.message}") }
+                result.onSuccess { pack -> iconPacks = iconPacks.map { if (it.id == id) pack else it }; toast("Nombre guardado.") }
+                    .onFailure { toast("No se pudo cambiar el nombre: ${it.message}") }
             } }
         }
     }
     fun deleteIconPack(id: String, name: String) {
         if (busy || !canEdit) return
         val dependencies = runCatching { IconManagementSettings.dependencies(iconManagementRecords(), id) }.getOrDefault(0)
-        confirmation = UiConfirmation("删除图标库", "删除“$name”及其资源。${if (dependencies > 0) "引用它的 $dependencies 项套装或单项选择将恢复默认。" else ""}独立颜色和透明度保留。", "删除") {
+        confirmation = UiConfirmation("Eliminar biblioteca de iconos", "Eliminar «$name» y sus recursos. ${if (dependencies > 0) "Los paquetes o selecciones individuales que lo usan ($dependencies) volverán a sus valores predeterminados." else ""}Se conservarán los ajustes independientes de color y transparencia.", "Eliminar") {
             if (!resumed || !canEdit || busy) return@UiConfirmation
             val previous = raw.all
             val next = runCatching { IconManagementSettings.removePack(iconManagementRecords(), id) }
-            if (next.isFailure) { toast(next.exceptionOrNull()?.message ?: "图标配置无效"); return@UiConfirmation }
+            if (next.isFailure) { toast(next.exceptionOrNull()?.message ?: "La configuración de iconos no es válida."); return@UiConfirmation }
             busy = true
             work.execute {
                 try {
@@ -1710,7 +1710,7 @@ class ModernMainActivity : ComponentActivity() {
                                 val restore = raw.edit()
                                 if (previous.containsKey(IconManagementSettings.KEY)) restore.putString(IconManagementSettings.KEY, previous[IconManagementSettings.KEY] as String?)
                                 else restore.remove(IconManagementSettings.KEY)
-                                check(restore.commit()) { "原图标配置未能恢复" }
+                                check(restore.commit()) { "No se pudo restaurar la configuración original de iconos." }
                             })
                         } }
                         busy = false
@@ -1719,39 +1719,39 @@ class ModernMainActivity : ComponentActivity() {
                             result.onSuccess {
                                 iconPacks = iconPacks.filter { it.id != id }
                                 iconManagementDestination = IconManagementDestination("library")
-                                toast("图标库已删除")
-                            }.onFailure { toast("图标库未删除：${it.message}"); refreshIconLibraries() }
+                                toast("Biblioteca de iconos eliminada.")
+                            }.onFailure { toast("No se eliminó la biblioteca de iconos: ${it.message}"); refreshIconLibraries() }
                         }
                     }
                 } catch (error: Exception) { handler.post {
                     busy = false
-                    if (!destroyed) { toast("图标库未删除：${error.message}"); refreshIconLibraries() }
+                    if (!destroyed) { toast("No se eliminó la biblioteca de iconos: ${error.message}"); refreshIconLibraries() }
                 } }
             }
         }
     }
     fun chooseIconPack() {
         if (canEdit && !busy && iconPendingImport == null) importIconPack.launch(arrayOf("*/*"))
-        else if (!canEdit) toast("请先激活模块或授予 Root")
+        else if (!canEdit) toast("Primero activa el módulo o concede acceso Root.")
     }
     private fun prepareIconPack(uri: Uri) {
         work.execute {
             try { completeIconPack(IconManagementRepository.prepare(applicationContext, uri, ""), null) }
             catch (error: Exception) { handler.post { if (!destroyed) {
-                pendingFile = null; busy = false; toast("图标库导入失败：${error.message}")
+                pendingFile = null; busy = false; toast("Error al importar la biblioteca de iconos: ${error.message}")
             } } }
         }
     }
     fun downloadIconPack(source: String, name: String) {
         if (!resumed || !canEdit || busy || destroyed || iconPendingImport != null) return
-        if (source.isBlank()) { toast("请填写 GitHub 仓库或下载网址"); return }
+        if (source.isBlank()) { toast("Introduce un repositorio de GitHub o una URL de descarga."); return }
         val token = IconManagementDownload.Cancellation()
         iconPackCancellation = token; iconPackDownloading = true; busy = true
         work.execute {
             try { completeIconPack(IconManagementDownload.prepare(applicationContext, source, name, token), token) }
             catch (error: Exception) { handler.post { if (!destroyed && iconPackCancellation === token) {
                 iconPackCancellation = null; iconPackDownloading = false; busy = false
-                toast("图标库下载失败：${error.message}")
+                toast("Error al descargar la biblioteca de iconos: ${error.message}")
             } } }
         }
     }
@@ -1768,7 +1768,7 @@ class ModernMainActivity : ComponentActivity() {
             iconPendingBuiltin = builtin
             iconImportExisting = status.existing
             iconImportName = status.existing?.name ?: prepared.pack.name
-            iconImportError = if (status.nameConflict != null) "已有同名图标库，请输入不同名称" else ""
+            iconImportError = if (status.nameConflict != null) "Ya existe una biblioteca de iconos con ese nombre. Introduce otro." else ""
             iconManagementOpen = true; updateNavigation()
         }
     }
@@ -1792,9 +1792,9 @@ class ModernMainActivity : ComponentActivity() {
         if (scopes != null) {
             val validation = runCatching {
                 val proposed = IconManagementSettings.applyPack(iconManagementRecords(), prepared.pack.id, scopes, clearOverrides)
-                if (presetId == null) proposed else IconManagementSettings.applyColorPreset(proposed, IconColorPresets.options(prepared.pack.manifest)[presetId] ?: error("颜色预设已变化"), scopes)
+                if (presetId == null) proposed else IconManagementSettings.applyColorPreset(proposed, IconColorPresets.options(prepared.pack.manifest)[presetId] ?: error("El preajuste de color ha cambiado."), scopes)
             }
-            if (validation.isFailure) { iconImportError = validation.exceptionOrNull()?.message ?: "请选择应用范围"; return }
+            if (validation.isFailure) { iconImportError = validation.exceptionOrNull()?.message ?: "Selecciona un ámbito de aplicación."; return }
         }
         iconImportError = ""; busy = true
         work.execute {
@@ -1817,24 +1817,24 @@ class ModernMainActivity : ComponentActivity() {
                         iconManagementDestination = IconManagementDestination("apply", packId = pack.id)
                         val error = runCatching {
                             var proposed = IconManagementSettings.applyPack(iconManagementRecords(), pack.id, scopes, clearOverrides)
-                            if (presetId != null) proposed = IconManagementSettings.applyColorPreset(proposed, IconColorPresets.options(pack.manifest)[presetId] ?: error("颜色预设已变化"), scopes)
+                            if (presetId != null) proposed = IconManagementSettings.applyColorPreset(proposed, IconColorPresets.options(pack.manifest)[presetId] ?: error("El preajuste de color ha cambiado."), scopes)
                             saveIconRecords(proposed)
                         }
-                            .getOrElse { it.message ?: "图标设置未能保存" }
+                            .getOrElse { it.message ?: "No se pudo guardar la configuración de iconos." }
                         if (error.isEmpty()) finishIconPackApplication()
-                        else toast("图标库已保存，应用失败：$error")
+                        else toast("La biblioteca de iconos se guardó, pero no se pudo aplicar: $error")
                     } else if (iconLibraryTarget != null) {
                         finishIconLibraryForTarget(pack.id)
-                        toast(if (existing != null) "使用已有图标库，请选择图案" else "请选择该图标使用的图案")
+                        toast(if (existing != null) "Usa una biblioteca de iconos existente y selecciona un icono." else "Selecciona el icono que quieres usar aquí.")
                     } else {
                         iconManagementDestination = IconManagementDestination("pack", packId = pack.id)
-                        toast(if (existing != null) "已使用已有图标库，未重复导入" else "图标库已保存，可选择范围应用")
+                        toast(if (existing != null) "Se utilizó la biblioteca existente; no se volvió a importar." else "Biblioteca de iconos guardada. Puedes elegir los ámbitos donde aplicarla.")
                     }
                 }.onFailure { failure ->
                     if (iconPendingImport === prepared) {
                         iconImportExisting = retryStatus?.existing
                         retryStatus?.existing?.let { iconImportName = it.name }
-                        iconImportError = failure.message ?: "图标库未能保存，请重试"
+                        iconImportError = failure.message ?: "No se pudo guardar la biblioteca de iconos. Inténtalo de nuevo."
                     }
                 }
             } }
@@ -1847,14 +1847,14 @@ class ModernMainActivity : ComponentActivity() {
         busy = true
         work.execute {
             try { completeIconPack(IconManagementRepository.prepareBundled(applicationContext, kind), null, kind) }
-            catch (error: Exception) { handler.post { if (!destroyed) { busy = false; toast("套装预览失败：${error.message}") } } }
+            catch (error: Exception) { handler.post { if (!destroyed) { busy = false; toast("No se pudo previsualizar el paquete: ${error.message}") } } }
         }
     }
     fun cancelIconPackDownload() {
         iconPackCancellation?.cancel(); iconPackCancellation = null; iconPackDownloading = false; busy = false
     }
     fun pickColor(item: SettingsCatalog.Item) {
-        if (!canEdit) { toast("请先激活模块或授予 Root"); return }
+        if (!canEdit) { toast("Primero activa el módulo o concede acceso Root."); return }
         colorEditing = item
     }
     fun saveColor(item: SettingsCatalog.Item, color: Int, customAlpha: Boolean) {
@@ -1865,8 +1865,8 @@ class ModernMainActivity : ComponentActivity() {
         }
     }
     fun resetGroup(group: SettingsCatalog.Group, items: List<SettingsCatalog.Item> = group.items, title: String = group.title) {
-        confirmation = UiConfirmation("恢复${title}默认设置", "只恢复当前页面的设置，其他配置会保留。", "恢复默认") {
-            if (!canEdit) { toast("请先激活模块或授予 Root"); return@UiConfirmation }
+        confirmation = UiConfirmation("Restaurar los valores predeterminados de ${title}", "Solo se restaurarán los ajustes de esta página; el resto de la configuración se conservará.", "Restaurar valores predeterminados") {
+            if (!canEdit) { toast("Primero activa el módulo o concede acceso Root."); return@UiConfirmation }
             val editor = preferences.edit()
             val before = raw.all
             items.forEach {

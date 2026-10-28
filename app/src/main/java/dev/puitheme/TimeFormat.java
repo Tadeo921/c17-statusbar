@@ -81,15 +81,15 @@ public final class TimeFormat {
                     case "时": replacement = "HH"; break;
                     case "12时": replacement = "hh"; break;
                     case "分": replacement = "mm"; break;
-                    case "秒": replacement = "ss"; break;
+                    case "segundos": replacement = "ss"; break;
                     case "上午下午": replacement = date.get(Calendar.HOUR_OF_DAY) < 12 ? "上午" : "下午"; break;
-                    case "时段": replacement = period(date.get(Calendar.HOUR_OF_DAY)); break;
+                    case "Franja horaria": replacement = period(date.get(Calendar.HOUR_OF_DAY)); break;
                     case "周": replacement = "周" + "日一二三四五六".charAt(date.get(Calendar.DAY_OF_WEEK) - 1); break;
-                    case "星期": replacement = "星期" + "日一二三四五六".charAt(date.get(Calendar.DAY_OF_WEEK) - 1); break;
+                    case "Día de la semana": replacement = "Día de la semana" + "日一二三四五六".charAt(date.get(Calendar.DAY_OF_WEEK) - 1); break;
                     case "lunar": case "农历":
                         if (lunar == null) lunar = LunarCalendar.date(now, zone, date);
                         replacement = lunar.date; literal = true; break;
-                    case "lunar_date": case "农历日期":
+                    case "lunar_date": case "Fecha lunar":
                         if (lunar == null) lunar = LunarCalendar.date(now, zone, date);
                         replacement = lunar.date.startsWith("农历") ? lunar.date.substring(2) : lunar.date;
                         literal = true; break;

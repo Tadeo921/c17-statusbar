@@ -43,11 +43,11 @@ public final class FontDownloadRepository {
     public static FontRepository.PreparedFont prepare(Context context,FontCatalog.Entry entry,
             Progress progress,BooleanSupplier cancelled) throws Exception {
         if(context==null||entry==null||FontCatalog.find(entry.id)!=entry)
-            throw new IllegalArgumentException("请选择字体库中的字体");
+            throw new IllegalArgumentException("Selecciona una fuente de la biblioteca.");
         FontFileValidator.checkCancelled(cancelled);
         File fonts=new File(context.createDeviceProtectedStorageContext().getFilesDir(),"fonts");
         File cache=new File(fonts,"catalog");
-        if(!cache.isDirectory()&&!cache.mkdirs())throw new IOException("无法创建私有字体缓存");
+        if(!cache.isDirectory()&&!cache.mkdirs())throw new IOException("No se pudo crear la caché privada de fuentes.");
         clearStaleDownloads(cache);
         File owned=FontLibrary.downloaded(context,entry);
         File cached=owned!=null?owned:new File(cache,entry.id+"-"+entry.sha256+".font");
@@ -61,7 +61,7 @@ public final class FontDownloadRepository {
         else if(progress!=null)progress.onProgress(entry.bytes,entry.bytes);
         FontFileValidator.checkCancelled(cancelled);
         if(new Typeface.Builder(cached).setFontVariationSettings("'wght' "+entry.clampWeight(400)).build()==null)
-            throw new IOException("字体无法加载，原字体已保留");
+            throw new IOException("No se pudo cargar la fuente; se conservó la fuente original.");
         FontFileValidator.checkCancelled(cancelled);
         File staged=File.createTempFile("catalog-",".font",fonts);boolean prepared=false;
         try {
@@ -80,12 +80,12 @@ public final class FontDownloadRepository {
         return prepare(context,entry,null,null);
     }
     public static URL downloadUrl(FontCatalog.Entry entry) throws IOException {
-        if(entry==null||FontCatalog.find(entry.id)!=entry)throw new IOException("未知字体来源");
+        if(entry==null||FontCatalog.find(entry.id)!=entry)throw new IOException("Origen de fuente desconocido.");
         URL url=new URL(entry.downloadUrl);
         if(!"https".equals(url.getProtocol())||!"raw.githubusercontent.com".equals(url.getHost())
                 ||(url.getPort()!=-1&&url.getPort()!=443)||url.getUserInfo()!=null||url.getQuery()!=null||url.getRef()!=null
                 ||!url.getPath().startsWith("/google/fonts/"+FontCatalog.DISTRIBUTION_COMMIT+"/ofl/"))
-            throw new IOException("字体下载来源不受支持");
+            throw new IOException("El origen de descarga de la fuente no es compatible.");
         return url;
     }
     /** The same pinned commit through jsDelivr, for networks where raw.githubusercontent.com is unreachable.
@@ -121,18 +121,18 @@ public final class FontDownloadRepository {
             if(cancelled instanceof Cancellation)((Cancellation)cancelled).attach(connection);
             FontFileValidator.checkCancelled(cancelled);
             long started=System.nanoTime(),lastProgress=0;
-            if(connection.getResponseCode()!=200)throw new IOException("字体下载失败，请检查网络后重试");
+            if(connection.getResponseCode()!=200)throw new IOException("No se pudo descargar la fuente. Comprueba la conexión e inténtalo de nuevo.");
             long declared=connection.getContentLengthLong();
             if(declared>FontCatalog.MAX_DOWNLOAD_BYTES||(declared>=0&&declared!=entry.bytes))
-                throw new IOException("字体下载大小与已验证版本不符");
+                throw new IOException("El tamaño de la fuente descargada no coincide con la versión verificada.");
             try(InputStream input=connection.getInputStream();FileOutputStream output=new FileOutputStream(temporary)) {
                 byte[] buffer=new byte[32768];long received=0;int count;
                 while((count=input.read(buffer))!=-1) {
                     FontFileValidator.checkCancelled(cancelled);
                     received+=count;
                     if(received>FontCatalog.MAX_DOWNLOAD_BYTES||received>entry.bytes)
-                        throw new IOException("字体下载超过大小限制");
-                    if((System.nanoTime()-started)/1000000L>MAX_DOWNLOAD_MS)throw new IOException("字体下载超时，请稍后重试");
+                        throw new IOException("La fuente descargada supera el límite de tamaño.");
+                    if((System.nanoTime()-started)/1000000L>MAX_DOWNLOAD_MS)throw new IOException("La descarga de la fuente agotó el tiempo de espera. Inténtalo más tarde.");
                     output.write(buffer,0,count);
                     long now=System.nanoTime();
                     if(progress!=null&&(now-lastProgress>=200000000L||received==entry.bytes)) {
@@ -155,7 +155,7 @@ public final class FontDownloadRepository {
             byte[] buffer=new byte[32768];long length=0;int count;
             while((count=input.read(buffer))!=-1) {
                 FontFileValidator.checkCancelled(cancelled);length+=count;
-                if(length>entry.bytes)throw new IOException("字体缓存大小改变");
+                if(length>entry.bytes)throw new IOException("Cambió el tamaño de la caché de fuentes.");
                 output.write(buffer,0,count);
             }
             output.getFD().sync();

@@ -75,7 +75,7 @@ internal fun drawableBitmap(drawable: android.graphics.drawable.Drawable, size: 
 private fun EasterEggShow(icon: ImageBitmap, theme: Int, onDone: () -> Unit) {
     val measurer = rememberTextMeasurer(cacheSize = 48)
     val context = LocalContext.current
-    // Only the hidden show uses it: the local first-install time for "你与 C17 的第 N 天" and its serial.
+    // Only the hidden show uses it: the local first-install time for "Llevas N días con C17" and its serial.
     val installMillis = remember(context) {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).firstInstallTime }.getOrDefault(0L)
     }

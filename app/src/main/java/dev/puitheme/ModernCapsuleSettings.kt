@@ -63,7 +63,7 @@ fun MarqueeColorsRow(app: ModernMainActivity, enabled: Boolean, note: String) {
     val colors = customColors(app)
     val shown = if (preset == "comet") 1 else customCount(app)
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("自定义颜色", fontSize = 16.sp)
+        Text("Color personalizado", fontSize = 16.sp)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             for (i in 0 until shown) {
                 val key = FluidCloudCapsule.MARQUEE_COLOR_KEYS[i]
@@ -72,7 +72,7 @@ fun MarqueeColorsRow(app: ModernMainActivity, enabled: Boolean, note: String) {
                     .clickable(enabled = enabled) { SettingsCatalog.item(key)?.let { app.pickColor(it) } })
             }
         }
-        val text = note.ifEmpty { if (preset == "comet") "单色流光只用第一个颜色" else "点圆点修改颜色；数量在上面的“自定义颜色数量”里调" }
+        val text = note.ifEmpty { if (preset == "comet") "El efecto de luz monocromática solo usa el primer color." else "Toca los puntos para cambiar los colores; ajusta la cantidad en «Cantidad de colores personalizados» arriba." }
         Text(text, fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
     }
 }
@@ -83,7 +83,7 @@ fun MarqueePresetDialog(app: ModernMainActivity) {
     val selected = presetIndex(app)
     val custom = customColors(app)
     val count = customCount(app)
-    C17OverlayDialog(show = true, title = "跑马灯预设", summary = "点一个预设立即换上；“自定义”用你自己选的颜色。",
+    C17OverlayDialog(show = true, title = "Preajustes de luz animada", summary = "Toca un preajuste para aplicarlo al instante; «Personalizado» usa los colores que elijas.",
         onDismissRequest = { app.marqueePickerOpen = false }) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             LazyColumn(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -106,7 +106,7 @@ fun MarqueePresetDialog(app: ModernMainActivity) {
                     }
                 }
             }
-            C17TextButton(text = "关闭", onClick = { app.marqueePickerOpen = false }, modifier = Modifier.fillMaxWidth())
+            C17TextButton(text = "Cerrar", onClick = { app.marqueePickerOpen = false }, modifier = Modifier.fillMaxWidth())
         }
     }
 }

@@ -69,7 +69,7 @@ public final class FontRepository {
         }
     }
     static Uri libraryUri(String hash){
-        if(!FontScopes.validRevision(hash))throw new IllegalArgumentException("字体引用无效");
+        if(!FontScopes.validRevision(hash))throw new IllegalArgumentException("La referencia de fuente no es válida.");
         return Uri.parse("content://"+StatusBarSettings.AUTHORITY+"/font/library/"+hash);
     }
     /** A cheap event token for native renderers; reading it never loads or changes a font. */
@@ -292,18 +292,18 @@ public final class FontRepository {
     /** Reading and Typeface validation stay on the worker; publication runs with the Activity's lifecycle callbacks. */
     public static PreparedFont prepareFont(Context context, Uri uri) throws Exception {
         File directory = new File(context.createDeviceProtectedStorageContext().getFilesDir(), "fonts");
-        if (!directory.isDirectory() && !directory.mkdirs()) throw new IllegalStateException("无法创建字体目录");
+        if (!directory.isDirectory() && !directory.mkdirs()) throw new IllegalStateException("No se pudo crear la carpeta de fuentes.");
         File temporary = File.createTempFile("import-", ".font", directory);
         boolean prepared = false;
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             try (InputStream input = context.getContentResolver().openInputStream(uri);
                     FileOutputStream output = new FileOutputStream(temporary)) {
-                if (input == null) throw new IllegalArgumentException("无法读取字体文件");
+                if (input == null) throw new IllegalArgumentException("No se pudo leer el archivo de fuente.");
                 byte[] bytes = new byte[32768]; long length = 0; int count;
                 while ((count = input.read(bytes)) != -1) {
                     length += count;
-                    if (length > 96L * 1024 * 1024) throw new IllegalArgumentException("字体文件最多 96 MB");
+                    if (length > 96L * 1024 * 1024) throw new IllegalArgumentException("El archivo de fuente puede tener un máximo de 96 MB.");
                     output.write(bytes, 0, count); digest.update(bytes, 0, count);
                 }
                 output.getFD().sync();
@@ -311,9 +311,9 @@ public final class FontRepository {
             try (FileInputStream input = new FileInputStream(temporary)) {
                 byte[] magic = new byte[4];
                 if (input.read(magic) != 4 || !supportedHeader(magic))
-                    throw new IllegalArgumentException("请选择有效的 TTF、OTF 或 TTC 字体");
+                    throw new IllegalArgumentException("Selecciona un archivo de fuente TTF, OTF o TTC válido.");
             }
-            if (new Typeface.Builder(temporary).build() == null) throw new IllegalArgumentException("字体文件无法加载");
+            if (new Typeface.Builder(temporary).build() == null) throw new IllegalArgumentException("No se pudo cargar el archivo de fuente.");
             StringBuilder hash = new StringBuilder();
             for (byte value : digest.digest()) hash.append(String.format(java.util.Locale.ROOT, "%02x", value & 255));
             PreparedFont result = new PreparedFont(temporary, new File(directory, "custom.font"), hash.toString());
@@ -331,7 +331,7 @@ public final class FontRepository {
         }
         /** Validated worker-stage inode for the persistent library; publication still uses commit(). */
         File stagedFile() throws IOException {
-            if(closed||!temporary.isFile())throw new IOException("字体暂存已关闭");
+            if(closed||!temporary.isFile())throw new IOException("El área temporal de fuentes está cerrada.");
             return temporary;
         }
 
@@ -339,11 +339,11 @@ public final class FontRepository {
         public String commit(BooleanSupplier canCommit, BooleanSupplier saveOptions, Runnable restoreOptions) throws Exception {
             Objects.requireNonNull(canCommit); Objects.requireNonNull(saveOptions); Objects.requireNonNull(restoreOptions);
             synchronized (IMPORT_LOCK) {
-                if (closed) throw new IOException("字体暂存已关闭");
+                if (closed) throw new IOException("El área temporal de fuentes está cerrada.");
                 File backup = null;
                 boolean published = false, optionsAttempted = false, keepBackup = false;
                 try {
-                    if (!canCommit.getAsBoolean()) throw new IOException("模块未确认激活，字体未导入");
+                    if (!canCommit.getAsBoolean()) throw new IOException("No se confirmó la activación del módulo; no se importó la fuente.");
                     if (target.exists()) {
                         backup = File.createTempFile("previous-", ".font", target.getParentFile());
                         android.system.Os.remove(backup.getAbsolutePath());
@@ -352,10 +352,10 @@ public final class FontRepository {
                     }
                     publishValidatedFont(temporary, target, canCommit);
                     published = true;
-                    if (!canCommit.getAsBoolean()) throw new IOException("模块激活状态已失效，字体未导入");
+                    if (!canCommit.getAsBoolean()) throw new IOException("La activación del módulo ya no está vigente; no se importó la fuente.");
                     optionsAttempted = true;
-                    if (!saveOptions.getAsBoolean()) throw new IOException("字体设置未提交，已保留原字体");
-                    if (!canCommit.getAsBoolean()) throw new IOException("模块激活状态已失效，字体未导入");
+                    if (!saveOptions.getAsBoolean()) throw new IOException("No se aplicaron los ajustes de fuente; se conservó la fuente original.");
+                    if (!canCommit.getAsBoolean()) throw new IOException("La activación del módulo ya no está vigente; no se importó la fuente.");
                     return revision;
                 } catch (Exception failure) {
                     if (published) {
@@ -387,7 +387,7 @@ public final class FontRepository {
     }
 
     static void publishValidatedFont(File temporary, File target, BooleanSupplier canCommit) throws Exception {
-        if (!canCommit.getAsBoolean()) throw new IOException("模块未确认激活，字体未导入");
+        if (!canCommit.getAsBoolean()) throw new IOException("No se confirmó la activación del módulo; no se importó la fuente.");
         android.system.Os.rename(temporary.getAbsolutePath(), target.getAbsolutePath());
     }
 

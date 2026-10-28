@@ -95,64 +95,64 @@ public final class MainActivity extends Activity {
     private float bigClockPreviewCollapse;
     private final Runnable previewTick=() -> { updateSample();for(View preview:qsPreviews)preview.invalidate();schedulePreview(); };
     private final Group[] groups={
-        new Group("speed", "实时网速", "保留系统实时数值与 KB/s 单位。", new Setting[]{
-            pos("水平位置",StatusBarSettings.SPEED_OFFSET_X,true), pos("垂直位置",StatusBarSettings.SPEED_OFFSET_Y,false),
-            scale("整体大小",StatusBarSettings.SPEED_SCALE), scale("数字大小",StatusBarSettings.SPEED_NUMBER_SCALE),
-            scale("单位大小",StatusBarSettings.SPEED_UNIT_SCALE),
-            new Setting("数字与单位间距",StatusBarSettings.SPEED_LINE_GAP," dp",-8,8,.01f),
+        new Group("speed", "Velocidad de red en tiempo real", "Conserva el valor en tiempo real del sistema y la unidad KB/s.", new Setting[]{
+            pos("Posición horizontal",StatusBarSettings.SPEED_OFFSET_X,true), pos("Posición vertical",StatusBarSettings.SPEED_OFFSET_Y,false),
+            scale("Tamaño general",StatusBarSettings.SPEED_SCALE), scale("Tamaño de los números",StatusBarSettings.SPEED_NUMBER_SCALE),
+            scale("Tamaño de la unidad",StatusBarSettings.SPEED_UNIT_SCALE),
+            new Setting("Espacio entre el número y la unidad",StatusBarSettings.SPEED_LINE_GAP," dp",-8,8,.01f),
             weight(StatusBarSettings.SPEED_WEIGHT)}),
-        new Group("data", "蜂窝信号", "信号格数跟随真实系统信号，不填充虚假满格。", new Setting[]{
-            pos("水平位置",StatusBarSettings.DATA_OFFSET_X,true),pos("垂直位置",StatusBarSettings.DATA_OFFSET_Y,false),
-            scale("图标大小",StatusBarSettings.DATA_ICON_SCALE)}),
-        new Group("wifi", "Wi-Fi 图标", "位置、大小与颜色分别设置，透明度跟随原生状态。", new Setting[]{
-            pos("水平位置",StatusBarSettings.WIFI_OFFSET_X,true),pos("垂直位置",StatusBarSettings.WIFI_OFFSET_Y,false),
-            scale("图标大小",StatusBarSettings.WIFI_ICON_SCALE)}),
-        new Group("label", "网络制式文字", "统一显示 5G、4G、3G；Wi-Fi 接通后隐藏。", new Setting[]{
-            pos("水平位置",StatusBarSettings.LABEL_OFFSET_X,true),pos("垂直位置",StatusBarSettings.LABEL_OFFSET_Y,false),
-            scale("文字大小",StatusBarSettings.LABEL_SCALE),
-            new Setting("预留宽度",StatusBarSettings.SLOT_WIDTH," dp",0,80,.01f),weight(StatusBarSettings.FONT_WEIGHT)}),
-        new Group("clock", "状态栏时间", "设置状态栏时钟的格式、位置、大小与字距。通知栏与控制中心默认跟随此处设置，也可独立调节。长日期会占用更多空间。", new Setting[]{
-            pos("水平位置",StatusBarSettings.CLOCK_OFFSET_X,true),pos("垂直位置",StatusBarSettings.CLOCK_OFFSET_Y,false),
-            scale("文字大小",StatusBarSettings.CLOCK_SCALE),weight(StatusBarSettings.CLOCK_WEIGHT),
-            new Setting("字距微调",StatusBarSettings.CLOCK_SPACING," dp",-2,8,.01f)}),
-        new Group("carrier", "运营商文字", "通知页、控制中心与锁屏分别设置，可选时间或纯文本。", new Setting[]{
-            pos("水平位置",StatusBarSettings.CARRIER_OFFSET_X,true),pos("垂直位置",StatusBarSettings.CARRIER_OFFSET_Y,false),
-            scale("文字大小",StatusBarSettings.CARRIER_SCALE),weight(StatusBarSettings.CARRIER_WEIGHT),
-            new Setting("字距微调",StatusBarSettings.CARRIER_SPACING," dp",-2,8,.01f)}),
+        new Group("data", "Señal móvil", "信号格数跟随真实系统信号，不填充虚假满格。", new Setting[]{
+            pos("Posición horizontal",StatusBarSettings.DATA_OFFSET_X,true),pos("Posición vertical",StatusBarSettings.DATA_OFFSET_Y,false),
+            scale("Tamaño del icono",StatusBarSettings.DATA_ICON_SCALE)}),
+        new Group("wifi", "Icono de Wi-Fi", "Configura por separado la posición, el tamaño y el color; la transparencia sigue al estado nativo.", new Setting[]{
+            pos("Posición horizontal",StatusBarSettings.WIFI_OFFSET_X,true),pos("Posición vertical",StatusBarSettings.WIFI_OFFSET_Y,false),
+            scale("Tamaño del icono",StatusBarSettings.WIFI_ICON_SCALE)}),
+        new Group("label", "Texto del tipo de red", "统一显示 5G、4G、3G；Wi-Fi 接通后隐藏。", new Setting[]{
+            pos("Posición horizontal",StatusBarSettings.LABEL_OFFSET_X,true),pos("Posición vertical",StatusBarSettings.LABEL_OFFSET_Y,false),
+            scale("Tamaño del texto",StatusBarSettings.LABEL_SCALE),
+            new Setting("Ancho reservado",StatusBarSettings.SLOT_WIDTH," dp",0,80,.01f),weight(StatusBarSettings.FONT_WEIGHT)}),
+        new Group("clock", "Hora de la barra de estado", "设置状态栏时钟的格式、位置、大小与字距。通知栏与控制中心默认跟随此处设置，也可独立调节。长日期会占用更多空间。", new Setting[]{
+            pos("Posición horizontal",StatusBarSettings.CLOCK_OFFSET_X,true),pos("Posición vertical",StatusBarSettings.CLOCK_OFFSET_Y,false),
+            scale("Tamaño del texto",StatusBarSettings.CLOCK_SCALE),weight(StatusBarSettings.CLOCK_WEIGHT),
+            new Setting("Ajuste del espaciado",StatusBarSettings.CLOCK_SPACING," dp",-2,8,.01f)}),
+        new Group("carrier", "Texto del operador", "通知页、控制中心与锁屏分别设置，可选时间或纯文本。", new Setting[]{
+            pos("Posición horizontal",StatusBarSettings.CARRIER_OFFSET_X,true),pos("Posición vertical",StatusBarSettings.CARRIER_OFFSET_Y,false),
+            scale("Tamaño del texto",StatusBarSettings.CARRIER_SCALE),weight(StatusBarSettings.CARRIER_WEIGHT),
+            new Setting("Ajuste del espaciado",StatusBarSettings.CARRIER_SPACING," dp",-2,8,.01f)}),
         new Group("font", "文字字体", "统一用于时间、下拉替换文字、网络制式和网速。",new Setting[0]),
-        new Group("battery", "电池", "默认 PUI 横向样式，跟随真实电量；数字与闪电颜色独立。", new Setting[]{
-            pos("水平位置",StatusBarSettings.BATTERY_OFFSET_X,true),pos("垂直位置",StatusBarSettings.BATTERY_OFFSET_Y,false),
-            scale("整体大小",StatusBarSettings.BATTERY_SCALE),scale("宽度微调",StatusBarSettings.BATTERY_WIDTH_SCALE),scale("高度微调",StatusBarSettings.BATTERY_HEIGHT_SCALE),
-            new Setting("每项停留时间",StatusBarSettings.BATTERY_HOLD," 秒",1,10,.01f),
-            new Setting("淡入淡出时长",StatusBarSettings.BATTERY_FADE," 秒",.15f,3,.01f)}),
+        new Group("battery", "Batería", "默认 PUI 横向样式，跟随真实电量；数字与闪电颜色独立。", new Setting[]{
+            pos("Posición horizontal",StatusBarSettings.BATTERY_OFFSET_X,true),pos("Posición vertical",StatusBarSettings.BATTERY_OFFSET_Y,false),
+            scale("Tamaño general",StatusBarSettings.BATTERY_SCALE),scale("Ajuste fino del ancho",StatusBarSettings.BATTERY_WIDTH_SCALE),scale("Ajuste fino de la altura",StatusBarSettings.BATTERY_HEIGHT_SCALE),
+            new Setting("Tiempo visible de cada elemento",StatusBarSettings.BATTERY_HOLD," 秒",1,10,.01f),
+            new Setting("Duración del fundido de entrada y salida",StatusBarSettings.BATTERY_FADE," 秒",.15f,3,.01f)}),
         new Group("tiles","磁贴翻页渐隐","保留原生左右滑动，只让出入边缘柔和淡出；横竖屏分别启用。",new Setting[]{
-            new Setting("左侧渐隐范围","tiles_left_range"," dp",0,192,.01f),
-            new Setting("右侧渐隐范围","tiles_right_range"," dp",0,192,.01f),
-            new Setting("左侧水平位置","tiles_left_offset_x"," dp",-160,160,.01f),
-            new Setting("右侧水平位置","tiles_right_offset_x"," dp",-160,160,.01f),
-            new Setting("渐隐区域垂直位置","tiles_offset_y"," dp",-240,240,.01f),
-            new Setting("渐隐区域高度","tiles_region_height"," dp",0,1000,.01f),
-            new Setting("上下柔和过渡范围","tiles_vertical_feather"," dp",0,192,.01f),
+            new Setting("Rango de fundido del lado izquierdo","tiles_left_range"," dp",0,192,.01f),
+            new Setting("Rango de fundido del lado derecho","tiles_right_range"," dp",0,192,.01f),
+            new Setting("Posición horizontal izquierda","tiles_left_offset_x"," dp",-160,160,.01f),
+            new Setting("Posición horizontal derecha","tiles_right_offset_x"," dp",-160,160,.01f),
+            new Setting("Posición vertical del área de fundido","tiles_offset_y"," dp",-240,240,.01f),
+            new Setting("Altura del área de fundido","tiles_region_height"," dp",0,1000,.01f),
+            new Setting("Rango de transición suave vertical","tiles_vertical_feather"," dp",0,192,.01f),
             new Setting("模糊半径（高级选项）","tiles_blur_radius"," dp",0,48,.01f),
             new Setting("渐隐强度","tiles_strength","%",0,100,.01f)}),
         new Group("qs_appearance","磁贴活动调色","全局调整内部活动填充，保留 ColorOS 17 原生玻璃与高光。",new Setting[]{}),
-        new Group("shade_clock","通知栏与控制中心时钟","单独设置下拉时钟的格式、位置、大小、粗细、字距与颜色，保留系统展开动画。关闭独立调节后跟随状态栏时间格式与文字样式，位置保留原生布局。",new Setting[]{
-            pos("水平位置",StatusBarSettings.SHADE_CLOCK_OFFSET_X,true),pos("垂直位置",StatusBarSettings.SHADE_CLOCK_OFFSET_Y,false),
-            scale("文字大小",StatusBarSettings.SHADE_CLOCK_SCALE),weight(StatusBarSettings.SHADE_CLOCK_WEIGHT),
-            new Setting("字距微调",StatusBarSettings.SHADE_CLOCK_SPACING," dp",-2,8,.01f)}),
+        new Group("shade_clock","Reloj del panel de notificaciones y del centro de control","单独设置下拉时钟的格式、位置、大小、粗细、字距与颜色，保留系统展开动画。关闭独立调节后跟随状态栏时间格式与文字样式，位置保留原生布局。",new Setting[]{
+            pos("Posición horizontal",StatusBarSettings.SHADE_CLOCK_OFFSET_X,true),pos("Posición vertical",StatusBarSettings.SHADE_CLOCK_OFFSET_Y,false),
+            scale("Tamaño del texto",StatusBarSettings.SHADE_CLOCK_SCALE),weight(StatusBarSettings.SHADE_CLOCK_WEIGHT),
+            new Setting("Ajuste del espaciado",StatusBarSettings.SHADE_CLOCK_SPACING," dp",-2,8,.01f)}),
         new Group("notification_big_clock","通知栏大时钟","竖屏通知页显示大日期与时钟，随上滑平滑收起，为通知让出空间。横屏和控制中心继续使用原有时钟。",new Setting[]{
             new Setting("展开时钟大小",NotificationBigClockSettings.SCALE,"%",50,150,.01f),
             new Setting("收起时钟大小",NotificationBigClockSettings.COMPACT_SCALE,"%",15,70,.01f),
-            new Setting("时间字体粗细",NotificationBigClockSettings.WEIGHT,"",100,900,1),
+            new Setting("Grosor de la fuente de la hora",NotificationBigClockSettings.WEIGHT,"",100,900,1),
             new Setting("整体垂直位置",NotificationBigClockSettings.OFFSET_Y," dp",-80,160,.01f)}),
         new Group("notification_clear","通知清除按钮","独立调整清除按钮的玻璃底色、透明度与渐变，保留原生高光和清除操作。",new Setting[]{}),
-        new Group("qs_media","音乐卡片","封面铺满背景，居中裁切并虚化；小封面独立发光，保留系统玻璃与高光。",new Setting[]{})
+        new Group("qs_media","Tarjeta musical","封面铺满背景，居中裁切并虚化；小封面独立发光，保留系统玻璃与高光。",new Setting[]{})
     };
     private static Setting pos(String title,String key,boolean horizontal) {
         return new Setting(title,key," dp",horizontal?-80:-24,horizontal?80:24,.01f);
     }
     private static Setting scale(String title,String key) { return new Setting(title,key,"%",25,250,.01f); }
-    private static Setting weight(String key) { return new Setting("文字粗细",key,"",100,900,1f); }
+    private static Setting weight(String key) { return new Setting("Grosor del texto",key,"",100,900,1f); }
     private static final class Group {
         final String key,title,detail; final Setting[] settings;
         Group(String key,String title,String detail,Setting[] settings) { this.key=key;this.title=title;this.detail=detail;this.settings=settings; }
@@ -311,23 +311,23 @@ public final class MainActivity extends Activity {
             addHint(card,"水平位置会将渐隐区域移入或移出磁贴边缘。若渐隐过窄，可先把对应水平位置设为 0，再调整范围。");
             finishDetailLayout(card);addReset(group);pageScroll.post(()->pageScroll.scrollTo(0,oldScroll));return;
         }
-        if(group.key.equals("font")) { addSection(card,"字体来源");addFonts(card);finishDetailLayout(card);addReset(group);pageScroll.post(()->pageScroll.scrollTo(0,oldScroll));return; }
+        if(group.key.equals("font")) { addSection(card,"Origen de la fuente");addFonts(card);finishDetailLayout(card);addReset(group);pageScroll.post(()->pageScroll.scrollTo(0,oldScroll));return; }
         if(group.key.equals("battery")) {
-            addSection(card,"电池样式");addChoice(card,StatusBarSettings.BATTERY_STYLE,new String[]{"pui","native"},new String[]{"PUI 默认样式","系统原生样式"});
+            addSection(card,"Estilo de batería");addChoice(card,StatusBarSettings.BATTERY_STYLE,new String[]{"pui","native"},new String[]{"Estilo PUI predeterminado","Estilo nativo del sistema"});
             addHint(card,"充电时：镂空闪电 → 电量 → 镂空闪电，平滑淡入淡出。透明切口随切换恢复，闪电颜色自动跟随系统明暗。停止充电后显示原生电量。");
             addSettings(card,group);
-            addBatteryColors(card,"battery","电池外形与普通填充");
-            addBatteryColors(card,"battery_text","电量数字");
-            addBatteryColors(card,"battery_bolt","充电闪电");
-            addBatteryColors(card,"battery_charge","充电填充");
-            addBatteryColors(card,"battery_alert","低电量／省电填充");
+            addBatteryColors(card,"battery","Carcasa de la batería y relleno normal");
+            addBatteryColors(card,"battery_text","Número del nivel de batería");
+            addBatteryColors(card,"battery_bolt","Rayo de carga");
+            addBatteryColors(card,"battery_charge","Relleno durante la carga");
+            addBatteryColors(card,"battery_alert","Relleno de batería baja o ahorro de energía");
             addHint(card,"数字、闪电、电池外形和填充分别调色，默认保留系统颜色与透明度。浅色、深色背景分别设置；六位色值跟随原生透明度，八位色值可自定义透明度。位置与大小即时应用；透明切口会一起移动和缩放。");
             addHint(card,"位置与大小用于整个电池控件；关闭总开关后恢复系统显示。");
             finishDetailLayout(card);addReset(group);pageScroll.post(()->pageScroll.scrollTo(0,oldScroll));return;
         }
         if(group.key.equals("data")) {
-            addSection(card,"信号布局");
-            addChoice(card,StatusBarSettings.SIGNAL_LAYOUT,new String[]{"system","single"},new String[]{"跟随系统单双排","只显示主信号单排"});
+            addSection(card,"Distribución de la señal");
+            addChoice(card,StatusBarSettings.SIGNAL_LAYOUT,new String[]{"system","single"},new String[]{"Filas de señal según el sistema","Mostrar solo la señal principal en una fila"});
             addHint(card,"单排使用系统提供的主信号强度，双卡次信号仍由系统维护。");
         }
         if(isClockGroup(group.key)) {
@@ -335,8 +335,8 @@ public final class MainActivity extends Activity {
         }
         addSettings(card,group);
         addSection(card,"图标与文字颜色");
-        LinearLayout colors=row();addColor(colors,group.key+"_color_light","浅色背景",false);
-        addColor(colors,group.key+"_color_dark","深色背景",true);card.addView(colors,matchWrap());
+        LinearLayout colors=row();addColor(colors,group.key+"_color_light","Fondo claro",false);
+        addColor(colors,group.key+"_color_dark","Fondo oscuro",true);card.addView(colors,matchWrap());
         addHint(card,"自动跟随当前界面明暗。六位颜色保留系统透明度，八位颜色可指定透明度。");
         finishDetailLayout(card);addReset(group);updateSample();schedulePreview();pageScroll.post(()->pageScroll.scrollTo(0,oldScroll));
     }
@@ -351,7 +351,7 @@ public final class MainActivity extends Activity {
             LinearLayout.LayoutParams searchParams=matchWrap();searchParams.topMargin=dp(compact?6:14);heading.addView(search,searchParams);
             search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int start,int count,int after){}public void onTextChanged(CharSequence s,int start,int before,int count){featureQuery=s.toString();renderOverviewBody();}public void afterTextChanged(Editable s){}});
             LinearLayout categories=row();categories.setPadding(0,dp(compact?4:12),0,0);
-            String[] names={"全部","状态栏","通知中心"};
+            String[] names={"Todo","状态栏","Centro de notificaciones"};
             for(int i=0;i<3;i++) {final int category=i;TextView chip=text(names[i],13,configCategory==i?ACCENT:MUTED,true);
                 chip.setGravity(Gravity.CENTER);chip.setPadding(dp(8),dp(compact?6:11),dp(8),dp(compact?6:11));pressable(chip,rounded(configCategory==i?SOFT:Color.TRANSPARENT,14,false));
                 chip.setSelected(configCategory==i);chip.setOnClickListener(v->{configCategory=category;selectGroup(-1);});
@@ -376,7 +376,7 @@ public final class MainActivity extends Activity {
         if(navigationPage==1) {
             if(!canEditConfiguration())addConfigurationAccess(editor);
             if(configCategory!=2)addOverviewSection("状态栏","信号、文字与电池",0,8);
-            if(configCategory!=1)addOverviewSection("通知中心","时钟、磁贴与玻璃",8,groups.length);
+            if(configCategory!=1)addOverviewSection("Centro de notificaciones","时钟、磁贴与玻璃",8,groups.length);
             addConfigTransfer(editor);
             return;
         }
@@ -386,7 +386,7 @@ public final class MainActivity extends Activity {
         }
         addHomeActivation(editor);
         LinearLayout metrics=row();addOverviewMetric(metrics,"data","状态栏",countEnabled(0,8)+" / 8 项开启",1,false);
-        addOverviewMetric(metrics,"bell","通知中心",countEnabled(8,groups.length)+" / "+(groups.length-8)+" 项开启",1,true);
+        addOverviewMetric(metrics,"bell","Centro de notificaciones",countEnabled(8,groups.length)+" / "+(groups.length-8)+" 项开启",1,true);
         LinearLayout.LayoutParams metricParams=matchWrap();metricParams.topMargin=dp(14);editor.addView(metrics,metricParams);
         addSection(editor,"常用设置");LinearLayout shortcuts=column();shortcuts.setBackground(rounded(CARD,22,false));addRowDividers(shortcuts);
         for(String key:new String[]{"battery","qs_appearance","notification_big_clock","notification_clear"}) {
@@ -639,17 +639,17 @@ public final class MainActivity extends Activity {
         addHint(card,"统一应用于 Wi-Fi、数据和其他活动磁贴，以及亮度、音量滑条的已填充部分。");
         LinearLayout previews=row();previews.setPadding(0,dp(8),0,0);
         for(String scene:new String[]{"light","dark"}) {
-            LinearLayout sample=column();TextView label=text(scene.equals("dark")?"深色背景":"浅色背景",11,MUTED,true);
+            LinearLayout sample=column();TextView label=text(scene.equals("dark")?"Fondo oscuro":"Fondo claro",11,MUTED,true);
             label.setPadding(dp(3),0,0,dp(7));sample.addView(label,matchWrap());
             View preview=qsPreview(scene);qsPreviews.add(preview);sample.addView(preview,new LinearLayout.LayoutParams(-1,dp(84)));
             LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,-2,1);if(scene.equals("dark"))p.leftMargin=dp(8);previews.addView(sample,p);
         }
         card.addView(previews,matchWrap());
         addHint(card,"效果示意 · 实际控件沿用系统材质。浅色与深色设置随系统主题自动切换。");
-        addSection(card,"活动填充颜色");LinearLayout colors=row();
-        addColor(colors,"qs_global_light_color","浅色背景",false);addColor(colors,"qs_global_dark_color","深色背景",true);card.addView(colors,matchWrap());
-        addSection(card,"渐变终点颜色");LinearLayout gradientColors=row();
-        addColor(gradientColors,"qs_global_light_gradient_color","浅色背景",false);addColor(gradientColors,"qs_global_dark_gradient_color","深色背景",true);card.addView(gradientColors,matchWrap());
+        addSection(card,"Color del relleno activo");LinearLayout colors=row();
+        addColor(colors,"qs_global_light_color","Fondo claro",false);addColor(colors,"qs_global_dark_color","Fondo oscuro",true);card.addView(colors,matchWrap());
+        addSection(card,"Color final del degradado");LinearLayout gradientColors=row();
+        addColor(gradientColors,"qs_global_light_gradient_color","Fondo claro",false);addColor(gradientColors,"qs_global_dark_gradient_color","Fondo oscuro",true);card.addView(gradientColors,matchWrap());
         addToggle(card,"qs_global_light_gradient_enabled","浅色背景 · 启用渐变");
         addToggle(card,"qs_global_dark_gradient_enabled","深色背景 · 启用渐变");
         addSettings(card,new Group("qs_appearance","","",new Setting[]{
@@ -660,22 +660,22 @@ public final class MainActivity extends Activity {
         addHint(card,"填充透明度与颜色透明度相乘，并跟随系统原有的透明度变化。渐变方向：0° 从左到右，90° 从上到下。");
     }
     private void addMediaEditor(LinearLayout card) {
-        addSection(card,"显示效果");
+        addSection(card,"Efecto visual");
         addHint(card,"当前音乐封面会居中铺满整个卡片，按比例裁切。原来的小封面、标题、播放按钮和玻璃高光继续保留。");
-        addToggle(card,QsMediaAppearance.BACKGROUND,"使用封面作为卡片背景");
-        addToggle(card,QsMediaAppearance.GLOW,"小封面外发光");
+        addToggle(card,QsMediaAppearance.BACKGROUND,"Usar la portada como fondo de la tarjeta");
+        addToggle(card,QsMediaAppearance.GLOW,"Resplandor exterior de la miniatura");
         for(String scene:new String[]{"light","dark"}) {
             String key=QsMediaAppearance.prefix(scene);boolean dark=scene.equals("dark");
-            addSection(card,dark?"深色界面":"浅色界面");
-            addSlider(card,new Setting("背景透明度",key+"_background_opacity","%",0,100,.01f));
-            addSlider(card,new Setting("背景模糊度",key+"_background_blur"," dp",0,48,.01f));
-            addToggle(card,key+"_glow_inverse_enabled","发光使用封面反色");
+            addSection(card,dark?"Interfaz oscura":"Interfaz clara");
+            addSlider(card,new Setting("Transparencia del fondo",key+"_background_opacity","%",0,100,.01f));
+            addSlider(card,new Setting("Intensidad del desenfoque del fondo",key+"_background_blur"," dp",0,48,.01f));
+            addToggle(card,key+"_glow_inverse_enabled","Usar el color invertido de la portada para el resplandor");
             if(!enabled(key+"_glow_inverse_enabled")) {
-                LinearLayout colors=row();addColor(colors,key+"_glow_color","自定义发光颜色",false);card.addView(colors,matchWrap());
+                LinearLayout colors=row();addColor(colors,key+"_glow_color","Color de resplandor personalizado",false);card.addView(colors,matchWrap());
             }
-            addSlider(card,new Setting("发光透明度",key+"_glow_opacity","%",0,100,.01f));
-            addSlider(card,new Setting("发光模糊半径",key+"_glow_radius"," dp",0,48,.01f));
-            addSlider(card,new Setting("发光扩散距离",key+"_glow_spread"," dp",0,24,.01f));
+            addSlider(card,new Setting("Transparencia del resplandor",key+"_glow_opacity","%",0,100,.01f));
+            addSlider(card,new Setting("Radio de desenfoque del resplandor",key+"_glow_radius"," dp",0,48,.01f));
+            addSlider(card,new Setting("Distancia de expansión del resplandor",key+"_glow_spread"," dp",0,24,.01f));
         }
         addHint(card,"浅色与深色配置随系统界面切换。没有可用封面时保留系统背景；关闭总开关恢复原生音乐卡片。");
     }
@@ -687,7 +687,7 @@ public final class MainActivity extends Activity {
         addHint(card,"此开关独立于大时钟。只调整系统清除按钮的玻璃底色，保留按钮形状、高光、图标、按压效果与清除功能；关闭后恢复原生绘制。");
         LinearLayout previews=row();previews.setPadding(0,dp(8),0,0);
         for(String scene:new String[]{"light","dark"}) {
-            LinearLayout sample=column();TextView label=text(scene.equals("dark")?"深色背景":"浅色背景",11,MUTED,true);
+            LinearLayout sample=column();TextView label=text(scene.equals("dark")?"Fondo oscuro":"Fondo claro",11,MUTED,true);
             label.setPadding(dp(3),0,0,dp(7));sample.addView(label,matchWrap());
             View preview=notificationClearPreview(scene.equals("dark"));qsPreviews.add(preview);sample.addView(preview,new LinearLayout.LayoutParams(-1,dp(84)));
             LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(0,-2,1);if(scene.equals("dark"))params.leftMargin=dp(8);previews.addView(sample,params);
@@ -695,11 +695,11 @@ public final class MainActivity extends Activity {
         card.addView(previews,matchWrap());addHint(card,"效果示意 · 原生按钮材质与清除图标由系统保留，自动跟随浅色、深色主题。");
         addSection(card,"按钮底色 · 颜色与透明度");
         addBigClockColors(card,NotificationClearAppearance.COLOR_LIGHT,NotificationClearAppearance.COLOR_DARK);
-        addToggle(card,NotificationClearAppearance.GRADIENT_ENABLED,"启用渐变");
+        addToggle(card,NotificationClearAppearance.GRADIENT_ENABLED,"Activar degradado");
         addSection(card,"渐变终点 · 颜色与透明度");
         addBigClockColors(card,NotificationClearAppearance.GRADIENT_COLOR_LIGHT,NotificationClearAppearance.GRADIENT_COLOR_DARK);
-        addBigClockNumbers(card,new Setting("底色透明度",NotificationClearAppearance.OPACITY,"%",0,100,.01f),
-                new Setting("渐变方向",NotificationClearAppearance.GRADIENT_ANGLE,"°",0,360,.01f));
+        addBigClockNumbers(card,new Setting("Transparencia del fondo",NotificationClearAppearance.OPACITY,"%",0,100,.01f),
+                new Setting("Dirección del degradado",NotificationClearAppearance.GRADIENT_ANGLE,"°",0,360,.01f));
         addHint(card,"透明度仅调整玻璃底色，并与 HSB 中的颜色透明度相乘；原有高光和清除图标不随底色消失。0° 从左到右，90° 从上到下。");
     }
     private View notificationClearPreview(boolean dark) {
@@ -726,7 +726,7 @@ public final class MainActivity extends Activity {
     private void addBigClockEditor(LinearLayout card,Group group) {
         addHint(card,"开启后仅接管竖屏通知页。原有时钟和运营商设置会保留；修改对应原生设置会自动关闭大时钟。");
         addSection(card,"效果预览");BigClockPreview preview=new BigClockPreview();qsPreviews.add(preview);
-        LinearLayout scenes=row();TextView light=navigationChip("浅色背景"),dark=navigationChip("深色背景");
+        LinearLayout scenes=row();TextView light=navigationChip("Fondo claro"),dark=navigationChip("Fondo oscuro");
         Runnable sceneStyle=()->{light.setTextColor(preview.dark?MUTED:ACCENT);dark.setTextColor(preview.dark?ACCENT:MUTED);light.setSelected(!preview.dark);dark.setSelected(preview.dark);};
         light.setOnClickListener(v->{bigClockPreviewDark=preview.dark=false;sceneStyle.run();preview.invalidate();});dark.setOnClickListener(v->{bigClockPreviewDark=preview.dark=true;sceneStyle.run();preview.invalidate();});
         addNavigationChip(scenes,light,false);addNavigationChip(scenes,dark,true);sceneStyle.run();card.addView(scenes,matchWrap());
@@ -740,8 +740,8 @@ public final class MainActivity extends Activity {
             public void onProgressChanged(SeekBar bar,int value,boolean fromUser){bigClockPreviewCollapse=preview.collapse=value/100f;preview.invalidate();}
         });card.addView(progress,new LinearLayout.LayoutParams(-1,dp(44)));
         addHint(card,"预览保留顶部状态图标。原生字体通过自身字形变化收起；其他字体或无法读取高度变化的原生字体按自然比例缩小。实际通知卡片仍由系统管理。");
-        addSection(card,"时间");
-        addAction(card,"时间格式",string(NotificationBigClockSettings.PATTERN),()->editFormat(NotificationBigClockSettings.PATTERN));
+        addSection(card,"Hora");
+        addAction(card,"Formato de hora",string(NotificationBigClockSettings.PATTERN),()->editFormat(NotificationBigClockSettings.PATTERN));
         addAction(card,"常用时间格式","时分、秒、上午下午与时段",()->chooseFormat(NotificationBigClockSettings.PATTERN));
         addHint(card,"字体只用于通知栏大时钟、日期和底部内容。自选字体使用“文字字体”中已经导入的文件。");
         addChoice(card,NotificationBigClockSettings.FONT,NotificationBigClockSettings.FONT_VALUES,NotificationBigClockSettings.FONT_LABELS);
@@ -751,88 +751,88 @@ public final class MainActivity extends Activity {
                 new Setting("展开大小比例",NotificationBigClockSettings.SCALE,"%",25,200,.01f),
                 new Setting("收起字高上限",NotificationBigClockSettings.COMPACT_MAX_SIZE," dp",12,96,.01f),
                 new Setting("收起字高比例",NotificationBigClockSettings.COMPACT_SCALE,"%",10,100,.01f),
-                new Setting("时间字体粗细",NotificationBigClockSettings.WEIGHT,"",100,900,1),
-                new Setting("时间字距",NotificationBigClockSettings.LETTER_SPACING," em",-.15f,.5f,.01f));
+                new Setting("Grosor de la fuente de la hora",NotificationBigClockSettings.WEIGHT,"",100,900,1),
+                new Setting("Espaciado de la hora",NotificationBigClockSettings.LETTER_SPACING," em",-.15f,.5f,.01f));
         addHint(card,"展开与收起使用同一粗细，滑动只改变高度与布局。");
         addToggle(card,NotificationBigClockSettings.PROPORTIONAL_DIGITS,"等宽字距限制解除（可配合时间字距调整）");
-        addToggle(card,NotificationBigClockSettings.TIME_ANIMATION_DISABLED,"关闭时间变动动画");
+        addToggle(card,NotificationBigClockSettings.TIME_ANIMATION_DISABLED,"Desactivar la animación al cambiar la hora");
         addSection(card,"时间颜色与玻璃边框");
-        addToggle(card,NotificationBigClockSettings.GLASS,"液态玻璃文字");
+        addToggle(card,NotificationBigClockSettings.GLASS,"Texto de vidrio líquido");
         addHint(card,"填充与边框分别调色。点击浅色或深色卡片，进入 HSB 调色盘调整颜色与透明度；默认跟随原生透明度。");
         addSection(card,"时间填充 · 颜色与透明度");
         addBigClockColors(card,NotificationBigClockSettings.COLOR_LIGHT,NotificationBigClockSettings.COLOR_DARK);
-        addToggle(card,NotificationBigClockSettings.GLASS_BORDER_ENABLED,"显示玻璃边框");
-        addSlider(card,new Setting("玻璃边框宽度",NotificationBigClockSettings.GLASS_BORDER_WIDTH," dp",0,4,.01f));
+        addToggle(card,NotificationBigClockSettings.GLASS_BORDER_ENABLED,"Mostrar borde de vidrio");
+        addSlider(card,new Setting("Ancho del borde de vidrio",NotificationBigClockSettings.GLASS_BORDER_WIDTH," dp",0,4,.01f));
         addSection(card,"玻璃边框 · 颜色与透明度");
         addBigClockColors(card,NotificationBigClockSettings.GLASS_BORDER_COLOR_LIGHT,NotificationBigClockSettings.GLASS_BORDER_COLOR_DARK);
 
         addSection(card,"下拉入口过渡");
-        addToggle(card,NotificationBigClockSettings.ENTRY_EFFECT_ENABLED,"随下拉手势移动、模糊与渐显");
-        addBigClockNumbers(card,new Setting("入场移动距离",NotificationBigClockSettings.ENTRY_TRAVEL," dp",0,120,.01f),
-                new Setting("入口模糊半径",NotificationBigClockSettings.ENTRY_BLUR_RADIUS," dp",0,32,.01f),
-                new Setting("入口渐显强度",NotificationBigClockSettings.ENTRY_FADE_STRENGTH,"%",0,100,.01f),
-                new Setting("清晰显示的下拉进度",NotificationBigClockSettings.ENTRY_COMPLETION,"%",1,100,.01f));
+        addToggle(card,NotificationBigClockSettings.ENTRY_EFFECT_ENABLED,"Mover, desenfocar y mostrar gradualmente al deslizar el panel");
+        addBigClockNumbers(card,new Setting("Distancia de desplazamiento de entrada",NotificationBigClockSettings.ENTRY_TRAVEL," dp",0,120,.01f),
+                new Setting("Radio de desenfoque de entrada",NotificationBigClockSettings.ENTRY_BLUR_RADIUS," dp",0,32,.01f),
+                new Setting("Intensidad del fundido de entrada",NotificationBigClockSettings.ENTRY_FADE_STRENGTH,"%",0,100,.01f),
+                new Setting("Progreso de despliegue para mostrar el texto nítido",NotificationBigClockSettings.ENTRY_COMPLETION,"%",1,100,.01f));
         addHint(card,"上下移动、模糊和渐显共用真实下拉与收起进度，达到设定进度时完全清晰。移动距离独立于大时钟高度，可精确调节；顶部状态图标与通知不参与时钟入口模糊。");
 
-        addSection(card,"日期");addToggle(card,NotificationBigClockSettings.DATE_ENABLED,"显示日期");
-        addAction(card,"日期格式",string(NotificationBigClockSettings.DATE_PATTERN),()->editFormat(NotificationBigClockSettings.DATE_PATTERN));
+        addSection(card,"Fecha");addToggle(card,NotificationBigClockSettings.DATE_ENABLED,"Mostrar fecha");
+        addAction(card,"Formato de fecha",string(NotificationBigClockSettings.DATE_PATTERN),()->editFormat(NotificationBigClockSettings.DATE_PATTERN));
         addAction(card,"日期模板","年月日、星期、农历日期与干支年",()->chooseFormat(NotificationBigClockSettings.DATE_PATTERN));
         addHint(card,"默认组合公历日期、星期、干支年与农历日期；“农历日期”只显示月份和日期，不带“农历”前缀。");
-        addBigClockNumbers(card,new Setting("日期字号",NotificationBigClockSettings.DATE_SIZE," dp",8,40,.01f),
-                new Setting("日期字体粗细",NotificationBigClockSettings.DATE_WEIGHT,"",100,900,1),
-                new Setting("日期水平位置",NotificationBigClockSettings.DATE_OFFSET_X," dp",-120,120,.01f),
-                new Setting("日期垂直位置",NotificationBigClockSettings.DATE_OFFSET_Y," dp",-120,120,.01f),
-                new Setting("日期与时间间距",NotificationBigClockSettings.DATE_GAP," dp",0,80,.01f));
+        addBigClockNumbers(card,new Setting("Tamaño de la fecha",NotificationBigClockSettings.DATE_SIZE," dp",8,40,.01f),
+                new Setting("Grosor de fuente de la fecha",NotificationBigClockSettings.DATE_WEIGHT,"",100,900,1),
+                new Setting("Posición horizontal de la fecha",NotificationBigClockSettings.DATE_OFFSET_X," dp",-120,120,.01f),
+                new Setting("Posición vertical de la fecha",NotificationBigClockSettings.DATE_OFFSET_Y," dp",-120,120,.01f),
+                new Setting("Espacio entre fecha y hora",NotificationBigClockSettings.DATE_GAP," dp",0,80,.01f));
         addBigClockAlignment(card,NotificationBigClockSettings.DATE_ALIGNMENT);
         addBigClockColors(card,NotificationBigClockSettings.DATE_COLOR_LIGHT,NotificationBigClockSettings.DATE_COLOR_DARK);
 
-        addSection(card,"布局");addBigClockAlignment(card,NotificationBigClockSettings.ALIGNMENT);
+        addSection(card,"Diseño");addBigClockAlignment(card,NotificationBigClockSettings.ALIGNMENT);
         addBigClockNumbers(card,new Setting("展开水平位置",NotificationBigClockSettings.OFFSET_X," dp",-160,160,.01f),
                 new Setting("展开垂直位置",NotificationBigClockSettings.OFFSET_Y," dp",-120,200,.01f),
-                new Setting("收起水平位置",NotificationBigClockSettings.COMPACT_OFFSET_X," dp",-160,160,.01f),
-                new Setting("收起垂直位置",NotificationBigClockSettings.COMPACT_OFFSET_Y," dp",-120,120,.01f));
+                new Setting("Posición horizontal contraída",NotificationBigClockSettings.COMPACT_OFFSET_X," dp",-160,160,.01f),
+                new Setting("Posición vertical contraída",NotificationBigClockSettings.COMPACT_OFFSET_Y," dp",-120,120,.01f));
         addHint(card,"位置可正负微调到两位小数。手动字号可超过滑条建议范围，确认后保存；实际排版会为顶部图标和通知留出安全空间。");
 
         addHint(card,"右上图标随下拉向下渐显，收起时向上渐隐。网速、信号、Wi‑Fi 和电池统一交接，避免重复显示。");
 
         addSection(card,"时钟与通知安全间距");
-        addToggle(card,NotificationBigClockSettings.NOTIFICATION_GAP_ENABLED,"自动保留时钟与首张通知的距离");
-        addBigClockNumbers(card,new Setting("时间与通知间距",NotificationBigClockSettings.NOTIFICATION_GAP," dp",0,100,.01f));
+        addToggle(card,NotificationBigClockSettings.NOTIFICATION_GAP_ENABLED,"Mantener automáticamente la distancia entre el reloj y la primera notificación");
+        addBigClockNumbers(card,new Setting("Separación entre la hora y las notificaciones",NotificationBigClockSettings.NOTIFICATION_GAP," dp",0,100,.01f));
         addHint(card,"从调整后的时间与日期实际底边计算，字号和位置改变时同步更新首张通知的留白。支持两位小数与点击输入；此间距独立于通知堆叠及边缘虚化，关闭不会清除已保存的数值。");
 
-        addSection(card,"通知堆叠");addToggle(card,NotificationBigClockSettings.STACK_ENABLED,"大时钟展开时层叠后续通知");
-        addBigClockNumbers(card,new Setting("完整通知数量",NotificationBigClockSettings.VISIBLE_COUNT,"",1,3,1),
+        addSection(card,"Apilado de notificaciones");addToggle(card,NotificationBigClockSettings.STACK_ENABLED,"大时钟展开时层叠后续通知");
+        addBigClockNumbers(card,new Setting("Cantidad de notificaciones completas",NotificationBigClockSettings.VISIBLE_COUNT,"",1,3,1),
                 new Setting("第一层底边宽度",NotificationBigClockSettings.TAIL_WIDTH_1,"%",50,100,.01f),
                 new Setting("第二层底边宽度",NotificationBigClockSettings.TAIL_WIDTH_2,"%",50,100,.01f),
                 new Setting("第三层底边宽度",NotificationBigClockSettings.TAIL_WIDTH_3,"%",50,100,.01f));
         addHint(card,"大时钟展开时保留 1–3 张完整通知，后方最多三层仅露出圆角底边。所有通知仍保留，滑动列表可继续查看全部通知。数量只支持 1 到 3 的整数；底边宽度独立固定，100% 对应完整卡片宽度，默认依次为 96%、92%、88%。宽度支持两位小数，超出滑条建议范围须确认。层叠间距沿用系统，旧间距与内缩设置不再生效。预览显示完整卡片及三层底边。");
 
         addSection(card,"通知边缘过渡");
-        addToggle(card,NotificationBigClockSettings.NOTIFICATION_EDGE_ENABLED,"通知进入顶部边缘时模糊与渐隐");
-        addBigClockNumbers(card,new Setting("顶部安全距离",NotificationBigClockSettings.NOTIFICATION_EDGE_SAFE_DISTANCE," dp",0,100,.01f),
-                new Setting("过渡范围",NotificationBigClockSettings.NOTIFICATION_EDGE_RANGE," dp",0,120,.01f),
-                new Setting("边缘模糊半径",NotificationBigClockSettings.NOTIFICATION_EDGE_BLUR_RADIUS," dp",0,32,.01f));
+        addToggle(card,NotificationBigClockSettings.NOTIFICATION_EDGE_ENABLED,"Desenfocar y desvanecer las notificaciones al acercarse al borde superior");
+        addBigClockNumbers(card,new Setting("Distancia de seguridad superior",NotificationBigClockSettings.NOTIFICATION_EDGE_SAFE_DISTANCE," dp",0,100,.01f),
+                new Setting("Rango de transición",NotificationBigClockSettings.NOTIFICATION_EDGE_RANGE," dp",0,120,.01f),
+                new Setting("Radio de desenfoque del borde",NotificationBigClockSettings.NOTIFICATION_EDGE_BLUR_RADIUS," dp",0,32,.01f));
         addHint(card,"完整卡片在安全区保持清晰。卡片进入顶部安全距离后，在设定范围内逐渐模糊与渐隐；停止滑动时保留当前位置对应的效果，返回安全区恢复清晰。点击数值可精细输入到两位小数。");
 
-        addSection(card,"底部内容");addToggle(card,NotificationBigClockSettings.FOOTER_ENABLED,"显示底部内容");
-        addAction(card,"内容格式",string(NotificationBigClockSettings.FOOTER_PATTERN),()->editFormat(NotificationBigClockSettings.FOOTER_PATTERN));
+        addSection(card,"Contenido inferior");addToggle(card,NotificationBigClockSettings.FOOTER_ENABLED,"Mostrar contenido inferior");
+        addAction(card,"Formato del contenido",string(NotificationBigClockSettings.FOOTER_PATTERN),()->editFormat(NotificationBigClockSettings.FOOTER_PATTERN));
         addAction(card,"内容模板","纯文本、日期时间、文字与时间组合",()->chooseFormat(NotificationBigClockSettings.FOOTER_PATTERN));
-        addAction(card,"编辑纯文本",string(NotificationBigClockSettings.FOOTER_TEXT).isEmpty()?"可输入中文、英文或 emoji":string(NotificationBigClockSettings.FOOTER_TEXT),()->editText(NotificationBigClockSettings.FOOTER_TEXT));
+        addAction(card,"Editar texto simple",string(NotificationBigClockSettings.FOOTER_TEXT).isEmpty()?"可输入中文、英文或 emoji":string(NotificationBigClockSettings.FOOTER_TEXT),()->editText(NotificationBigClockSettings.FOOTER_TEXT));
         addHint(card,"格式中的 {text} 显示上面输入的纯文本。固定英文可加单引号，如 'C17' HH:mm {text}；纯文本本身不会按日期格式解释。");
-        addBigClockNumbers(card,new Setting("底部字号",NotificationBigClockSettings.FOOTER_SIZE," dp",8,36,.01f),
-                new Setting("底部字体粗细",NotificationBigClockSettings.FOOTER_WEIGHT,"",100,900,1),
-                new Setting("底部水平位置",NotificationBigClockSettings.FOOTER_OFFSET_X," dp",-160,160,.01f),
-                new Setting("底部垂直位置",NotificationBigClockSettings.FOOTER_OFFSET_Y," dp",-120,120,.01f),
-                new Setting("底部安全间距",NotificationBigClockSettings.FOOTER_MARGIN," dp",0,120,.01f));
+        addBigClockNumbers(card,new Setting("Tamaño de fuente inferior",NotificationBigClockSettings.FOOTER_SIZE," dp",8,36,.01f),
+                new Setting("Grosor de fuente inferior",NotificationBigClockSettings.FOOTER_WEIGHT,"",100,900,1),
+                new Setting("Posición horizontal inferior",NotificationBigClockSettings.FOOTER_OFFSET_X," dp",-160,160,.01f),
+                new Setting("Posición vertical inferior",NotificationBigClockSettings.FOOTER_OFFSET_Y," dp",-120,120,.01f),
+                new Setting("Margen de seguridad inferior",NotificationBigClockSettings.FOOTER_MARGIN," dp",0,120,.01f));
         addBigClockAlignment(card,NotificationBigClockSettings.FOOTER_ALIGNMENT);
         addBigClockColors(card,NotificationBigClockSettings.FOOTER_COLOR_LIGHT,NotificationBigClockSettings.FOOTER_COLOR_DARK);
     }
     private void addBigClockNumbers(LinearLayout card,Setting... settings) { for(Setting setting:settings)addSlider(card,setting); }
     private void addBigClockColors(LinearLayout card,String light,String dark) {
-        LinearLayout colors=row();addColor(colors,light,"浅色背景",false);addColor(colors,dark,"深色背景",true);card.addView(colors,matchWrap());
+        LinearLayout colors=row();addColor(colors,light,"Fondo claro",false);addColor(colors,dark,"Fondo oscuro",true);card.addView(colors,matchWrap());
     }
     private void addBigClockAlignment(LinearLayout card,String key) {
-        addChoice(card,key,new String[]{"left","center","right"},new String[]{"左对齐","居中","右对齐"});
+        addChoice(card,key,new String[]{"left","center","right"},new String[]{"左对齐","Centrar","右对齐"});
     }
     private final class BigClockPreview extends View {
         private float collapse=bigClockPreviewCollapse;
@@ -1049,7 +1049,7 @@ public final class MainActivity extends Activity {
                 canvas.drawOval(circle,paint);canvas.drawRoundRect(fill,dp(12),dp(12),paint);paint.setShader(null);
             }
         };
-        preview.setContentDescription((dark?"深色背景":"浅色背景")+"活动填充预览");return preview;
+        preview.setContentDescription((dark?"Fondo oscuro":"Fondo claro")+"活动填充预览");return preview;
     }
     private void addToggle(LinearLayout parent,String key,String label) {
         LinearLayout line=row();line.setPadding(0,dp(9),0,dp(7));line.setMinimumHeight(dp(52));
@@ -1169,34 +1169,34 @@ public final class MainActivity extends Activity {
     private String[][] featureKeys(String group) {
         List<String[]> keys=new ArrayList<>();
         if(!group.equals("font")&&!group.equals("tiles")) {
-            keys.add(new String[]{group+"_position_enabled","位置调整"});keys.add(new String[]{group+"_size_enabled","大小调整"});keys.add(new String[]{group+"_color_enabled","颜色调整"});
+            keys.add(new String[]{group+"_position_enabled","Ajustar posición"});keys.add(new String[]{group+"_size_enabled","Ajustar tamaño"});keys.add(new String[]{group+"_color_enabled","Ajustar color"});
         }
         if(group.equals("data")) {
-            keys.add(new String[]{"data_icon_enabled","仿 iOS 信号样式"});keys.add(new String[]{"data_badge_hidden","隐藏系统网络角标"});
+            keys.add(new String[]{"data_icon_enabled","Estilo de señal similar a iOS"});keys.add(new String[]{"data_badge_hidden","Ocultar los indicadores de red del sistema"});
         } else if(group.equals("wifi")) {
-            keys.add(new String[]{"wifi_icon_enabled","仿 iOS Wi-Fi 样式"});keys.add(new String[]{"wifi_activity_hidden","隐藏 Wi-Fi 上传下载箭头"});keys.add(new String[]{"wifi_badge_hidden","隐藏 Wi-Fi 角标"});
+            keys.add(new String[]{"wifi_icon_enabled","Estilo de Wi-Fi similar a iOS"});keys.add(new String[]{"wifi_activity_hidden","Ocultar las flechas de subida y descarga de Wi-Fi"});keys.add(new String[]{"wifi_badge_hidden","Ocultar el indicador de Wi-Fi"});
         } else if(group.equals("label")) {
-            keys.add(new String[]{StatusBarSettings.LABEL_HIDDEN,"隐藏网络制式文字"});
-            keys.add(new String[]{"label_normalize_enabled","统一网络制式名称"});keys.add(new String[]{"label_text_style_enabled","文字粗细"});
+            keys.add(new String[]{StatusBarSettings.LABEL_HIDDEN,"Ocultar el texto del tipo de red"});
+            keys.add(new String[]{"label_normalize_enabled","Unificar el nombre del tipo de red"});keys.add(new String[]{"label_text_style_enabled","Grosor del texto"});
         } else if(isClockGroup(group)) {
-            keys.add(new String[]{group.equals("shade_clock")?StatusBarSettings.SHADE_CLOCK_ENABLED:StatusBarSettings.CLOCK_ENABLED,"自定义时间格式"});keys.add(new String[]{group+"_text_style_enabled","文字粗细与字距"});
+            keys.add(new String[]{group.equals("shade_clock")?StatusBarSettings.SHADE_CLOCK_ENABLED:StatusBarSettings.CLOCK_ENABLED,"Formato de hora personalizado"});keys.add(new String[]{group+"_text_style_enabled","Grosor y espaciado del texto"});
         } else if(group.equals("carrier")||isCarrierPanel(group)) {
-            keys.add(new String[]{group+"_replace_enabled","运营商替换"});keys.add(new String[]{group+"_text_style_enabled","文字粗细与字距"});
+            keys.add(new String[]{group+"_replace_enabled","Sustitución del operador"});keys.add(new String[]{group+"_text_style_enabled","Grosor y espaciado del texto"});
         } else if(group.equals("speed")) {
-            keys.add(new String[]{"speed_lines_enabled","数字与单位间距"});keys.add(new String[]{"speed_text_style_enabled","文字粗细"});
+            keys.add(new String[]{"speed_lines_enabled","Espacio entre el número y la unidad"});keys.add(new String[]{"speed_text_style_enabled","Grosor del texto"});
         } else if(group.equals("battery")) {
-            keys.add(new String[]{"battery_style_enabled","应用所选电池样式"});
-            keys.add(new String[]{StatusBarSettings.BATTERY_CHARGE_INSIDE,"电池内数字与闪电切换"});
+            keys.add(new String[]{"battery_style_enabled","Aplicar el estilo de batería seleccionado"});
+            keys.add(new String[]{StatusBarSettings.BATTERY_CHARGE_INSIDE,"Alternar entre el número y el rayo dentro de la batería"});
             keys.add(new String[]{"battery_text_color_enabled","独立电量数字颜色"});keys.add(new String[]{"battery_bolt_color_enabled","独立闪电颜色"});keys.add(new String[]{"battery_charge_color_enabled","独立充电填充颜色"});keys.add(new String[]{"battery_alert_color_enabled","独立低电量／省电颜色"});
         } else if(group.equals("tiles")) {
-            keys.add(new String[]{"tiles_portrait_enabled","竖屏启用"});keys.add(new String[]{"tiles_landscape_enabled","横屏启用"});
-            keys.add(new String[]{"tiles_fade_enabled","滑动边缘渐隐"});keys.add(new String[]{"tiles_blur_enabled","高级模糊（默认关闭）"});
+            keys.add(new String[]{"tiles_portrait_enabled","Activar en vertical"});keys.add(new String[]{"tiles_landscape_enabled","Activar en horizontal"});
+            keys.add(new String[]{"tiles_fade_enabled","Fundido de los bordes durante el deslizamiento"});keys.add(new String[]{"tiles_blur_enabled","高级模糊（默认关闭）"});
         }
         return keys.toArray(new String[keys.size()][]);
     }
     private void addFeaturePanel(LinearLayout card,Group group) {
         String[][] keys=featureKeys(group.key);if(keys.length==0)return;
-        addSection(card,"独立开关");LinearLayout panel=column();
+        addSection(card,"Interruptor independiente");LinearLayout panel=column();
         for(String[] key:keys) {
             LinearLayout line=row();line.setPadding(0,dp(6),0,dp(6));line.setMinimumHeight(dp(52));line.addView(text(key[1],13,INK,false),new LinearLayout.LayoutParams(0,-2,1));
             Switch toggle=styledSwitch(enabled(key[0]));toggle.setContentDescription(key[1]+"开关");
@@ -1208,16 +1208,16 @@ public final class MainActivity extends Activity {
     private Group carrierGroup() {
         String title=carrierPanel.equals(CarrierPanels.NOTIFICATION)?"通知页运营商文字":carrierPanel.equals(CarrierPanels.CONTROL)?"控制中心运营商文字":"锁屏运营商文字";
         return new Group(carrierPanel,title,"",new Setting[]{
-            pos("水平位置",CarrierPanels.key(carrierPanel,"offset_x"),true),pos("垂直位置",CarrierPanels.key(carrierPanel,"offset_y"),false),
-            scale("文字大小",CarrierPanels.key(carrierPanel,"scale")),weight(CarrierPanels.key(carrierPanel,"weight")),
-            new Setting("字距微调",CarrierPanels.key(carrierPanel,"spacing")," dp",-2,8,.01f)});
+            pos("Posición horizontal",CarrierPanels.key(carrierPanel,"offset_x"),true),pos("Posición vertical",CarrierPanels.key(carrierPanel,"offset_y"),false),
+            scale("Tamaño del texto",CarrierPanels.key(carrierPanel,"scale")),weight(CarrierPanels.key(carrierPanel,"weight")),
+            new Setting("Ajuste del espaciado",CarrierPanels.key(carrierPanel,"spacing")," dp",-2,8,.01f)});
     }
     private void addCarrierEditor(LinearLayout card) {
         addSection(card,"正在编辑的界面");LinearLayout panels=row();
-        String[] labels={"通知页","控制中心","锁屏"};String[] values={CarrierPanels.NOTIFICATION,CarrierPanels.CONTROL,CarrierPanels.LOCKSCREEN};
+        String[] labels={"Panel de notificaciones","Centro de control","Pantalla de bloqueo"};String[] values={CarrierPanels.NOTIFICATION,CarrierPanels.CONTROL,CarrierPanels.LOCKSCREEN};
         for(int i=0;i<values.length;i++) {
             final String panel=values[i];boolean active=panel.equals(carrierPanel);TextView choice=text(labels[i],13,active?ACCENT:MUTED,false);
-            choice.setContentDescription("编辑"+labels[i]+"运营商");choice.setGravity(Gravity.CENTER);choice.setPadding(dp(8),dp(13),dp(8),dp(13));
+            choice.setContentDescription("编辑"+labels[i]+"Operador");choice.setGravity(Gravity.CENTER);choice.setPadding(dp(8),dp(13),dp(8),dp(13));
             pressable(choice,rounded(active?SOFT:SURFACE,12,false));choice.setSelected(active);choice.setOnClickListener(v->{carrierPanel=panel;selectGroup(selected);pageScroll.post(()->pageScroll.scrollTo(0,0));});
             LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(0,-2,1);if(i>0)params.leftMargin=dp(6);panels.addView(choice,params);
         }
@@ -1228,11 +1228,11 @@ public final class MainActivity extends Activity {
         addHint(card,carrierPanel.equals(CarrierPanels.LOCKSCREEN)?"锁屏独立设置默认关闭。开启后应用此处参数，关闭恢复系统运营商内容。":"下面的设置只作用于所选界面。未单独修改的参数沿用之前的设置，各界面可分别恢复默认值。");
         if(carrierPanel.equals(CarrierPanels.NOTIFICATION))addBigClockConflict(card);
         addFeaturePanel(card,group);String modeKey=CarrierPanels.key(group.key,"mode"),patternKey=CarrierPanels.key(group.key,"pattern"),textKey=CarrierPanels.key(group.key,"text");
-        addChoice(card,modeKey,new String[]{"original","time","text"},new String[]{"运营商","自定义时间","纯文本"});
+        addChoice(card,modeKey,new String[]{"original","time","text"},new String[]{"Operador","Hora personalizada","Solo texto"});
         String mode=string(modeKey);if(mode.equals("time"))addFormat(card,patternKey);
         if(mode.equals("text")) { addAction(card,"编辑文本",string(textKey),()->editText(textKey));addSample(card); }
         addSettings(card,group);addSection(card,"此界面的文字颜色");LinearLayout colors=row();
-        addColor(colors,CarrierPanels.key(group.key,"color_light"),"浅色背景",false);addColor(colors,CarrierPanels.key(group.key,"color_dark"),"深色背景",true);card.addView(colors,matchWrap());
+        addColor(colors,CarrierPanels.key(group.key,"color_light"),"Fondo claro",false);addColor(colors,CarrierPanels.key(group.key,"color_dark"),"Fondo oscuro",true);card.addView(colors,matchWrap());
         addHint(card,"颜色与透明度只作用于此界面，按原生文字颜色自动切换。");addReset(group);
     }
     private TextView addSection(LinearLayout card,String title) { TextView label=text(title,13,MUTED,true);label.setTag("c17-section:"+title);label.setPadding(dp(5),dp(22),0,dp(10));card.addView(label,matchWrap());return label; }
@@ -1253,7 +1253,7 @@ public final class MainActivity extends Activity {
             final String title=titles.get(i),key=groups[selected].key+"/"+i+"/"+title;
             LinearLayout section=column();section.setPadding(dp(18),dp(5),dp(18),dp(7));section.setBackground(rounded(CARD,24,false));
             LinearLayout body=bodies.get(i);body.setPadding(0,0,0,dp(10));
-            boolean open=expandedSections.contains(key)||!expandedSections.contains("closed:"+key)&&!title.equals("独立开关");body.setVisibility(open?View.VISIBLE:View.GONE);
+            boolean open=expandedSections.contains(key)||!expandedSections.contains("closed:"+key)&&!title.equals("Interruptor independiente");body.setVisibility(open?View.VISIBLE:View.GONE);
             LinearLayout heading=row();heading.setPadding(dp(2),dp(15),dp(2),dp(15));heading.setMinimumHeight(dp(62));
             TextView name=text(title,17,INK,true);heading.addView(name,new LinearLayout.LayoutParams(0,-2,1));
             TextView arrow=text(open?"−":"＋",20,MUTED,false);arrow.setPadding(dp(8),0,0,0);heading.addView(arrow);
@@ -1270,7 +1270,7 @@ public final class MainActivity extends Activity {
     private void addSettings(LinearLayout card,Group group) {
         String previous="";
         for(Setting setting:group.settings) {
-            String section=setting.key.startsWith("qs_global_")?"填充效果":setting.key.startsWith("tiles_")?"边缘范围与位置":setting.key.contains("offset_")?"位置":setting.key.contains("scale")?"大小":setting.key.contains("seconds")?"充电切换节奏":"文字与间距";
+            String section=setting.key.startsWith("qs_global_")?"填充效果":setting.key.startsWith("tiles_")?"边缘范围与位置":setting.key.contains("offset_")?"Posición":setting.key.contains("scale")?"Tamaño":setting.key.contains("seconds")?"充电切换节奏":"Texto y espaciado";
             if(!previous.equals(section)) { addSection(card,section);previous=section; }addSlider(card,setting);
         }
     }
@@ -1281,9 +1281,9 @@ public final class MainActivity extends Activity {
     }
     private void addBatteryColors(LinearLayout card,String item,String title) {
         addSection(card,title);
-        String label=item.equals("battery")?"外形":item.equals("battery_text")?"数字":item.equals("battery_bolt")?"闪电":item.equals("battery_charge")?"充电填充":"低电量／省电";
-        LinearLayout choices=row();addColor(choices,item+"_color_light",label+" · 浅色背景",false);
-        addColor(choices,item+"_color_dark",label+" · 深色背景",true);card.addView(choices,matchWrap());
+        String label=item.equals("battery")?"外形":item.equals("battery_text")?"数字":item.equals("battery_bolt")?"闪电":item.equals("battery_charge")?"Relleno durante la carga":"低电量／省电";
+        LinearLayout choices=row();addColor(choices,item+"_color_light",label+" · Fondo claro",false);
+        addColor(choices,item+"_color_dark",label+" · Fondo oscuro",true);card.addView(choices,matchWrap());
     }
     private void addAction(LinearLayout parent,String title,String detail,Runnable action) {
         LinearLayout box=row();box.setPadding(dp(14),dp(14),dp(12),dp(14));box.setMinimumHeight(dp(62));
@@ -1316,7 +1316,7 @@ public final class MainActivity extends Activity {
         if(nativeBattery)addHint(card,"系统已关闭电池百分比，PUI 不可选；开启百分比后可选。");
     }
     private void addFonts(LinearLayout card) {
-        addChoice(card,StatusBarSettings.FONT_MODE,new String[]{"system","pingfang","custom"},new String[]{"跟随系统","苹方","自选字体"});
+        addChoice(card,StatusBarSettings.FONT_MODE,new String[]{"system","pingfang","custom"},new String[]{"Seguir al sistema","PingFang","Fuente personalizada"});
         addHint(card,"内置苹方仅保留数字、英文、标点和时间常用中文字，粗细 100–900；其余字符由系统补齐。自选字体的真实字重范围取决于文件。");
         addAction(card,importing?"正在导入字体…":"导入 TTF / OTF / TTC",string(StatusBarSettings.FONT_NAME),()->{if(!importing)pickFont();});
         sample=text("09:41  周三  5G  KB/s",20,INK,false);sample.setPadding(0,dp(20),0,dp(8));card.addView(sample,matchWrap());
@@ -1324,7 +1324,7 @@ public final class MainActivity extends Activity {
     }
     private void addFormat(LinearLayout card,String key) {
         addSection(card,"实时预览");addSample(card);
-        addSection(card,"时间格式");addAction(card,"编辑时间格式",string(key),()->editFormat(key));
+        addSection(card,"Formato de hora");addAction(card,"编辑时间格式",string(key),()->editFormat(key));
         addAction(card,"选择常用格式","时分、秒、日期与星期",()->chooseFormat(key));
     }
     private void addSample(LinearLayout card) {
@@ -1355,11 +1355,11 @@ public final class MainActivity extends Activity {
         field.setText(string(key));content.addView(field,matchWrap());TextView result=text("",14,INK,false);content.addView(result,matchWrap());
         addHint(content,"点击添加：年 / 月 / 日 / 周 / 星期 / 时 / 12时 / 分 / 秒 / 上午下午 / 时段 / 农历 / 农历日期 / 干支。“农历日期”不带“农历”前缀。");
         String[][] tokens=key.equals(NotificationBigClockSettings.FOOTER_PATTERN)
-                ?new String[][]{{"年","月","日","周","星期"},{"时","12时","分","秒"},{"上午下午","时段"},{"农历","农历日期","干支","text"}}
-                :new String[][]{{"年","月","日","周","星期"},{"时","12时","分","秒"},{"上午下午","时段"},{"农历","农历日期","干支"}};
+                ?new String[][]{{"年","月","日","周","Día de la semana"},{"时","12时","分","segundos"},{"上午下午","Franja horaria"},{"农历","Fecha lunar","干支","text"}}
+                :new String[][]{{"年","月","日","周","Día de la semana"},{"时","12时","分","segundos"},{"上午下午","Franja horaria"},{"农历","Fecha lunar","干支"}};
         for(String[] line:tokens) {
             LinearLayout row=row();for(String token:line) {
-                TextView chip=text(token.equals("text")?"纯文本":token,11,ACCENT,true);chip.setGravity(Gravity.CENTER);chip.setPadding(dp(3),dp(10),dp(3),dp(10));
+                TextView chip=text(token.equals("text")?"Solo texto":token,11,ACCENT,true);chip.setGravity(Gravity.CENTER);chip.setPadding(dp(3),dp(10),dp(3),dp(10));
                 chip.setOnClickListener(v->{int start=Math.max(0,field.getSelectionStart()),end=Math.max(start,field.getSelectionEnd());field.getText().replace(start,end,"{"+token+"}");});
                 row.addView(chip,new LinearLayout.LayoutParams(0,-2,1));
             }content.addView(row,matchWrap());
@@ -1367,7 +1367,7 @@ public final class MainActivity extends Activity {
         addHint(content,"也可输入 yyyy-MM-dd HH:mm:ss 等格式。固定英文放在单引号内，例如 'C17' HH:mm；中文直接输入。时段按小时显示凌晨、早晨、上午、中午、下午、晚上。");
         if(key.equals(NotificationBigClockSettings.FOOTER_PATTERN))addHint(content,"{text} 引用独立输入的纯文本，英文与 emoji 都按原文显示；单引号内的 {text} 仅显示这个标记本身。");
         ScrollView scroll=new ScrollView(this);scroll.addView(content);
-        AlertDialog dialog=new AlertDialog.Builder(this).setTitle("自定义时间格式").setView(scroll).setNegativeButton("取消",null).setPositiveButton("应用",null).create();
+        AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Formato de hora personalizado").setView(scroll).setNegativeButton("取消",null).setPositiveButton("应用",null).create();
         Runnable validate=()->{
             String pattern=field.getText().toString(),error=formatPatternError(key,pattern);
             result.setText(error==null?formatPatternPreview(key,pattern,System.currentTimeMillis()):error);result.setTextColor(error==null?INK:0xffc23434);
@@ -1421,7 +1421,7 @@ public final class MainActivity extends Activity {
             return;
         }
         if(request!=FONT_REQUEST||result!=RESULT_OK||data==null||data.getData()==null||importing)return;
-        Uri uri=data.getData();String displayName="自选字体";
+        Uri uri=data.getData();String displayName="Fuente personalizada";
         try(Cursor cursor=getContentResolver().query(uri,new String[]{OpenableColumns.DISPLAY_NAME},null,null,null)) {
             if(cursor!=null&&cursor.moveToFirst()&&!cursor.isNull(0))displayName=cursor.getString(0);
         } catch(Exception ignored){}

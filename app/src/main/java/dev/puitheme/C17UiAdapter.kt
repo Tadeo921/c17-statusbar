@@ -384,7 +384,7 @@ fun C17TextField(
 ) {
     val appearance = modifier.semantics {
         if (!enabled) disabled()
-        if (isError) error(errorMessage ?: "输入内容有误")
+        if (isError) error(errorMessage ?: "El contenido introducido no es válido.")
     }
     if (LocalC17Coui.current) {
         CouiTextField(value = value, onValueChange = onValueChange, modifier = appearance,

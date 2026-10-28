@@ -27,7 +27,7 @@ public final class NativeStatusIcons {
     public static final String PRIORITY="status_hint_icons_priority";
     public static final String LAYOUT="status_hint_icons_layout";
     public static final String[] PRIORITY_SLOTS={"bluetooth","location","alarm_clock","zen","volume","hotspot","headset","rotate","vpn","nfc","cast","screen_record","microphone","camera","privacy_call","usb","hd","airplane"};
-    public static final String[] PRIORITY_LABELS={"蓝牙","定位","闹钟","勿扰","静音与振动","个人热点","耳机","屏幕旋转","VPN","NFC","投屏","屏幕录制","麦克风","相机","通话隐私","USB","高清通话","飞行模式"};
+    public static final String[] PRIORITY_LABELS={"Bluetooth","Ubicación","Alarma","No molestar","Silencio y vibración","Punto de acceso","Auriculares","Rotación de pantalla","VPN","NFC","Transmitir pantalla","Grabación de pantalla","Micrófono","Cámara","Privacidad de llamadas","USB","Llamadas HD","Modo avión"};
     /** UI uses names only; persisted slot IDs never become an editable code field. */
     public static List<String> editablePriority(String stored) {
         ArrayList<String> result=new ArrayList<>();
@@ -38,7 +38,7 @@ public final class NativeStatusIcons {
     }
     public static String priorityLabel(String slot){
         for(int i=0;i<PRIORITY_SLOTS.length;i++)if(PRIORITY_SLOTS[i].equals(slot))return PRIORITY_LABELS[i];
-        return "其他系统提示";
+        return "Otras alertas del sistema";
     }
     public static Map<String,Boolean> booleanDefaults(){return Collections.singletonMap(MASTER,false);}
     public static Map<String,Float> floatDefaults(){
@@ -96,10 +96,10 @@ public final class NativeStatusIcons {
     }
     private static String alias(String name){
         switch(name){
-            case "蓝牙":return "bluetooth";case "定位":return "location";case "闹钟":return "alarm_clock";
-            case "勿扰":return "zen";case "热点":return "hotspot";case "耳机":return "headset";
-            case "静音":return "volume";case "麦克风":return "microphone";case "相机":return "camera";
-            case "隐私":return "microphone,camera,privacy_call";default:return name;
+            case "Bluetooth":return "bluetooth";case "Ubicación":return "location";case "Alarma":return "alarm_clock";
+            case "No molestar":return "zen";case "Punto de acceso":return "hotspot";case "Auriculares":return "headset";
+            case "Silencio":return "volume";case "Micrófono":return "microphone";case "Cámara":return "camera";
+            case "Privacidad":return "microphone,camera,privacy_call";default:return name;
         }
     }
     static boolean excludedSlot(String name){

@@ -22,10 +22,10 @@ public final class NotificationIconRepository {
         byte[] data;
         try (InputStream input = context.getContentResolver().openInputStream(uri);
              ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
-            if (input == null) throw new IOException("无法读取图片");
+            if (input == null) throw new IOException("No se pudo leer la imagen");
             byte[] buffer = new byte[8192]; int count;
             while ((count = input.read(buffer)) != -1) {
-                if (bytes.size() + count > 2 * 1024 * 1024) throw new IOException("图片最多 2 MB");
+                if (bytes.size() + count > 2 * 1024 * 1024) throw new IOException("La imagen puede ocupar hasta 2 MB");
                 bytes.write(buffer, 0, count);
             }
             data = bytes.toByteArray();
@@ -33,20 +33,20 @@ public final class NotificationIconRepository {
         BitmapFactory.Options options = new BitmapFactory.Options(); options.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(data, 0, data.length, options);
         if (!supported(options.outMimeType) || options.outWidth <= 0 || options.outHeight <= 0
-                || options.outWidth > 16384 || options.outHeight > 16384) throw new IOException("请选择 PNG、JPEG 或 WebP 图片");
+                || options.outWidth > 16384 || options.outHeight > 16384) throw new IOException("Selecciona una imagen PNG, JPEG o WebP");
         options.inJustDecodeBounds = false; options.inSampleSize = 1;
         while (Math.max(options.outWidth, options.outHeight) / options.inSampleSize > 256) options.inSampleSize *= 2;
         Bitmap decoded = BitmapFactory.decodeByteArray(data, 0, data.length, options);
-        if (decoded == null) throw new IOException("图片无法加载");
+        if (decoded == null) throw new IOException("No se pudo cargar la imagen");
         File target = file(context), directory = target.getParentFile();
-        if (!directory.isDirectory() && !directory.mkdirs()) { decoded.recycle(); throw new IOException("图片目录无法创建"); }
+        if (!directory.isDirectory() && !directory.mkdirs()) { decoded.recycle(); throw new IOException("No se pudo crear la carpeta de imágenes"); }
         File temporary = File.createTempFile("pending-", ".png", directory); boolean ready = false;
         try {
             int largest = Math.max(decoded.getWidth(), decoded.getHeight());
             Bitmap normalized = largest > 128 ? Bitmap.createScaledBitmap(decoded,
                     Math.max(1, decoded.getWidth() * 128 / largest), Math.max(1, decoded.getHeight() * 128 / largest), true) : decoded;
             try (FileOutputStream output = new FileOutputStream(temporary)) {
-                if (!normalized.compress(Bitmap.CompressFormat.PNG, 100, output)) throw new IOException("图片保存失败");
+                if (!normalized.compress(Bitmap.CompressFormat.PNG, 100, output)) throw new IOException("No se pudo guardar la imagen");
                 output.getFD().sync();
             } finally { if (normalized != decoded) normalized.recycle(); }
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -67,7 +67,7 @@ public final class NotificationIconRepository {
         PreparedIcon(File temporary, File target, String revision) { this.temporary = temporary; this.target = target; this.revision = revision; }
         public String commit(BooleanSupplier canCommit, BooleanSupplier save, Runnable restore) throws Exception {
             synchronized (LOCK) {
-                if (closed || !canCommit.getAsBoolean()) throw new IOException("权限状态已变化，图片未导入");
+                if (closed || !canCommit.getAsBoolean()) throw new IOException("El estado de los permisos cambió; no se importó la imagen");
                 File backup = null; boolean published = false, attempted = false, retained = false;
                 try {
                     if (target.exists()) {
@@ -76,9 +76,9 @@ public final class NotificationIconRepository {
                         android.system.Os.link(target.getAbsolutePath(), backup.getAbsolutePath());
                     }
                     android.system.Os.rename(temporary.getAbsolutePath(), target.getAbsolutePath()); published = true;
-                    if (!canCommit.getAsBoolean()) throw new IOException("权限状态已变化，图片未导入");
+                    if (!canCommit.getAsBoolean()) throw new IOException("El estado de los permisos cambió; no se importó la imagen");
                     attempted = true;
-                    if (!save.getAsBoolean() || !canCommit.getAsBoolean()) throw new IOException("图片配置保存失败");
+                    if (!save.getAsBoolean() || !canCommit.getAsBoolean()) throw new IOException("No se pudo guardar la configuración de la imagen");
                     return revision;
                 } catch (Exception failure) {
                     if (published) try {

@@ -51,7 +51,7 @@ private fun availablePackRoles(pack: IconManagementRepository.Pack): List<String
 
 private fun roleTitle(role: String): String = IconRoleRegistry.role(role)?.title ?: IconRoleRegistry.target(role)?.title ?: role
 private fun iconPackName(pack: IconManagementRepository.Pack): String = if (pack.name.startsWith("C17 Rounded 27"))
-    "C17示例库" + pack.name.removePrefix("C17 Rounded 27") else pack.name
+    "Biblioteca de ejemplo C17" + pack.name.removePrefix("C17 Rounded 27") else pack.name
 private fun packPreviewRoles(pack: IconManagementRepository.Pack, limit: Int): List<String> {
     val representative = listOf("wifi.4", "cellular.4", "battery.100", "tile.wifi.on", "tile.bluetooth.on", "tile.flashlight.on",
         "slider.brightness.default", "media.play_pause.play", "device.headset.default", "footer.settings.default")
@@ -64,12 +64,12 @@ private fun unsupportedArtworkCount(pack: IconManagementRepository.Pack): Int = 
     IconRoleRegistry.role(it)?.supported != true && IconRoleRegistry.targetForRole(it)?.supported != true
 }
 private fun packFormats(pack: IconManagementRepository.Pack): String =
-    "v3 · PNG ${pack.pngCount} · 矢量 ${pack.vectorCount} · 动态 ${pack.animationCount}"
+    "v3 · PNG ${pack.pngCount} · vectoriales ${pack.vectorCount} · animados ${pack.animationCount}"
 
 /** Thumbnail loading shares the production PNG/vector decoder; native/default artwork is never invented. */
 @Composable
 private fun IconArtwork(app: ModernMainActivity, pack: IconManagementRepository.Pack?, role: String?,
-    label: String = "系统图案", tint: Int? = null, opacity: Float = 100f, previewDark: Boolean? = null, geometryRole: String? = null,
+    label: String = "Iconos del sistema", tint: Int? = null, opacity: Float = 100f, previewDark: Boolean? = null, geometryRole: String? = null,
     sizePercent: Float = 100f, largePreview: Boolean = false) {
     val asset = role?.let { current -> pack?.let { source -> sourceRoleInPack(source, current)?.let { source.manifest.icons[it] } } }
     val prepared = app.iconPendingImport?.takeIf { it.pack.id == pack?.id }
@@ -97,29 +97,29 @@ private fun IconArtwork(app: ModernMainActivity, pack: IconManagementRepository.
                 asset?.render == "mask" -> ColorFilter.tint(MiuixTheme.colorScheme.onSurface)
                 else -> null
             })
-        else Text(if (pack == null) "系统" else if (loaded?.first == previewKey) "无法预览" else "…", fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+        else Text(if (pack == null) "Sistema" else if (loaded?.first == previewKey) "No se puede previsualizar" else "…", fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
     }
 }
 
 private data class IconUiCategory(val title: String, val scopes: Set<String>)
 private val iconUiCategories = listOf(
-    IconUiCategory("状态栏", setOf("hint", "wifi", "cellular", "battery")),
-    IconUiCategory("控制中心", setOf("tile", "slider", "footer")),
-    IconUiCategory("其他", setOf("media", "device"))
+    IconUiCategory("Barra de estado", setOf("hint", "wifi", "cellular", "battery")),
+    IconUiCategory("Centro de control", setOf("tile", "slider", "footer")),
+    IconUiCategory("Otros", setOf("media", "device"))
 )
 private fun isOriginalCandidate(role: String): Boolean = !IconRoleRegistry.knownResourceRole(role)
 private fun iconSectionTitle(scope: String): String = when (scope) {
-    "hint" -> "系统提示"; "tile" -> "快捷开关"; "slider" -> "亮度与音量"
-    "media" -> "媒体控制"; "device" -> "连接设备"; "footer" -> "页脚入口"
+    "hint" -> "Indicadores del sistema"; "tile" -> "Ajustes rápidos"; "slider" -> "Brillo y volumen"
+    "media" -> "Controles multimedia"; "device" -> "Dispositivos conectados"; "footer" -> "Accesos del pie de página"
     else -> IconRoleRegistry.scopeTitle(scope)
 }
 private fun targetGroup(target: IconRoleRegistry.Target): String = if (target.scope != "tile") iconSectionTitle(target.scope) else when (target.id.removePrefix("tile.")) {
-    "wifi", "bluetooth", "mobile_data", "hotspot", "airplane", "nfc", "data_saver", "vpn", "otg", "cast" -> "网络与连接"
-    "rotation", "dark", "auto_brightness", "auto_color_temperature", "osie", "iris", "small_screen" -> "显示与屏幕"
-    "dolby", "dnd", "no_disturb", "vibration", "ringer_mode" -> "声音与免打扰"
-    "camera", "microphone", "location", "phone_anti_theft", "lock_screen" -> "隐私与安全"
-    "alipay", "ali_scan", "wechat_pay", "wechat_scan", "qr_scanner", "wallet" -> "扫码与付款"
-    else -> "常用工具"
+    "wifi", "bluetooth", "mobile_data", "hotspot", "airplane", "nfc", "data_saver", "vpn", "otg", "cast" -> "Red y conexiones"
+    "rotation", "dark", "auto_brightness", "auto_color_temperature", "osie", "iris", "small_screen" -> "Pantalla y visualización"
+    "dolby", "dnd", "no_disturb", "vibration", "ringer_mode" -> "Sonido y No molestar"
+    "camera", "microphone", "location", "phone_anti_theft", "lock_screen" -> "Privacidad y seguridad"
+    "alipay", "ali_scan", "wechat_pay", "wechat_scan", "qr_scanner", "wallet" -> "Escaneo de códigos y pagos"
+    else -> "Herramientas habituales"
 }
 
 @Composable
@@ -185,18 +185,18 @@ internal fun IconManagementPage(app: ModernMainActivity) {
     SideEffect { app.iconManagementBackRequest = ::back }
     DisposableEffect(app) { onDispose { app.iconManagementBackRequest = null } }
     val title = when {
-        pending != null || destination.section in listOf("pack", "apply") -> if (app.iconLibraryTarget != null && destination.section != "apply") "预览图库" else "预览与应用"
-        destination.section == "library" -> if (app.iconLibraryTarget != null) "选择图库" else "选套装"
-        destination.section == "github" -> "从 GitHub 导入"
-        destination.section == "custom" || destination.section == "scope" -> "自定义图标"
-        destination.section == "appearance" -> "${scope?.let { iconSectionTitle(it) }.orEmpty()}外观"
-        destination.section in listOf("target", "target_pick") -> IconRoleRegistry.target(destination.targetId)?.title ?: "选择图案"
-        else -> "图标管理"
+        pending != null || destination.section in listOf("pack", "apply") -> if (app.iconLibraryTarget != null && destination.section != "apply") "Previsualizar biblioteca" else "Previsualizar y aplicar"
+        destination.section == "library" -> if (app.iconLibraryTarget != null) "Seleccionar biblioteca" else "Elegir paquete"
+        destination.section == "github" -> "Importar desde GitHub"
+        destination.section == "custom" || destination.section == "scope" -> "Iconos personalizados"
+        destination.section == "appearance" -> "Apariencia de ${scope?.let { iconSectionTitle(it) }.orEmpty()}"
+        destination.section in listOf("target", "target_pick") -> IconRoleRegistry.target(destination.targetId)?.title ?: "Seleccionar icono"
+        else -> "Gestión de iconos"
     }
     val scroll = rememberC17ScrollBehavior(rememberC17TopAppBarState(initialHeightOffsetLimit = 0f))
     C17Scaffold(containerColor = MiuixTheme.colorScheme.surface, topBar = {
         C17SmallTopAppBar(title = title, scrollBehavior = scroll, navigationIcon = {
-            C17IconButton(onClick = ::back, enabled = !app.busy) { Icon(Icons.Outlined.ArrowBack, "返回") }
+            C17IconButton(onClick = ::back, enabled = !app.busy) { Icon(Icons.Outlined.ArrowBack, "Volver") }
         })
     }) { padding ->
         key(destination, pending?.pack?.id) {
@@ -204,17 +204,17 @@ internal fun IconManagementPage(app: ModernMainActivity) {
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = padding.calculateBottomPadding() + 32.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 app.iconMigrationNotice?.let { notice -> item { UiGroupCard {
-                    UiRow(if (app.iconMigrationCompleted) "图标管理已升级" else "图标升级需要重试", notice)
-                    UiRow(if (app.iconMigrationCompleted) "知道了" else "重试升级", enabled = !app.busy) {
+                    UiRow(if (app.iconMigrationCompleted) "Administración de iconos actualizada" else "Hay que volver a intentar la actualización de iconos.", notice)
+                    UiRow(if (app.iconMigrationCompleted) "Entendido" else "Reintentar actualización", enabled = !app.busy) {
                         if (app.iconMigrationCompleted) app.acknowledgeIconMigration() else app.refreshIconLibraries()
                     }
                 } } }
                 if (app.busy || app.iconLibrariesLoading) item { UiGroupCard {
-                    UiRow(if (app.iconLibrariesLoading) "正在读取图标库" else "正在校验图标资源")
-                    if (app.iconPackDownloading) UiRow("取消下载", enabled = true, onClick = app::cancelIconPackDownload)
+                    UiRow(if (app.iconLibrariesLoading) "Leyendo la biblioteca de iconos…" else "Verificando los recursos de iconos…")
+                    if (app.iconPackDownloading) UiRow("Cancelar descarga", enabled = true, onClick = app::cancelIconPackDownload)
                 } }
                 if (!app.iconManagementEnabled() && destination.section != "home") item { UiGroupCard {
-                    UiRow("图标管理已关闭", "可以继续选择和保存，开启总开关后生效。")
+                    UiRow("Administración de iconos desactivada", "Puedes seguir seleccionando y guardando; los cambios se aplicarán al activar el interruptor principal.")
                 } }
                 when {
                     pending != null -> item {
@@ -222,33 +222,33 @@ internal fun IconManagementPage(app: ModernMainActivity) {
                     }
                     destination.section == "library" -> {
                         app.iconLibraryTarget?.let { targetId -> item { UiGroupCard {
-                            UiRow("为${IconRoleRegistry.target(targetId)?.title ?: "当前图标"}选择素材", "选择图库后直接挑选图案，最后在目标页统一保存。")
+                            UiRow("Seleccionar recursos para ${IconRoleRegistry.target(targetId)?.title ?: "el icono actual"} ", "Selecciona una biblioteca y elige directamente los iconos; guarda todos los cambios en la página de destino.")
                         } } }
                         if (bundledKinds.isNotEmpty()) {
-                            item { IconSectionLabel("内置套装") }
+                            item { IconSectionLabel("Paquetes integrados") }
                             item { UiGroupCard {
-                                if ("pui" in bundledKinds) UiRow("PUI ColorOS 17", "天伞桜&PanL · 原主题真实图案", "预览", Icons.Outlined.Collections,
+                                if ("pui" in bundledKinds) UiRow("PUI ColorOS 17", "Tensankura & PanL · iconos del tema original", "Vista previa", Icons.Outlined.Collections,
                                     enabled = app.canEdit && !app.busy) { app.prepareBundledIcons("pui") }
-                                if ("original" in bundledKinds) UiRow("C17示例库", "状态图案与动画示例素材", "预览", Icons.Outlined.AutoAwesome,
+                                if ("original" in bundledKinds) UiRow("Biblioteca de ejemplo C17", "Recursos de ejemplo de iconos de estado y animaciones", "Vista previa", Icons.Outlined.AutoAwesome,
                                     enabled = app.canEdit && !app.busy) { app.prepareBundledIcons("original") }
                             } }
                         }
-                        if (app.iconPacks.isNotEmpty()) item { IconSectionLabel("我的套装") }
+                        if (app.iconPacks.isNotEmpty()) item { IconSectionLabel("Mis paquetes") }
                         items(app.iconPacks, key = { it.id }) { listed -> UiGroupCard {
-                            UiRow(iconPackName(listed), "${listed.author.ifBlank { "未署名" }} · ${listed.iconCount} 个图案", "预览", Icons.Outlined.Collections,
+                            UiRow(iconPackName(listed), "${listed.author.ifBlank { "Sin autor" }} · ${listed.iconCount} iconos", "Vista previa", Icons.Outlined.Collections,
                                 enabled = !app.busy) { navigate("pack", null, listed.id) }
                             Row(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 packPreviewRoles(listed, 5).forEach { role -> IconArtwork(app, listed, role, roleTitle(role)) }
                             }
                             Row(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                C17TextButton(text = "重命名", modifier = Modifier.weight(1f), enabled = app.canEdit && !app.busy, onClick = { rename = listed })
-                                C17TextButton(text = "删除", modifier = Modifier.weight(1f), enabled = app.canEdit && !app.busy, onClick = { app.deleteIconPack(listed.id, iconPackName(listed)) })
+                                C17TextButton(text = "Cambiar nombre", modifier = Modifier.weight(1f), enabled = app.canEdit && !app.busy, onClick = { rename = listed })
+                                C17TextButton(text = "Eliminar", modifier = Modifier.weight(1f), enabled = app.canEdit && !app.busy, onClick = { app.deleteIconPack(listed.id, iconPackName(listed)) })
                             }
                         } }
                         item { UiGroupCard {
-                            UiRow("导入图标包", if (app.iconLibraryTarget != null) "选择自己的 v3 ZIP / RAR（含 PUI 图库），预览后挑选图案" else "选择自己的 v3 ZIP / RAR（含 PUI 图库），预览后应用", "文件", Icons.Outlined.FileUpload,
+                            UiRow("Importar paquete de iconos", if (app.iconLibraryTarget != null) "Selecciona tu propio ZIP/RAR v3 (incluida una biblioteca PUI), previsualiza y elige los iconos." else "Selecciona tu propio ZIP/RAR v3 (incluida una biblioteca PUI), previsualiza y aplica los iconos.", "Archivo", Icons.Outlined.FileUpload,
                                 enabled = app.canEdit && !app.busy, onClick = app::chooseIconPack)
-                            UiRow("从 GitHub 获取", "仓库或图标包下载链接", "进入", Icons.Outlined.CloudDownload, enabled = !app.busy) { navigate("github", null) }
+                            UiRow("Obtener desde GitHub", "Repositorio o enlace de descarga del paquete de iconos", "Abrir", Icons.Outlined.CloudDownload, enabled = !app.busy) { navigate("github", null) }
                         } }
                     }
                     destination.section == "github" -> item { IconGithubImport(app) }
@@ -264,36 +264,36 @@ internal fun IconManagementPage(app: ModernMainActivity) {
                             IconTargetEditor(app, target, state, childBack,
                                 initialDraft = targetDrafts[target.id], initiallyPick = destination.section == "target_pick", preferredPackId = destination.packId,
                                 onDraft = { targetDrafts[target.id] = it }) { navigate("custom", target.scope) }
-                        } ?: UiGroupCard { UiRow("目标已变化", "返回后重新选择图标。") }
+                        } ?: UiGroupCard { UiRow("El destino ha cambiado.", "Vuelve atrás y selecciona el icono otra vez.") }
                     }
                     destination.section == "appearance" && scope != null -> item {
                         IconScopeAppearance(app, scope, state, childBack) { navigate("custom") }
                     }
-                    destination.section in listOf("pack", "apply") -> item { UiGroupCard { UiRow("套装已不存在", "返回后重新选择。") } }
+                    destination.section in listOf("pack", "apply") -> item { UiGroupCard { UiRow("El paquete ya no existe.", "Vuelve atrás y selecciónalo otra vez.") } }
                     else -> {
                         item { UiGroupCard {
-                            UiSwitchRow("启用图标管理", "关闭后恢复系统或功能默认图案，保留已保存的选择。", app.iconManagementEnabled(), app.canEdit && !app.busy) {
+                            UiSwitchRow("Activar Administración de iconos", "Al desactivarla, se restaurarán los iconos predeterminados del sistema o de cada función, pero se conservarán las selecciones guardadas.", app.iconManagementEnabled(), app.canEdit && !app.busy) {
                                 switchError = app.setIconManagementEnabled(it)
                             }
                         } }
                         if (switchError.isNotEmpty()) item { Text(switchError, color = MiuixTheme.colorScheme.error, fontSize = 13.sp) }
                         item { UiGroupCard {
-                            UiRow("选套装", "预览整套图标，一次应用", "进入", Icons.Outlined.Collections, enabled = !app.busy) {
+                            UiRow("Elegir paquete", "Previsualiza todos los iconos del paquete y aplícalos de una vez.", "Abrir", Icons.Outlined.Collections, enabled = !app.busy) {
                                 app.iconLibraryTarget = null; targetDrafts.clear(); navigate("library", null)
                             }
-                            UiRow("自定义", "先选要改的图标，再选图案", "进入", Icons.Outlined.Tune, enabled = !app.busy) { navigate("custom", null) }
+                            UiRow("Personalizado", "Primero selecciona el icono que quieres cambiar y después el diseño.", "Abrir", Icons.Outlined.Tune, enabled = !app.busy) { navigate("custom", null) }
                         } }
                         item { UiGroupCard {
-                            UiRow("当前选择", "${state.scopePacks.size} 个范围已选套装 · ${state.overrides.keys.mapNotNull { IconRoleRegistry.role(it)?.targetId }.distinct().size} 个自定义目标")
-                            UiRow("恢复图标默认设置", "清除套装与自定义选择，保留图标库", "恢复", enabled = app.canEdit && !app.busy, onClick = app::resetIconManagement)
-                            UiRow("图标包制作说明", "v3 格式与支持范围", "查看") { app.openUrl("https://github.com/SANWU5/c17-icon-packs") }
+                            UiRow("Selección actual", "${state.scopePacks.size} ámbitos con paquetes seleccionados · ${state.overrides.keys.mapNotNull { IconRoleRegistry.role(it)?.targetId }.distinct().size} destinos personalizados")
+                            UiRow("Restaurar los ajustes de iconos predeterminados", "Eliminar las selecciones de paquetes y las personalizadas; conservar las bibliotecas de iconos.", "Restaurar", enabled = app.canEdit && !app.busy, onClick = app::resetIconManagement)
+                            UiRow("Guía para crear paquetes de iconos", "Formato v3 y ámbitos compatibles", "Ver") { app.openUrl("https://github.com/SANWU5/c17-icon-packs") }
                         } }
                     }
                 }
             }
         }
     }
-    rename?.let { selected -> UiInputDialog("重命名图标库", iconPackName(selected), "使用未被其他图标库占用的名称。", onDismiss = { rename = null }) { value ->
+    rename?.let { selected -> UiInputDialog("Cambiar el nombre de la biblioteca de iconos", iconPackName(selected), "Usa un nombre que no esté ocupado por otra biblioteca de iconos.", onDismiss = { rename = null }) { value ->
         app.iconLibraryNameError(value, selected.id).takeIf { it.isNotEmpty() }
             ?: run { app.renameIconPack(selected.id, value); rename = null; null }
     } }
@@ -313,25 +313,25 @@ private fun IconTargetBrowser(app: ModernMainActivity, state: IconManagementSett
     }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         UiContentTabs(tabs = iconUiCategories.map { it.title }, selectedTabIndex = category, onTabSelected = { category = it; showUnsupported = false }, modifier = Modifier.fillMaxWidth())
-        C17TextField(value = query, onValueChange = { query = it }, label = "搜索图标名称", modifier = Modifier.fillMaxWidth(), singleLine = true,
+        C17TextField(value = query, onValueChange = { query = it }, label = "Buscar por nombre de icono", modifier = Modifier.fillMaxWidth(), singleLine = true,
             useLabelAsPlaceholder = true, insideMargin = DpSize(12.dp, 10.dp))
         visible.filter { it.supported }.groupBy(::targetGroup).forEach { (title, targets) ->
             IconSectionLabel(title)
             UiGroupCard { targets.forEach { target ->
                 val count = target.roles.count { state.overrides.containsKey(it) }
                 val packName = state.scopePacks[target.scope]?.let { id -> app.iconPacks.firstOrNull { it.id == id }?.let(::iconPackName) }
-                UiRow(target.title, if (count > 0) "已自定义 · $count 个状态" else packName ?: "系统或功能默认图案", "选择", enabled = !app.busy) { onTarget(target) }
+                UiRow(target.title, if (count > 0) "Personalizados · $count estados" else packName ?: "Icono predeterminado del sistema o de la función", "Seleccionar", enabled = !app.busy) { onTarget(target) }
             } }
         }
-        if (visible.none { it.supported }) UiGroupCard { UiRow("没有找到可设置的图标", "换个名称搜索，或选择其他分类。") }
+        if (visible.none { it.supported }) UiGroupCard { UiRow("No se encontraron iconos que se puedan configurar.", "Prueba otro término de búsqueda o selecciona otra categoría.") }
         val unsupported = visible.filterNot { it.supported }
         if (unsupported.isNotEmpty()) UiGroupCard {
-            UiRow("暂未支持", "${unsupported.size} 个目标保留系统图案", if (showUnsupported) "收起" else "展开") { showUnsupported = !showUnsupported }
-            if (showUnsupported) unsupported.forEach { UiRow(it.title, it.reason, "保留原生", enabled = false) }
+            UiRow("Aún no compatible", "${unsupported.size} destinos conservan los iconos del sistema.", if (showUnsupported) "Contraer" else "Expandir") { showUnsupported = !showUnsupported }
+            if (showUnsupported) unsupported.forEach { UiRow(it.title, it.reason, "Conservar el aspecto nativo", enabled = false) }
         }
         UiGroupCard {
-            UiRow("分类大小与颜色", "统一设置某类图标；单个目标仍可独立调整", if (advanced) "收起" else "展开") { advanced = !advanced }
-            if (advanced) iconUiCategories[category].scopes.forEach { scope -> UiRow(iconSectionTitle(scope), "单个图标的设置仍优先", "外观", enabled = !app.busy) { onAppearance(scope) } }
+            UiRow("Tamaño y color por categoría", "Configura todos los iconos de una categoría; cada destino puede seguir ajustándose por separado.", if (advanced) "Contraer" else "Expandir") { advanced = !advanced }
+            if (advanced) iconUiCategories[category].scopes.forEach { scope -> UiRow(iconSectionTitle(scope), "Los ajustes de cada icono individual siguen teniendo prioridad.", "Apariencia", enabled = !app.busy) { onAppearance(scope) } }
         }
     }
 }
@@ -341,12 +341,12 @@ private fun IconGithubImport(app: ModernMainActivity) {
     var source by remember { mutableStateOf("SANWU5/c17-icon-packs") }
     var name by remember { mutableStateOf("") }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        UiGroupCard { UiRow("公开 v3 图标包", "填写 owner/repo 或 GitHub 官方下载链接。仓库需发布 icon-pack-v3.zip；未发布时不会导入整仓库源码。") }
+        UiGroupCard { UiRow("Paquetes públicos de iconos v3", "Introduce owner/repo o un enlace oficial de descarga de GitHub. El repositorio debe publicar icon-pack-v3.zip; si no está publicado, no se importará todo el código fuente del repositorio.") }
         UiGroupCard { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            C17TextField(value = source, onValueChange = { source = it }, label = "GitHub 仓库或下载链接", modifier = Modifier.fillMaxWidth(), singleLine = true, useLabelAsPlaceholder = true, insideMargin = DpSize(12.dp, 10.dp))
-            C17TextField(value = name, onValueChange = { name = it }, label = "显示名称（可不填）", modifier = Modifier.fillMaxWidth(), singleLine = true, useLabelAsPlaceholder = true, insideMargin = DpSize(12.dp, 10.dp))
+            C17TextField(value = source, onValueChange = { source = it }, label = "Repositorio de GitHub o enlace de descarga", modifier = Modifier.fillMaxWidth(), singleLine = true, useLabelAsPlaceholder = true, insideMargin = DpSize(12.dp, 10.dp))
+            C17TextField(value = name, onValueChange = { name = it }, label = "Nombre para mostrar (opcional)", modifier = Modifier.fillMaxWidth(), singleLine = true, useLabelAsPlaceholder = true, insideMargin = DpSize(12.dp, 10.dp))
         } }
-        C17TextButton(text = "下载并检查", modifier = Modifier.fillMaxWidth(), enabled = app.canEdit && !app.busy && source.isNotBlank(), onClick = { app.downloadIconPack(source.trim(), name.trim()) })
+        C17TextButton(text = "Descargar y verificar", modifier = Modifier.fillMaxWidth(), enabled = app.canEdit && !app.busy && source.isNotBlank(), onClick = { app.downloadIconPack(source.trim(), name.trim()) })
     }
 }
 
@@ -383,32 +383,32 @@ private fun IconPackApplication(app: ModernMainActivity, pack: IconManagementRep
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (target != null) UiGroupCard {
             if (targetSelection) {
-                UiRow("仅为${target.title}选择图案", "选择后返回目标预览，图案和高级设置仍需在目标页保存。")
-                UiRow("改为应用整套", "选择状态栏、控制中心等范围；当前目标草稿会保留。", "选择范围", enabled = !app.busy) {
+                UiRow("Seleccionar iconos solo para ${target.title}", "Después de seleccionar, volverás a la vista previa del destino. Los iconos y los ajustes avanzados deben guardarse en la página de destino.")
+                UiRow("Cambiar a aplicar el paquete completo", "Selecciona ámbitos como la barra de estado o el centro de control; se conservará el borrador del destino actual.", "Seleccionar ámbitos", enabled = !app.busy) {
                     app.iconManagementDestination = IconManagementDestination("apply", packId = pack.id)
                 }
             } else {
-                UiRow("应用整套", "只保存下面所选范围，${target.title}的未保存草稿会保留。")
-                UiRow("返回单个目标选图", "继续为${target.title}挑选图案", "返回", enabled = !app.busy) {
+                UiRow("Aplicar paquete completo", "Solo se guardarán los ámbitos seleccionados abajo; se conservará el borrador sin guardar de ${target.title}.")
+                UiRow("Volver a elegir el icono de un destino individual", "Seguir seleccionando iconos para ${target.title}", "Volver", enabled = !app.busy) {
                     app.iconManagementDestination = IconManagementDestination("pack", packId = pack.id)
                 }
             }
         }
         if (pending) UiGroupCard {
             if (existing != null) {
-                UiRow("相同内容已在图库中", "将使用“${iconPackName(existing)}”，不会重复导入或更改已有名称。需要改名时可在图库列表操作。")
+                UiRow("El mismo contenido ya está en la biblioteca.", "Se usará «${iconPackName(existing)}». No se volverá a importar ni se cambiará el nombre existente. Para cambiarlo, usa la lista de bibliotecas.")
             } else {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     C17TextField(value = app.iconImportName, onValueChange = { app.iconImportName = it; app.iconImportError = "" },
-                        label = "图标库名称", modifier = Modifier.fillMaxWidth(), singleLine = true,
+                        label = "Nombre de la biblioteca de iconos", modifier = Modifier.fillMaxWidth(), singleLine = true,
                         enabled = app.canEdit && !app.busy, isError = nameError.isNotEmpty(), errorMessage = nameError.takeIf { it.isNotEmpty() },
                         useLabelAsPlaceholder = true, insideMargin = DpSize(12.dp, 10.dp))
-                    Text("不同内容不能使用已有名称。修改名称后再保存，原有图标库保持不变。", fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                    Text("El contenido diferente no puede usar un nombre existente. Cambia el nombre y vuelve a guardar; la biblioteca original no se modificará.", fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 }
             }
         }
         UiGroupCard {
-            UiRow(existing?.let(::iconPackName) ?: iconPackName(pack), "${pack.author.ifBlank { "未署名" }} · ${pack.iconCount} 个图案" + if (pack.animationCount > 0) " · ${pack.animationCount} 个动画" else "")
+            UiRow(existing?.let(::iconPackName) ?: iconPackName(pack), "${pack.author.ifBlank { "Sin autor" }} · ${pack.iconCount} iconos" + if (pack.animationCount > 0) " · ${pack.animationCount} animaciones" else "")
             val samples = packPreviewRoles(pack, 12)
             samples.chunked(4).forEach { row -> Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { role -> Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -424,52 +424,52 @@ private fun IconPackApplication(app: ModernMainActivity, pack: IconManagementRep
                 } }
                 repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
             } }
-            UiRow("浏览全部图案", "按分类查看素材与原始候选", if (browse) "收起" else "展开") { browse = !browse }
+            UiRow("Explorar todos los iconos", "Ver recursos y opciones originales por categoría", if (browse) "Contraer" else "Expandir") { browse = !browse }
         }
         if (browse) IconArtworkBrowser(app, pack)
         if (!targetSelection) UiGroupCard {
-            UiRow("应用范围", "选择要替换的区域，缺失状态继续使用默认图案。")
+            UiRow("Ámbitos de aplicación", "Selecciona las áreas que quieres sustituir; los estados que falten seguirán usando el icono predeterminado.")
             iconUiCategories.forEach { category ->
                 val scopes = category.scopes.intersect(availableScopes)
                 val chosen = scopes.intersect(selected)
-                val summary = if (scopes.isEmpty()) "此库没有可应用图案" else
-                    (if (chosen.isEmpty()) "未选择 · " else if (chosen.size < scopes.size) "部分已选 · " else "已选择 · ") +
+                val summary = if (scopes.isEmpty()) "Esta biblioteca no tiene iconos que se puedan aplicar." else
+                    (if (chosen.isEmpty()) "Sin seleccionar · " else if (chosen.size < scopes.size) "Selección parcial · " else "Seleccionado · ") +
                         scopes.joinToString("、") { iconSectionTitle(it) }
                 UiSwitchRow(category.title, summary, chosen.isNotEmpty(), app.canEdit && !app.busy && scopes.isNotEmpty()) { checked ->
                     selected = if (checked) selected + scopes else selected - scopes
                 }
             }
-            UiRow("细分范围", "单独选择快捷开关、亮度、页脚等", if (editScopes) "收起" else "展开") { editScopes = !editScopes }
+            UiRow("Ámbitos específicos", "Selecciona por separado los ajustes rápidos, el brillo, el pie de página y otros elementos.", if (editScopes) "Contraer" else "Expandir") { editScopes = !editScopes }
             if (editScopes) {
                 iconUiCategories.forEach { category ->
                     val scopes = category.scopes.filter { it in availableScopes }
                     if (scopes.isNotEmpty()) {
                         UiRow(category.title)
-                        scopes.forEach { scope -> UiSwitchRow(iconSectionTitle(scope), "缺失的状态继续使用默认图案", scope in selected, app.canEdit && !app.busy) { checked ->
+                        scopes.forEach { scope -> UiSwitchRow(iconSectionTitle(scope), "Los estados que falten seguirán usando el icono predeterminado.", scope in selected, app.canEdit && !app.busy) { checked ->
                             selected = if (checked) selected + scope else selected - scope
                         } }
                     }
                 }
             }
             preview?.let { result ->
-                UiRow("应用后", "替换 ${result.replaceCount} 个状态 · 缺失 ${result.missingCount} 个状态使用默认图案" +
-                    if (result.preserveCount > 0) "\n保留 ${result.preserveCount} 个已有单项选择" else "")
+                UiRow("Después de aplicar", "Se sustituirán ${result.replaceCount} estados · ${result.missingCount} estados sin icono usarán el predeterminado" +
+                    if (result.preserveCount > 0) "\nSe conservarán ${result.preserveCount} selecciones individuales existentes" else "")
             }
-            if (availableScopes.isEmpty()) UiRow("没有可直接应用的目标", "这套资源没有已接入的匹配状态，可以加入图标库后手动选取。")
+            if (availableScopes.isEmpty()) UiRow("No hay destinos que se puedan aplicar directamente.", "Este paquete no tiene estados compatibles ya vinculados. Puedes añadirlo a la biblioteca y elegir manualmente los iconos.")
         }
         if (!targetSelection) UiGroupCard {
-            UiRow("图库颜色预设", "选择后先预览；仅影响上方选中的范围，大小与图案来源独立保留。")
-            UiRow("保留当前颜色", "应用套装时沿用已有颜色与透明度", if (presetId == null) "已选择" else "", enabled = !app.busy) { presetId = null }
+            UiRow("Preajustes de color de la biblioteca", "Previsualiza antes de aplicar. Solo afecta a los ámbitos seleccionados arriba; el tamaño y el origen de los iconos se conservan por separado.")
+            UiRow("Conservar los colores actuales", "Al aplicar el paquete, conservar los colores y la transparencia existentes.", if (presetId == null) "Seleccionado" else "", enabled = !app.busy) { presetId = null }
             palettes.forEach { (id, palette) ->
-                UiRow(palette.name, "${palette.appearances.size} 项配色", if (presetId == id) "已选择" else "", enabled = !app.busy) { presetId = id }
+                UiRow(palette.name, "${palette.appearances.size} esquemas de color", if (presetId == id) "Seleccionado" else "", enabled = !app.busy) { presetId = id }
             }
-            UiContentTabs(tabs = listOf("浅色背景预览", "深色背景预览"), selectedTabIndex = if (presetDark) 1 else 0,
+            UiContentTabs(tabs = listOf("Vista previa con fondo claro", "Vista previa con fondo oscuro"), selectedTabIndex = if (presetDark) 1 else 0,
                 onTabSelected = { presetDark = it == 1 }, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp))
-            C17TextButton("仅应用颜色预设", enabled = app.canEdit && !app.busy && preset != null && selected.isNotEmpty(),
+            C17TextButton("Aplicar solo el preajuste de color", enabled = app.canEdit && !app.busy && preset != null && selected.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), onClick = {
                     preset?.let { palette ->
                         error = app.applyIconColorPreset(palette, selected)
-                        if (error.isEmpty()) app.toast("颜色预设已保存，图案来源与大小保持原样")
+                        if (error.isEmpty()) app.toast("Preajuste de color guardado; se mantienen los iconos y tamaños originales.")
                     }
                 })
         }
@@ -477,9 +477,9 @@ private fun IconPackApplication(app: ModernMainActivity, pack: IconManagementRep
             Text(nameError.ifEmpty { app.iconImportError }, color = MiuixTheme.colorScheme.error, fontSize = 13.sp)
         if (error.isNotEmpty()) Text(error, color = MiuixTheme.colorScheme.error, fontSize = 13.sp)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            C17TextButton(text = "取消", modifier = Modifier.weight(1f), enabled = !app.busy, onClick = onCancel)
-            C17TextButton(text = if (targetSelection) { if (existing != null) "使用已有库选图" else "选择图案" }
-                else if (app.iconManagementEnabled()) { if (existing != null) "使用已有库并应用" else "应用套装" } else "保存选择",
+            C17TextButton(text = "Cancelar", modifier = Modifier.weight(1f), enabled = !app.busy, onClick = onCancel)
+            C17TextButton(text = if (targetSelection) { if (existing != null) "Elegir iconos de una biblioteca existente" else "Seleccionar icono" }
+                else if (app.iconManagementEnabled()) { if (existing != null) "Usar una biblioteca existente y aplicar" else "Aplicar paquete" } else "Guardar selección",
                 modifier = Modifier.weight(1f), enabled = app.canEdit && !app.busy && nameError.isEmpty() && (targetSelection || selected.isNotEmpty() && preview != null), onClick = {
                 if (targetSelection) {
                     if (pending) app.confirmIconImport() else app.finishIconLibraryForTarget(pack.id)
@@ -491,26 +491,26 @@ private fun IconPackApplication(app: ModernMainActivity, pack: IconManagementRep
             })
         }
         UiGroupCard {
-            UiRow(if (targetSelection) "素材信息" else "更多选项", if (targetSelection) "来源、格式与支持范围" else "单项选择与来源信息", if (advanced) "收起" else "展开") { advanced = !advanced }
+            UiRow(if (targetSelection) "Información del recurso" else "Más opciones", if (targetSelection) "Origen, formato y ámbitos compatibles" else "Selecciones individuales e información de origen", if (advanced) "Contraer" else "Expandir") { advanced = !advanced }
             if (advanced) {
-                if (!targetSelection) UiSwitchRow("替换已有的单项图案", "只清除所选范围的图案覆盖，保留颜色、透明度和动画设置", clearOverrides, app.canEdit && !app.busy) { clearOverrides = it }
-                UiRow("素材信息", "${packFormats(pack)}\n${pack.license.ifBlank { "未提供许可信息" }}")
+                if (!targetSelection) UiSwitchRow("Sustituir los iconos individuales existentes", "Solo elimina las sustituciones de iconos de los ámbitos seleccionados; conserva los ajustes de color, transparencia y animación.", clearOverrides, app.canEdit && !app.busy) { clearOverrides = it }
+                UiRow("Información del recurso", "${packFormats(pack)}\n${pack.license.ifBlank { "No se proporcionó información de licencia" }}")
                 val unsupported = unsupportedArtworkCount(pack)
-                if (unsupported > 0) UiRow("原始候选与未接入素材", "$unsupported 个资源不自动映射到原生宿主。")
+                if (unsupported > 0) UiRow("Opciones originales y recursos aún no vinculados", "$unsupported recursos no se asignan automáticamente al componente anfitrión nativo.")
                 preview?.let { result ->
-                    if (result.missingCount > 0) UiRow("缺失状态", result.missing.take(12).joinToString("、") { roleTitle(it) } + if (result.missingCount > 12) "…" else "")
-                    if (result.unsupportedCount > 0) UiRow("未接入目标", "${result.unsupportedCount} 个状态继续使用原生图案。")
+                    if (result.missingCount > 0) UiRow("Estados sin icono", result.missing.take(12).joinToString("、") { roleTitle(it) } + if (result.missingCount > 12) "…" else "")
+                    if (result.unsupportedCount > 0) UiRow("Destino no vinculado", "${result.unsupportedCount} estados seguirán usando los iconos nativos.")
                 }
-                if (!targetSelection && pending) UiRow(if (existing != null) "使用已有图标库" else "仅加入图标库",
-                    if (existing != null) "打开已保存的相同内容，不修改应用范围" else "保存素材，稍后用于自定义", if (existing != null) "打开" else "保存",
+                if (!targetSelection && pending) UiRow(if (existing != null) "Usar una biblioteca de iconos existente" else "Añadir solo a la biblioteca",
+                    if (existing != null) "Abrir el contenido idéntico guardado sin cambiar los ámbitos donde se aplica." else "Guardar los recursos para personalizarlos más adelante.", if (existing != null) "Abrir" else "Guardar",
                     enabled = app.canEdit && !app.busy && nameError.isEmpty(), onClick = app::confirmIconImport)
             }
         }
         if (!pending) UiGroupCard {
-            onRename?.let { UiRow("重命名图标库", enabled = app.canEdit && !app.busy, onClick = it) }
-            UiRow("删除图标库", "删除前会显示受影响的选择", enabled = app.canEdit && !app.busy) { app.deleteIconPack(pack.id, iconPackName(pack)) }
+            onRename?.let { UiRow("Cambiar el nombre de la biblioteca de iconos", enabled = app.canEdit && !app.busy, onClick = it) }
+            UiRow("Eliminar biblioteca de iconos", "Antes de eliminarla, se mostrarán las selecciones afectadas.", enabled = app.canEdit && !app.busy) { app.deleteIconPack(pack.id, iconPackName(pack)) }
         }
-        Text("预览为素材图案；显示位置、状态与动画以实际支持范围为准。“仅应用颜色预设”会立即保存配色；其余选择在应用套装后保存。", fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+        Text("La vista previa muestra los iconos del recurso; la posición, los estados y las animaciones dependen de la compatibilidad real. «Aplicar solo el preajuste de color» guarda los colores inmediatamente; el resto de las opciones se guarda al aplicar el paquete.", fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
     }
 }
 
@@ -523,8 +523,8 @@ private fun IconArtworkBrowser(app: ModernMainActivity, pack: IconManagementRepo
     var page by remember(pack.id, query, category, showRaw) { mutableIntStateOf(0) }
     val matching = target?.roles?.filter { sourceRoleInPack(pack, it) != null }?.toSet().orEmpty()
     val categories = buildList {
-        if (target != null) add("matching" to "当前目标")
-        add("all" to "全部分类")
+        if (target != null) add("matching" to "Destino actual")
+        add("all" to "Todas las categorías")
         IconRoleRegistry.SCOPES.filter { scope -> availablePackRoles(pack).any { IconRoleRegistry.scopeOfRole(it) == scope } }
             .forEach { add(it to iconSectionTitle(it)) }
     }
@@ -537,25 +537,25 @@ private fun IconArtworkBrowser(app: ModernMainActivity, pack: IconManagementRepo
             (query.isBlank() || role.contains(query.trim(), true) || IconRoleRegistry.scopeOfRole(role)?.let { iconSectionTitle(it).contains(query.trim(), true) } == true)
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        C17TextField(value = query, onValueChange = { query = it }, label = "搜索图案或状态", modifier = Modifier.fillMaxWidth(), singleLine = true,
+        C17TextField(value = query, onValueChange = { query = it }, label = "Buscar iconos o estados", modifier = Modifier.fillMaxWidth(), singleLine = true,
             useLabelAsPlaceholder = true, insideMargin = DpSize(12.dp, 10.dp))
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             categories.forEach { (id, label) -> C17TextButton(text = if (id == category) "✓ $label" else label, onClick = { category = id }) }
         }
         UiGroupCard {
-            if (roles.isEmpty()) UiRow("没有匹配图案", "试试其他分类或搜索名称。")
+            if (roles.isEmpty()) UiRow("No se encontraron iconos coincidentes.", "Prueba otra categoría o busca otro nombre.")
             else IconArtworkGrid(app, pack, roles, page, selected, onChoose)
             val lastPage = (roles.size - 1).coerceAtLeast(0) / 24
             if (lastPage > 0) Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                C17TextButton(text = "上一页", modifier = Modifier.weight(1f), enabled = page > 0, onClick = { page-- })
+                C17TextButton(text = "Anterior", modifier = Modifier.weight(1f), enabled = page > 0, onClick = { page-- })
                 Text("${page + 1}/${lastPage + 1}", Modifier.align(Alignment.CenterVertically), fontSize = 12.sp)
-                C17TextButton(text = "下一页", modifier = Modifier.weight(1f), enabled = page < lastPage, onClick = { page++ })
+                C17TextButton(text = "Siguiente", modifier = Modifier.weight(1f), enabled = page < lastPage, onClick = { page++ })
             }
         }
         if (raw.isNotEmpty()) UiGroupCard {
-            UiRow("原始素材", "${raw.size} 个来源原图，可手动选择；已核对的状态也列在上方分类", if (showRaw) "收起" else "展开") { showRaw = !showRaw }
+            UiRow("Recursos originales", "${raw.size} imágenes originales de origen que puedes seleccionar manualmente; los estados verificados también aparecen en las categorías superiores.", if (showRaw) "Contraer" else "Expandir") { showRaw = !showRaw }
             if (showRaw) {
-                Text("选择后仅使用静态图形，不代表新增宿主或动态支持。", Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                Text("La selección solo usa el gráfico estático; no añade compatibilidad con componentes anfitriones ni animaciones.", Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                 IconRawArtwork(app, pack, raw, selected, onChoose)
             }
         }
@@ -569,9 +569,9 @@ private fun IconRawArtwork(app: ModernMainActivity, pack: IconManagementReposito
     IconArtworkGrid(app, pack, roles, page, selected, onChoose)
     val lastPage = (roles.size - 1).coerceAtLeast(0) / 24
     if (lastPage > 0) Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        C17TextButton(text = "上一页", modifier = Modifier.weight(1f), enabled = page > 0, onClick = { page-- })
+        C17TextButton(text = "Anterior", modifier = Modifier.weight(1f), enabled = page > 0, onClick = { page-- })
         Text("${page + 1}/${lastPage + 1}", Modifier.align(Alignment.CenterVertically), fontSize = 12.sp)
-        C17TextButton(text = "下一页", modifier = Modifier.weight(1f), enabled = page < lastPage, onClick = { page++ })
+        C17TextButton(text = "Siguiente", modifier = Modifier.weight(1f), enabled = page < lastPage, onClick = { page++ })
     }
 }
 
@@ -585,7 +585,7 @@ private fun IconArtworkGrid(app: ModernMainActivity, pack: IconManagementReposit
                 Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(enabled = onChoose != null && app.canEdit && !app.busy) { onChoose?.invoke(source) }
                     .padding(horizontal = 4.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     IconArtwork(app, pack, role, roleTitle(role))
-                    val label = IconRoleRegistry.role(role)?.title ?: IconRoleRegistry.target(role)?.title ?: "原始 · ${role.substringAfterLast('.')}"
+                    val label = IconRoleRegistry.role(role)?.title ?: IconRoleRegistry.target(role)?.title ?: "Original · ${role.substringAfterLast('.')}"
                     Text((if (selected?.packId == pack.id && selected.sourceRole == source) "✓ " else "") + label,
                         fontSize = 12.sp, maxLines = 3, modifier = Modifier.padding(top = 6.dp))
                 }
@@ -645,8 +645,8 @@ private fun IconTargetEditor(app: ModernMainActivity, target: IconRoleRegistry.T
     val manifests = remember(app.iconPacks) { app.iconPacks.associate { it.id to it.manifest } }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         UiGroupCard {
-            UiRow("图案预览", if (sources.isEmpty()) "跟随套装或系统默认" else "已选择 ${sources.size} 个状态图案")
-            UiContentTabs(tabs = listOf("浅色背景", "深色背景"), selectedTabIndex = if (previewDark) 1 else 0,
+            UiRow("Vista previa del icono", if (sources.isEmpty()) "Seguir el paquete o el valor predeterminado del sistema" else "Se seleccionaron iconos para ${sources.size} estados.")
+            UiContentTabs(tabs = listOf("Fondo claro", "Fondo oscuro"), selectedTabIndex = if (previewDark) 1 else 0,
                 onTabSelected = { previewDark = it == 1 }, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp))
             target.roles.chunked(3).forEach { row -> Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { role ->
@@ -667,59 +667,59 @@ private fun IconTargetEditor(app: ModernMainActivity, target: IconRoleRegistry.T
                 }
                 repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
             } }
-            UiRow("选择图案", "为整个目标选择状态组或统一图案", "更换", enabled = app.canEdit && !app.busy) {
+            UiRow("Seleccionar icono", "Selecciona un grupo de estados o un icono uniforme para todo el destino.", "Cambiar", enabled = app.canEdit && !app.busy) {
                 pickingRole = null; pickingSource = true
             }
-            if (target.reason.isNotBlank()) UiRow("显示范围", target.reason)
+            if (target.reason.isNotBlank()) UiRow("Ámbito de visualización", target.reason)
         }
-        IconAppearanceEditor(if (target.scope == "hint") "图标大小与浅深背景颜色" else "此图标的大小与颜色",
+        IconAppearanceEditor(if (target.scope == "hint") "Tamaño del icono y colores de fondo claro/oscuro" else "Tamaño y color de este icono",
             look, app.canEdit && !app.busy, childBack) { look = it }
         if (target.scope == "tile" && target.roles.size > 1) {
-            IconSectionLabel("各状态独立颜色")
+            IconSectionLabel("Colores independientes por estado")
             UiGroupCard {
                 UiContentTabs(tabs = target.roles.map { target.stateLabels[IconRoleRegistry.role(it)?.state] ?: roleTitle(it) },
                     selectedTabIndex = target.roles.indexOf(activeState).coerceAtLeast(0),
                     onTabSelected = { activeState = target.roles[it] }, modifier = Modifier.fillMaxWidth().padding(8.dp))
-                UiRow("只调整当前状态", roleTitle(activeState))
+                UiRow("Ajustar solo el estado actual", roleTitle(activeState))
             }
-            IconAppearanceEditor("${roleTitle(activeState)}配色", stateLooks[activeState] ?: IconLookDraft(),
+            IconAppearanceEditor("Colores de ${roleTitle(activeState)}", stateLooks[activeState] ?: IconLookDraft(),
                 app.canEdit && !app.busy, childBack, showSize = false) { value ->
                 stateLooks = stateLooks.toMutableMap().apply { if (value.value() == null) remove(activeState) else put(activeState, value) }
             }
         }
         if (error.isNotEmpty()) Text(error, color = MiuixTheme.colorScheme.error, fontSize = 13.sp)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            C17TextButton(text = "取消", modifier = Modifier.weight(1f), enabled = !app.busy, onClick = onApplied)
-            C17TextButton(text = if (app.iconManagementEnabled()) "应用到此图标" else "保存选择", modifier = Modifier.weight(1f), enabled = app.canEdit && !app.busy && target.supported, onClick = {
+            C17TextButton(text = "Cancelar", modifier = Modifier.weight(1f), enabled = !app.busy, onClick = onApplied)
+            C17TextButton(text = if (app.iconManagementEnabled()) "Aplicar a este icono" else "Guardar selección", modifier = Modifier.weight(1f), enabled = app.canEdit && !app.busy && target.supported, onClick = {
                 error = app.applyIconTarget(target.id, sources, look.value(), stateLooks.mapNotNull { (role, value) -> value.value()?.let { role to it } }.toMap(), animation)
                 if (error.isEmpty()) onApplied()
             })
         }
         UiGroupCard {
-            UiRow("其他设置", "逐个状态的图案与动画", if (advanced) "收起" else "展开") { advanced = !advanced }
+            UiRow("Otros ajustes", "Iconos y animaciones de cada estado", if (advanced) "Contraer" else "Expandir") { advanced = !advanced }
         }
         if (advanced) {
             UiGroupCard {
-                UiRow("逐个状态设置", "只调整选中的状态", if (individual) "收起" else "展开") { individual = !individual }
+                UiRow("Configurar cada estado por separado", "Solo ajustar el estado seleccionado", if (individual) "Contraer" else "Expandir") { individual = !individual }
                 if (individual) {
-                    target.roles.forEach { role -> UiRow(roleTitle(role), value = if (activeState == role) "已选择" else "") { activeState = role } }
-                    UiRow("更换当前状态图案", roleTitle(activeState), "选择", enabled = app.canEdit && !app.busy) {
+                    target.roles.forEach { role -> UiRow(roleTitle(role), value = if (activeState == role) "Seleccionado" else "") { activeState = role } }
+                    UiRow("Cambiar el icono del estado actual", roleTitle(activeState), "Seleccionar", enabled = app.canEdit && !app.busy) {
                         pickingRole = activeState; pickingSource = true
                     }
                 }
-                UiSwitchRow("使用套装动画", if (target.dynamicSupported) "跟随真实状态变化；仅在宿主允许时播放" else "此目标仅支持静态图案", animation,
+                UiSwitchRow("Usar animación del paquete", if (target.dynamicSupported) "Seguir los cambios de estado reales; solo se anima cuando el componente anfitrión lo permite." else "Este destino solo admite iconos estáticos.", animation,
                     app.canEdit && !app.busy && target.dynamicSupported) { animation = it }
             }
-            if (individual && target.scope != "tile") IconAppearanceEditor("${roleTitle(activeState)}外观", stateLooks[activeState] ?: IconLookDraft(), app.canEdit && !app.busy, childBack) { value ->
+            if (individual && target.scope != "tile") IconAppearanceEditor("Apariencia de ${roleTitle(activeState)}", stateLooks[activeState] ?: IconLookDraft(), app.canEdit && !app.busy, childBack) { value ->
                 stateLooks = stateLooks.toMutableMap().apply { if (value.value() == null) remove(activeState) else put(activeState, value) }
             }
             UiGroupCard {
-                UiRow("恢复此目标的默认设置", "清空本页草稿，点击应用后保存", "恢复", enabled = app.canEdit && !app.busy) {
+                UiRow("Restaurar los ajustes predeterminados de este destino", "Borrar el borrador de esta página; los cambios se guardarán al pulsar Aplicar.", "Restaurar", enabled = app.canEdit && !app.busy) {
                     sources = emptyMap(); look = IconLookDraft(); stateLooks = emptyMap(); animation = true
                 }
             }
         }
-        Text("图案与高级设置统一保存；取消或返回会丢弃本次草稿。", fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+        Text("Los iconos y los ajustes avanzados se guardan juntos; al cancelar o volver atrás, se descarta el borrador actual.", fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
     }
 }
 
@@ -739,18 +739,18 @@ private fun IconSourcePicker(app: ModernMainActivity, target: IconRoleRegistry.T
     }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         UiGroupCard {
-            UiRow(if (role == null) target.title else roleTitle(role), if (role == null) "默认一起设置全部状态；选择后返回预览。" else "只更改当前状态，其他状态保持草稿。")
-            UiRow("跟随套装", "使用此范围的套装，缺失时使用默认图案", enabled = !app.busy) { chooseSingle(null) }
-            UiRow("使用系统图案", if (role == null) "此目标不使用套装替换" else "此状态不使用套装替换", enabled = !app.busy) { chooseSingle(IconManagementSettings.Override("system", "", "")) }
+            UiRow(if (role == null) target.title else roleTitle(role), if (role == null) "Por defecto, se configuran todos los estados a la vez. Después de elegir, volverás a la vista previa." else "Solo cambia el estado actual; los demás conservarán sus borradores.")
+            UiRow("Seguir el paquete", "Usar el paquete de este ámbito; si falta un icono, usar el predeterminado.", enabled = !app.busy) { chooseSingle(null) }
+            UiRow("Usar el icono del sistema", if (role == null) "Este destino no usa sustituciones del paquete." else "Este estado no usa sustituciones del paquete.", enabled = !app.busy) { chooseSingle(IconManagementSettings.Override("system", "", "")) }
         }
         if (role == null) {
             val matchingPacks = app.iconPacks.filter { pack -> target.roles.any { sourceRoleInPack(pack, it) != null } }
                 .sortedBy { if (it.id == selectedPack) 0 else 1 }
-            if (matchingPacks.isNotEmpty()) IconSectionLabel("整组选择 · 保留各状态的区别")
+            if (matchingPacks.isNotEmpty()) IconSectionLabel("Selección de grupo · conservar las diferencias entre estados")
             matchingPacks.forEach { pack ->
                 val matches = target.roles.mapNotNull { current -> sourceRoleInPack(pack, current)?.let { current to IconManagementSettings.Override("pack", pack.id, it) } }.toMap()
                 UiGroupCard {
-                    UiRow(iconPackName(pack), "匹配 ${matches.size}/${target.roles.size} 个状态，缺失状态跟随套装或系统", "选用", enabled = app.canEdit && !app.busy) { onChoose(matches) }
+                    UiRow(iconPackName(pack), "Coinciden ${matches.size}/${target.roles.size} estados; los estados sin coincidencia seguirán el paquete o al sistema.", "Usar selección", enabled = app.canEdit && !app.busy) { onChoose(matches) }
                     Row(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         matches.keys.take(5).forEach { IconArtwork(app, pack, it, roleTitle(it)) }
                     }
@@ -759,20 +759,20 @@ private fun IconSourcePicker(app: ModernMainActivity, target: IconRoleRegistry.T
         }
         val pack = app.iconPacks.firstOrNull { it.id == selectedPack }
         if (pack != null) {
-            IconSectionLabel(if (role == null) "或选择统一图案" else "选择此状态的图案")
+            IconSectionLabel(if (role == null) "O elegir un icono uniforme" else "Elegir el icono de este estado")
             UiGroupCard {
-                UiRow("图案来源", iconPackName(pack), if (choosePack) "收起" else "切换") { choosePack = !choosePack }
-                if (choosePack) app.iconPacks.forEach { entry -> UiRow(iconPackName(entry), value = if (selectedPack == entry.id) "已选择" else "") {
+                UiRow("Origen del icono", iconPackName(pack), if (choosePack) "Contraer" else "Cambiar") { choosePack = !choosePack }
+                if (choosePack) app.iconPacks.forEach { entry -> UiRow(iconPackName(entry), value = if (selectedPack == entry.id) "Seleccionado" else "") {
                     selectedPack = entry.id; choosePack = false
                 } }
             }
             IconArtworkBrowser(app, pack, target, selected) { source -> chooseSingle(IconManagementSettings.Override("pack", pack.id, source)) }
         }
         UiGroupCard {
-            UiRow(if (pack == null) "从图库选择图案" else "添加或选择其他图库", "选择已有图库、当前内置套装，或导入自己的 v3 图标包", "选择", Icons.Outlined.Collections,
+            UiRow(if (pack == null) "Seleccionar un icono de la biblioteca" else "Añadir o seleccionar otra biblioteca", "Selecciona una biblioteca existente, el paquete integrado actual o importa tu propio paquete de iconos v3.", "Seleccionar", Icons.Outlined.Collections,
                 enabled = app.canEdit && !app.busy, onClick = onOpenLibrary)
         }
-        C17TextButton(text = "返回图标预览", onClick = onBack, enabled = !app.busy, modifier = Modifier.fillMaxWidth())
+        C17TextButton(text = "Volver a la vista previa de iconos", onClick = onBack, enabled = !app.busy, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -783,12 +783,12 @@ private fun IconScopeAppearance(app: ModernMainActivity, scope: String, state: I
     var error by remember { mutableStateOf("") }
     DisposableEffect(scope) { childBack[0] = null; onDispose { childBack[0] = null } }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        IconAppearanceEditor("范围外观", draft, app.canEdit && !app.busy, childBack) { draft = it }
-        Text("只改变此范围的默认外观，各目标和状态的独立设置仍优先。返回不保存草稿。", fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+        IconAppearanceEditor("Apariencia del ámbito", draft, app.canEdit && !app.busy, childBack) { draft = it }
+        Text("Solo cambia la apariencia predeterminada de este ámbito; los ajustes independientes de destinos y estados tienen prioridad. Volver atrás no guarda el borrador.", fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         if (error.isNotEmpty()) Text(error, color = MiuixTheme.colorScheme.error, fontSize = 13.sp)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            C17TextButton(text = "取消", modifier = Modifier.weight(1f), enabled = !app.busy, onClick = onApplied)
-            C17TextButton(text = if (app.iconManagementEnabled()) "应用外观" else "保存外观", modifier = Modifier.weight(1f), enabled = app.canEdit && !app.busy, onClick = {
+            C17TextButton(text = "Cancelar", modifier = Modifier.weight(1f), enabled = !app.busy, onClick = onApplied)
+            C17TextButton(text = if (app.iconManagementEnabled()) "Aplicar apariencia" else "Guardar apariencia", modifier = Modifier.weight(1f), enabled = app.canEdit && !app.busy, onClick = {
                 error = app.applyIconAppearance("scope:$scope", draft.value())
                 if (error.isEmpty()) onApplied()
             })
@@ -813,26 +813,26 @@ private fun IconAppearanceEditor(title: String, draft: IconLookDraft, enabled: B
         Text(title, Modifier.padding(horizontal = 12.dp), fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         UiGroupCard {
             if (showSize) {
-                UiSwitchRow("独立图标大小", "默认100%；仅缩放图案，保留系统位置和点击区域", draft.sizePercent != null, enabled) {
+                UiSwitchRow("Tamaño de icono independiente", "100 % por defecto; solo cambia la escala del icono, conservando la posición del sistema y el área táctil.", draft.sizePercent != null, enabled) {
                     onChange(draft.copy(sizePercent = if (it) 100f else null))
                 }
                 draft.sizePercent?.let { size ->
-                    UiSliderRow("图标大小", size, 25f..200f, "${size.toInt()}%", enabled = enabled) { onChange(draft.copy(sizePercent = it)) }
-                    C17TextButton("恢复100%大小", enabled = enabled, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), onClick = { onChange(draft.copy(sizePercent = 100f)) })
+                    UiSliderRow("Tamaño del icono", size, 25f..200f, "${size.toInt()}%", enabled = enabled) { onChange(draft.copy(sizePercent = it)) }
+                    C17TextButton("Restaurar tamaño al 100 %", enabled = enabled, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), onClick = { onChange(draft.copy(sizePercent = 100f)) })
                 }
             }
-            val modes = listOf("inherit" to "跟随上级设置", "system" to "跟随系统颜色", "custom" to "自定义颜色", "artwork" to "保留素材原色")
+            val modes = listOf("inherit" to "Seguir los ajustes superiores", "system" to "Seguir los colores del sistema", "custom" to "Color personalizado", "artwork" to "Conservar los colores originales del recurso")
             modes.forEach { (mode, label) -> UiRow(label,
-                if (mode == "artwork") "彩色素材保留原色；蒙版仍按系统着色" else "", if (draft.mode == mode) "已选择" else "", enabled = enabled) { onChange(draft.copy(mode = mode)) } }
-            if (draft.mode == "custom") UiColorPair("浅色背景 / 深色背景", draft.light, draft.dark, enabled,
+                if (mode == "artwork") "Los recursos multicolor conservan sus colores originales; la máscara sigue usando el color del sistema." else "", if (draft.mode == mode) "Seleccionado" else "", enabled = enabled) { onChange(draft.copy(mode = mode)) } }
+            if (draft.mode == "custom") UiColorPair("Fondo claro / fondo oscuro", draft.light, draft.dark, enabled,
                 onLight = { colorSide = "light" }, onDark = { colorSide = "dark" })
-            UiSwitchRow("独立透明度", "关闭时继承上级，默认100%；保留系统状态与过渡透明度", draft.opacity != null, enabled) {
+            UiSwitchRow("Transparencia independiente", "Al desactivarla, hereda el valor superior. Por defecto es 100 %; se conservan el estado del sistema y la transparencia de transición.", draft.opacity != null, enabled) {
                 onChange(draft.copy(opacity = if (it) 100f else null))
             }
-            draft.opacity?.let { opacity -> UiSliderRow("图标透明度", opacity, 0f..100f, "${opacity.toInt()}%", enabled = enabled) { onChange(draft.copy(opacity = it)) } }
+            draft.opacity?.let { opacity -> UiSliderRow("Transparencia del icono", opacity, 0f..100f, "${opacity.toInt()}%", enabled = enabled) { onChange(draft.copy(opacity = it)) } }
         }
     }
-    colorSide?.let { side -> IconRgbDialog(if (side == "light") "浅色背景颜色" else "深色背景颜色", if (side == "light") draft.light else draft.dark,
+    colorSide?.let { side -> IconRgbDialog(if (side == "light") "Color del fondo claro" else "Color del fondo oscuro", if (side == "light") draft.light else draft.dark,
         onDismiss = { colorSide = null }) { color ->
         onChange(if (side == "light") draft.copy(light = color) else draft.copy(dark = color)); colorSide = null
     } }
@@ -844,10 +844,10 @@ private fun IconRgbDialog(title: String, initial: Int, onDismiss: () -> Unit, on
     fun hex(value: Int) = "#%06X".format(java.util.Locale.ROOT, value and 0xffffff)
     var text by remember(initial) { mutableStateOf(hex(initial)) }
     var error by remember { mutableStateOf("") }
-    C17OverlayDialog(show = true, title = title, summary = "只选择 RGB 颜色，图标透明度在外观中单独设置。", onDismissRequest = onDismiss) {
+    C17OverlayDialog(show = true, title = title, summary = "Selecciona solo el color RGB; la transparencia del icono se configura por separado en Apariencia.", onDismissRequest = onDismiss) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(12.dp)).background(Color(color)))
-            listOf(16 to "红", 8 to "绿", 0 to "蓝").forEach { (shift, label) ->
+            listOf(16 to "Rojo", 8 to "Verde", 0 to "Azul").forEach { (shift, label) ->
                 val value = (color ushr shift) and 255
                 UiSliderRow(label, value.toFloat(), 0f..255f, value.toString()) { selected ->
                     color = (color and (255 shl shift).inv()) or (selected.toInt().coerceIn(0, 255) shl shift) or 0xff000000.toInt()
@@ -861,9 +861,9 @@ private fun IconRgbDialog(title: String, initial: Int, onDismiss: () -> Unit, on
             }, label = "#RRGGBB", singleLine = true, modifier = Modifier.fillMaxWidth(), insideMargin = DpSize(12.dp, 10.dp))
             if (error.isNotEmpty()) Text(error, color = MiuixTheme.colorScheme.error, fontSize = 13.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                C17TextButton(text = "取消", modifier = Modifier.weight(1f), onClick = onDismiss)
-                C17TextButton(text = "确定", modifier = Modifier.weight(1f), onClick = {
-                    if (!text.removePrefix("#").matches(Regex("[0-9a-fA-F]{6}"))) error = "请输入6位 RGB 颜色"
+                C17TextButton(text = "Cancelar", modifier = Modifier.weight(1f), onClick = onDismiss)
+                C17TextButton(text = "Aceptar", modifier = Modifier.weight(1f), onClick = {
+                    if (!text.removePrefix("#").matches(Regex("[0-9a-fA-F]{6}"))) error = "Introduce un color RGB de 6 dígitos."
                     else onConfirm(color)
                 })
             }

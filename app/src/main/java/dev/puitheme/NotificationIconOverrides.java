@@ -26,15 +26,15 @@ public final class NotificationIconOverrides {
             this(packageName,TYPE_TEXT,text,"",enabled);
         }
         public Rule(String packageName,String type,String text,String sourcePackage,boolean enabled){
-            validatePackage(packageName,"应用包名格式不正确");
+            validatePackage(packageName,"El formato del nombre de paquete de la aplicación no es válido");
             if(TYPE_TEXT.equals(type)){
-                validateText(text);if(sourcePackage!=null&&!sourcePackage.isEmpty())throw new IllegalArgumentException("文字规则不能包含图标来源应用");
+                validateText(text);if(sourcePackage!=null&&!sourcePackage.isEmpty())throw new IllegalArgumentException("La regla de texto no puede incluir una aplicación de origen del icono");
                 this.text=text.trim();this.sourcePackage="";
             }else if(TYPE_APP_ICON.equals(type)){
-                validatePackage(sourcePackage,"图标来源应用包名格式不正确");
-                if(text!=null&&!text.isEmpty())throw new IllegalArgumentException("应用图标规则不能包含替换文字");
+                validatePackage(sourcePackage,"El formato del nombre de paquete de la aplicación de origen del icono no es válido");
+                if(text!=null&&!text.isEmpty())throw new IllegalArgumentException("La regla de icono de aplicación no puede incluir texto de reemplazo");
                 this.text="";this.sourcePackage=sourcePackage;
-            }else throw new IllegalArgumentException("通知图标替换类型不正确");
+            }else throw new IllegalArgumentException("El tipo de sustitución del icono de notificación no es válido");
             this.packageName=packageName;this.type=type;this.enabled=enabled;
         }
         public boolean isAppIcon(){return TYPE_APP_ICON.equals(type);}
@@ -72,39 +72,39 @@ public final class NotificationIconOverrides {
     public void releaseRuntime(){enabled=false;selected=Collections.emptyMap();raw="[]";released=true;revision++;}
     public static String validationError(String json){try{rules(json);return null;}catch(IllegalArgumentException invalid){return invalid.getMessage();}}
     public static List<Rule> rules(String json){
-        if(json==null||json.length()>MAX_JSON_LENGTH)throw new IllegalArgumentException("通知图标规则数据过长");
+        if(json==null||json.length()>MAX_JSON_LENGTH)throw new IllegalArgumentException("Los datos de la regla del icono de notificación son demasiado largos");
         try{
-            JSONArray source=new JSONArray(json);if(source.length()>MAX_RULES)throw new IllegalArgumentException("最多设置128个应用");
+            JSONArray source=new JSONArray(json);if(source.length()>MAX_RULES)throw new IllegalArgumentException("Puedes configurar hasta 128 aplicaciones");
             List<Rule> result=new ArrayList<>();Map<String,Boolean> seen=new LinkedHashMap<>();
             for(int i=0;i<source.length();i++){
-                Object value=source.get(i);if(!(value instanceof JSONObject))throw new IllegalArgumentException("通知图标规则格式不正确");
+                Object value=source.get(i);if(!(value instanceof JSONObject))throw new IllegalArgumentException("El formato de la regla del icono de notificación no es válido");
                 JSONObject object=(JSONObject)value;
                 for(java.util.Iterator<String> keys=object.keys();keys.hasNext();){String key=keys.next();
-                    if(!key.equals("package")&&!key.equals("text")&&!key.equals("enabled")&&!key.equals("type")&&!key.equals("sourcePackage"))throw new IllegalArgumentException("通知图标规则包含未知字段");}
+                    if(!key.equals("package")&&!key.equals("text")&&!key.equals("enabled")&&!key.equals("type")&&!key.equals("sourcePackage"))throw new IllegalArgumentException("La regla del icono de notificación contiene campos desconocidos");}
                 Object pkg=object.opt("package"),type=object.has("type")?object.get("type"):TYPE_TEXT;
                 Object text=object.has("text")?object.get("text"):"",sourcePackage=object.has("sourcePackage")?object.get("sourcePackage"):"";
                 Object on=object.has("enabled")?object.get("enabled"):Boolean.TRUE;
-                if(!(pkg instanceof String)||!(type instanceof String)||!(text instanceof String)||!(sourcePackage instanceof String)||!(on instanceof Boolean))throw new IllegalArgumentException("通知图标规则格式不正确");
+                if(!(pkg instanceof String)||!(type instanceof String)||!(text instanceof String)||!(sourcePackage instanceof String)||!(on instanceof Boolean))throw new IllegalArgumentException("El formato de la regla del icono de notificación no es válido");
                 Rule rule=new Rule((String)pkg,(String)type,(String)text,(String)sourcePackage,(Boolean)on);
-                if(seen.put(rule.packageName,true)!=null)throw new IllegalArgumentException("同一应用只能设置一条通知图标规则");
+                if(seen.put(rule.packageName,true)!=null)throw new IllegalArgumentException("Solo se puede configurar una regla de icono de notificación por aplicación");
                 result.add(rule);
             }
             return Collections.unmodifiableList(result);
-        }catch(JSONException invalid){throw new IllegalArgumentException("通知图标规则格式不正确");}
+        }catch(JSONException invalid){throw new IllegalArgumentException("El formato de la regla del icono de notificación no es válido");}
     }
     public static String encode(List<Rule> rules){
-        if(rules==null||rules.size()>MAX_RULES)throw new IllegalArgumentException("最多设置128个应用");
+        if(rules==null||rules.size()>MAX_RULES)throw new IllegalArgumentException("Puedes configurar hasta 128 aplicaciones");
         JSONArray encoded=new JSONArray();Map<String,Boolean> seen=new LinkedHashMap<>();
         try{
-            for(Rule input:rules){if(input==null)throw new IllegalArgumentException("通知图标规则格式不正确");
+            for(Rule input:rules){if(input==null)throw new IllegalArgumentException("El formato de la regla del icono de notificación no es válido");
                 Rule rule=new Rule(input.packageName,input.type,input.text,input.sourcePackage,input.enabled);
-                if(seen.put(rule.packageName,true)!=null)throw new IllegalArgumentException("同一应用只能设置一条通知图标规则");
+                if(seen.put(rule.packageName,true)!=null)throw new IllegalArgumentException("Solo se puede configurar una regla de icono de notificación por aplicación");
                 JSONObject object=new JSONObject().put("package",rule.packageName).put("enabled",rule.enabled);
                 if(rule.isAppIcon())object.put("type",TYPE_APP_ICON).put("sourcePackage",rule.sourcePackage);
                 else object.put("text",rule.text);
                 encoded.put(object);}
-        }catch(JSONException impossible){throw new IllegalArgumentException("通知图标规则格式不正确");}
-        String result=encoded.toString();if(result.length()>MAX_JSON_LENGTH)throw new IllegalArgumentException("通知图标规则数据过长");return result;
+        }catch(JSONException impossible){throw new IllegalArgumentException("El formato de la regla del icono de notificación no es válido");}
+        String result=encoded.toString();if(result.length()>MAX_JSON_LENGTH)throw new IllegalArgumentException("Los datos de la regla del icono de notificación son demasiado largos");return result;
     }
     public static String put(String json,String packageName,String text,boolean enabled){
         return putRule(json,new Rule(packageName,text,enabled));
@@ -126,16 +126,16 @@ public final class NotificationIconOverrides {
             throw new IllegalArgumentException(message);
     }
     private static void validateText(String text){
-        if(text==null||text.trim().isEmpty())throw new IllegalArgumentException("请填写文字或表情");
-        if(text.codePointCount(0,text.length())>MAX_CODE_POINTS)throw new IllegalArgumentException("文字或表情最多8个Unicode字符");
+        if(text==null||text.trim().isEmpty())throw new IllegalArgumentException("Introduce texto o un emoji");
+        if(text.codePointCount(0,text.length())>MAX_CODE_POINTS)throw new IllegalArgumentException("El texto o emoji admite hasta 8 caracteres Unicode");
         boolean visible=false;
         for(int i=0;i<text.length();){char ch=text.charAt(i);
             if(Character.isSurrogate(ch)&&(!Character.isHighSurrogate(ch)||i+1==text.length()||!Character.isLowSurrogate(text.charAt(i+1))))
-                throw new IllegalArgumentException("文字或表情包含无效字符");
-            int cp=text.codePointAt(i);if(Character.isISOControl(cp)||cp==0x2028||cp==0x2029)throw new IllegalArgumentException("文字或表情不能包含换行或控制字符");
+                throw new IllegalArgumentException("El texto o emoji contiene caracteres no válidos");
+            int cp=text.codePointAt(i);if(Character.isISOControl(cp)||cp==0x2028||cp==0x2029)throw new IllegalArgumentException("El texto o emoji no puede contener saltos de línea ni caracteres de control");
             if(!Character.isWhitespace(cp)&&Character.getType(cp)!=Character.FORMAT&&cp!=0xfe0f&&cp!=0xfe0e)visible=true;
             i+=Character.charCount(cp);
         }
-        if(!visible)throw new IllegalArgumentException("请填写可见的文字或表情");
+        if(!visible)throw new IllegalArgumentException("Introduce texto o un emoji visible");
     }
 }

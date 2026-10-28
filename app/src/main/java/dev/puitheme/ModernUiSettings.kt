@@ -76,8 +76,8 @@ fun UiSettingsPage(app: ModernMainActivity) {
     val scroll = rememberC17ScrollBehavior(rememberC17TopAppBarState(initialHeightOffsetLimit = 0f))
     val list = rememberLazyListState()
     C17Scaffold(containerColor = MiuixTheme.colorScheme.surface, topBar = {
-        C17SmallTopAppBar(title = "界面设置", scrollBehavior = scroll, navigationIcon = {
-            C17IconButton(onClick = app::closeUiSettings) { Icon(Icons.Outlined.ArrowBack, "返回") }
+        C17SmallTopAppBar(title = "Ajustes de interfaz", scrollBehavior = scroll, navigationIcon = {
+            C17IconButton(onClick = app::closeUiSettings) { Icon(Icons.Outlined.ArrowBack, "Volver") }
         })
     }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())
@@ -86,17 +86,17 @@ fun UiSettingsPage(app: ModernMainActivity) {
                 bottom = padding.calculateBottomPadding() + 32.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item(key = "ui-style") { UiGroupCard {
-                UiRow("界面风格", "选择应用界面的设计风格", ui.uiStyleTitle) { choosingUi = true }
+                UiRow("Estilo de la interfaz", "Elige el estilo visual de la aplicación.", ui.uiStyleTitle) { choosingUi = true }
             } }
-            item { UiSectionTitle("主题") }
+            item { UiSectionTitle("Tema") }
             item { UiGroupCard {
-                UiChoiceRow("深浅色", listOf("跟随系统", "浅色", "深色"), ui.themeMode) { ui.updateThemeMode(it) }
+                UiChoiceRow("Modo claro/oscuro", listOf("Seguir al sistema", "Claro", "Oscuro"), ui.themeMode) { ui.updateThemeMode(it) }
             } }
-            item { UiSectionTitle("配色") }
+            item { UiSectionTitle("Colores") }
             item { UiGroupCard {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("配色方案", Modifier.weight(1f), fontSize = 16.sp)
+                        Text("Esquema de colores", Modifier.weight(1f), fontSize = 16.sp)
                         Text(ui.scheme(ui.scheme).title, fontSize = 14.sp, color = MiuixTheme.colorScheme.primary)
                     }
                     // Keep labels readable on narrow screens and with the user's larger text setting.
@@ -113,36 +113,36 @@ fun UiSettingsPage(app: ModernMainActivity) {
                         }
                     }
                 }
-                UiChoiceRow("色彩风格", listOf("柔和", "鲜艳", "素净"), ui.paletteStyle, enabled = ui.scheme(ui.scheme).theme == null) { ui.updatePaletteStyle(it) }
-                UiTypableSlider("深色背景", ui.darkLevel.toFloat(), 0f..100f,
-                    when { ui.darkLevel >= 98 -> "纯黑"; ui.darkLevel == 50 -> "默认"; ui.darkLevel > 50 -> "偏黑"; else -> "偏灰" },
+                UiChoiceRow("Estilo de color", listOf("Suave", "Vivo", "Neutro"), ui.paletteStyle, enabled = ui.scheme(ui.scheme).theme == null) { ui.updatePaletteStyle(it) }
+                UiTypableSlider("Fondo oscuro", ui.darkLevel.toFloat(), 0f..100f,
+                    when { ui.darkLevel >= 98 -> "Negro puro"; ui.darkLevel == 50 -> "Predeterminado"; ui.darkLevel > 50 -> "Más oscuro"; else -> "Más gris" },
                     onType = { typing = "dark" }, onDragging = ::preview) { ui.updateDarkLevel(it.roundToInt()) }
             } }
-            item { UiSectionTitle("名称") }
+            item { UiSectionTitle("Nombre") }
             item { UiGroupCard {
-                UiSwitchRow("恢复旧名称", "桌面图标显示“${LauncherIcon.LEGACY_NAME}”；系统设置和 LSPosed 里的应用名仍是 ${LauncherIcon.NAME}",
+                UiSwitchRow("Restaurar el nombre anterior", "El icono del escritorio mostrará «${LauncherIcon.LEGACY_NAME}»; el nombre en Ajustes del sistema y en LSPosed seguirá siendo ${LauncherIcon.NAME}.",
                     app.legacyName, enabled = app.desktopIconAvailable && !app.busy && !app.maintenanceRunning,
                     onChecked = app::requestLegacyName)
             } }
-            item { UiSectionTitle("开源主题") }
+            item { UiSectionTitle("Temas de código abierto") }
             item { UiGroupCard {
                 UiThemes.ALL.forEach { theme -> ThemeRow(ui, theme) }
             } }
-            item { UiSectionTitle("主题配色来自开源项目，保持原作颜色；选用后色彩风格不再适用，深浅色与深色背景仍然有效。") }
-            item { UiSectionTitle("显示") }
+            item { UiSectionTitle("Los colores de estos temas proceden de proyectos de código abierto y conservan los originales. Al seleccionarlos, el estilo de color deja de aplicarse; el modo claro/oscuro y el fondo oscuro siguen disponibles.") }
+            item { UiSectionTitle("Mostrar") }
             item { UiGroupCard {
-                UiTypableSlider("界面字号", ui.textScale.toFloat(), 80f..130f, "${ui.textScale}%", onType = { typing = "scale" }) { ui.updateTextScale(it.roundToInt()) }
-                UiSwitchRow("滚动渐隐", checked = ui.edgeFade) { ui.updateEdgeFade(it) }
+                UiTypableSlider("Tamaño del texto de la interfaz", ui.textScale.toFloat(), 80f..130f, "${ui.textScale}%", onType = { typing = "scale" }) { ui.updateTextScale(it.roundToInt()) }
+                UiSwitchRow("Desvanecer al desplazarse", checked = ui.edgeFade) { ui.updateEdgeFade(it) }
                 val glass = GlassNavigationPreference.supported()
-                UiSwitchRow("液态玻璃底栏", if (glass) "" else "需要 Android 13 或更新版本",
+                UiSwitchRow("Barra inferior de vidrio líquido", if (glass) "" else "Requiere Android 13 o posterior.",
                     checked = app.glassNavigation, enabled = glass) { app.updateGlassNavigation(it) }
             } }
             item { UiGroupCard {
-                UiRow("恢复默认", icon = Icons.Outlined.RestartAlt) { app.resetUi(); app.toast("界面设置已恢复默认") }
+                UiRow("Restaurar valores predeterminados", icon = Icons.Outlined.RestartAlt) { app.resetUi(); app.toast("Se restauraron los ajustes predeterminados de la interfaz.") }
             } }
         }
         if (choosingUi) UiChoiceDialog(
-            title = "界面风格",
+            title = "Estilo de la interfaz",
             values = listOf(UiSettings.MIUIX, UiSettings.COUI),
             labels = listOf("Miuix", "COUI"),
             selected = ui.uiStyle,
@@ -151,16 +151,16 @@ fun UiSettingsPage(app: ModernMainActivity) {
         )
         // Tapping the value types it in, like every other number in the app.
         when (typing) {
-            "scale" -> UiInputDialog("界面字号", ui.textScale.toString(), description = "80–130，单位 %", numeric = true, integer = true,
-                allowNegative = false, label = "字号 %", onDismiss = { typing = null }) { text ->
+            "scale" -> UiInputDialog("Tamaño del texto de la interfaz", ui.textScale.toString(), description = "80–130, en %", numeric = true, integer = true,
+                allowNegative = false, label = "Tamaño del texto (%)", onDismiss = { typing = null }) { text ->
                 val value = text.trim().toDoubleOrNull()
-                if (value == null || !value.isFinite() || value < 80 || value > 130) "请输入 80 到 130 之间的数字"
+                if (value == null || !value.isFinite() || value < 80 || value > 130) "Introduce un número entre 80 y 130."
                 else { ui.updateTextScale(value.roundToInt()); null }
             }
-            "dark" -> UiInputDialog("深色背景", ui.darkLevel.toString(), description = "0 偏灰，50 默认，100 纯黑", numeric = true, integer = true,
-                allowNegative = false, label = "黑度", onDismiss = { typing = null }) { text ->
+            "dark" -> UiInputDialog("Fondo oscuro", ui.darkLevel.toString(), description = "0 = grisáceo, 50 = predeterminado, 100 = negro puro", numeric = true, integer = true,
+                allowNegative = false, label = "Intensidad del negro", onDismiss = { typing = null }) { text ->
                 val value = text.trim().toDoubleOrNull()
-                if (value == null || !value.isFinite() || value < 0 || value > 100) "请输入 0 到 100 之间的数字"
+                if (value == null || !value.isFinite() || value < 0 || value > 100) "Introduce un número entre 0 y 100."
                 else { ui.updateDarkLevel(value.roundToInt()); null }
             }
         }

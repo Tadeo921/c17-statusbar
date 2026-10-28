@@ -283,7 +283,7 @@ public final class StatusBarSettings {
         strings.putAll(ClockLayoutSettings.STRINGS);
         strings.put(CARRIER_PATTERN, TimeFormat.CARRIER_DEFAULT);
         strings.put(CARRIER_MODE, "original");
-        strings.put(CARRIER_TEXT, "更好的C17状态栏");
+        strings.put(CARRIER_TEXT, "C17 Statusbar mejorado");
         for (String panel : CarrierPanels.GROUPS) {
             strings.put(CarrierPanels.key(panel, "mode"), strings.get(CARRIER_MODE));
             strings.put(CarrierPanels.key(panel, "pattern"), strings.get(CARRIER_PATTERN));
@@ -291,7 +291,7 @@ public final class StatusBarSettings {
         }
         strings.put(FONT_MODE, "system");
         strings.put(FONT_REVISION, "");
-        strings.put(FONT_NAME, "未导入字体");
+        strings.put(FONT_NAME, "No se ha importado ninguna fuente.");
         strings.put(FontScopes.KEY, "{}");
         strings.put(IconManagementSettings.KEY, IconManagementSettings.DEFAULT);
         strings.put(SIGNAL_LAYOUT, "system");

@@ -101,7 +101,7 @@ public final class ShadeWallpaperSettings {
     /** Check seam: the desktop checks run the feature open or shelved, whatever {@link #OPEN} says. */
     static void openForCheck(boolean value) { checkOverride = value; }
     public static boolean available() { return checkOverride != null ? checkOverride : OPEN; }
-    public static String unavailableReason() { return available() ? "" : "下拉壁纸未完成，暂时不能开启"; }
+    public static String unavailableReason() { return available() ? "" : "La personalización del fondo al desplegar aún no está terminada; no se puede activar por ahora."; }
     public static String unavailableReason(String key) { return key != null && key.startsWith("shade_wallpaper_") ? unavailableReason() : ""; }
     public static boolean validScene(String scene) { return SCENES.contains(scene); }
     /** The scene whose picture this setting key names (the picture card is shown on that key), or null. */
@@ -170,12 +170,12 @@ public final class ShadeWallpaperSettings {
                 && Boolean.TRUE.equals(values.get(enabledKey(scene)));
     }
     public static String title(String scene) {
-        if (CLASSIC_PORTRAIT.equals(scene)) return "经典下拉 · 竖屏";
-        if (CLASSIC_LANDSCAPE.equals(scene)) return "经典下拉 · 横屏";
-        if (NOTIFICATION_PORTRAIT.equals(scene)) return "通知中心 · 竖屏";
-        if (NOTIFICATION_LANDSCAPE.equals(scene)) return "通知中心 · 横屏";
-        if (CONTROL_PORTRAIT.equals(scene)) return "控制中心 · 竖屏";
-        if (CONTROL_LANDSCAPE.equals(scene)) return "控制中心 · 横屏";
+        if (CLASSIC_PORTRAIT.equals(scene)) return "Panel clásico · vertical";
+        if (CLASSIC_LANDSCAPE.equals(scene)) return "Panel clásico · horizontal";
+        if (NOTIFICATION_PORTRAIT.equals(scene)) return "Centro de notificaciones · vertical";
+        if (NOTIFICATION_LANDSCAPE.equals(scene)) return "Centro de notificaciones · horizontal";
+        if (CONTROL_PORTRAIT.equals(scene)) return "Centro de control · vertical";
+        if (CONTROL_LANDSCAPE.equals(scene)) return "Centro de control · horizontal";
         throw new IllegalArgumentException("Unknown wallpaper scene");
     }
 }

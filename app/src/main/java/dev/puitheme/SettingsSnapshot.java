@@ -275,7 +275,7 @@ public final class SettingsSnapshot {
         if(context==null||!ModuleDiagnostics.PACKAGE_NAME.equals(context.getPackageName()))
             throw new IllegalArgumentException("Own application context required");
         synchronized(LOCK) {
-            if(maintenanceReset)return new ResetResult(false,false,false,false,"配置清理正在进行");
+            if(maintenanceReset)return new ResetResult(false,false,false,false,"Se está limpiando la configuración.");
             maintenanceReset=true;
             for(PendingSave pending:SAVES.values())if(pending.future!=null)pending.future.cancel(false);
             SAVES.clear();
@@ -286,18 +286,18 @@ public final class SettingsSnapshot {
             // Do not release the UI's maintenance guard while the transaction can still write.
             for(;;)try {return completed.get();}
             catch(InterruptedException interruption){interrupted=true;}
-            catch(ExecutionException unavailable){return new ResetResult(false,false,false,false,"配置清理失败，请重试");}
+            catch(ExecutionException unavailable){return new ResetResult(false,false,false,false,"No se pudo limpiar la configuración. Inténtalo de nuevo.");}
         } finally {if(interrupted)Thread.currentThread().interrupt();}
     }
 
     private static ResetResult resetOnWriter(Context context) {
         boolean primary=false,recovery=false,queued=false,synced=false;
-        String message="配置清理失败，请重试";
+        String message="No se pudo limpiar la configuración. Inténtalo de nuevo.";
         Context storage=storageContext(context);
         SharedPreferences raw=storage.getSharedPreferences(StatusBarSettings.PREFS,Context.MODE_PRIVATE);
         try {
             if(!NumericTrial.cancelForReset(storage,raw))
-                return new ResetResult(false,false,false,false,"无法取消数值试用，已保留原配置");
+                return new ResetResult(false,false,false,false,"No se pudo cancelar la prueba del valor; se conservó la configuración original.");
             Map<String,Object> defaults=new LinkedHashMap<>();
             // A nonempty mandatory default prevents empty-store recovery or CE migration of old values.
             defaults.put(StatusBarSettings.DATA_ACTIVITY_HIDDEN,true);
@@ -305,7 +305,7 @@ public final class SettingsSnapshot {
                 primary=PreferenceWrites.commit(raw,raw.edit().clear()
                         .putBoolean(StatusBarSettings.DATA_ACTIVITY_HIDDEN,true),defaults,true);
             }
-            if(!primary)return new ResetResult(false,false,false,false,"配置未能写入磁盘，已保留原配置");
+            if(!primary)return new ResetResult(false,false,false,false,"No se pudo guardar la configuración en el almacenamiento; se conservó la configuración original.");
             SharedPreferences backup=storage.getSharedPreferences(BACKUP_PREFS,Context.MODE_PRIVATE);
             Map<String,Object> previous=backupValues(storage);
             synchronized(LOCK) { DURABLE.put(backup,previous); }
@@ -320,12 +320,12 @@ public final class SettingsSnapshot {
             }
             SettingsFrameworkMirror.ResetResult mirrored=SettingsFrameworkMirror.resetForMaintenance(storage,fromPreferences(defaults));
             queued=mirrored.queued;synced=mirrored.synced;
-            message=!recovery?"当前配置已恢复默认，但旧恢复副本未能全部删除，请重试"
-                    :!queued?"本地配置已恢复默认，但框架清理未能排队，请重试"
-                    :synced?"所有配置已清理并恢复默认":"本地配置已恢复默认，框架连接后自动同步默认配置";
+            message=!recovery?"La configuración actual volvió a los valores predeterminados, pero no se eliminaron todas las copias de recuperación antiguas. Inténtalo de nuevo."
+                    :!queued?"La configuración local volvió a los valores predeterminados, pero no se pudo programar la limpieza del framework. Inténtalo de nuevo."
+                    :synced?"Se limpió toda la configuración y se restauraron los valores predeterminados.":"La configuración local volvió a los valores predeterminados; estos se sincronizarán con el framework al conectarse.";
             return new ResetResult(primary,recovery,queued,synced,message);
         } catch(RuntimeException | android.content.pm.PackageManager.NameNotFoundException unavailable) {
-            return new ResetResult(primary,recovery,queued,synced,"配置清理未全部完成，请重试");
+            return new ResetResult(primary,recovery,queued,synced,"La limpieza de la configuración no terminó por completo. Inténtalo de nuevo.");
         } finally {
             synchronized(LOCK) { maintenanceReset=false; }
             if(primary)try { context.getContentResolver().notifyChange(Uri.parse(StatusBarSettings.CONTENT_URI),null); }

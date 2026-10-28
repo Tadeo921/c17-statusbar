@@ -80,7 +80,7 @@ class UiSettings(context: Context) {
 
     /** One structured record of the current look, so a report shows which theme and scheme the app was using. */
     fun note(reason: String) {
-        ModuleDiagnostics.appFact(context, "ui", "界面设置", "theme_mode", themeMode, "scheme", scheme, "black_level", darkLevel,
+        ModuleDiagnostics.appFact(context, "ui", "Ajustes de interfaz", "theme_mode", themeMode, "scheme", scheme, "black_level", darkLevel,
             "dynamic", dynamicSupported, "blur_top", edgeFade, "glass_nav", GlassNavigationPreference.read(context),
             "ui_style", uiStyle, "reason", reason)
     }
@@ -103,16 +103,16 @@ class UiSettings(context: Context) {
 
         /** Curated key colours; Miuix derives the whole palette from each. */
         val SCHEMES: List<UiScheme> = listOf(
-            UiScheme("miuix", "经典蓝", null),
-            UiScheme("dynamic", "系统取色", null, dynamic = true),
-            UiScheme("green", "清新绿", Color(0xFF34C759)),
-            UiScheme("orange", "落日橙", Color(0xFFFF9500)),
-            UiScheme("pink", "樱花粉", Color(0xFFFF2D55)),
-            UiScheme("purple", "薰衣草", Color(0xFFAF52DE)),
-            UiScheme("teal", "湖水青", Color(0xFF30B0C7)),
-            UiScheme("indigo", "午夜靛", Color(0xFF5E5CE6)),
-            UiScheme("red", "珊瑚红", Color(0xFFFF3B30)),
-            UiScheme("graphite", "石墨灰", Color(0xFF8E8E93)),
+            UiScheme("miuix", "Azul clásico", null),
+            UiScheme("dynamic", "Color del sistema", null, dynamic = true),
+            UiScheme("green", "Verde fresco", Color(0xFF34C759)),
+            UiScheme("orange", "Naranja al atardecer", Color(0xFFFF9500)),
+            UiScheme("pink", "Rosa sakura", Color(0xFFFF2D55)),
+            UiScheme("purple", "Lavanda", Color(0xFFAF52DE)),
+            UiScheme("teal", "Turquesa", Color(0xFF30B0C7)),
+            UiScheme("indigo", "Índigo nocturno", Color(0xFF5E5CE6)),
+            UiScheme("red", "Rojo coral", Color(0xFFFF3B30)),
+            UiScheme("graphite", "Gris grafito", Color(0xFF8E8E93)),
         )
 
         /** Open-source themes, shown in their own section; the key is only the primary the rest of the palette is derived around. */

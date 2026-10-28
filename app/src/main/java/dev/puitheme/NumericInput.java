@@ -43,7 +43,7 @@ public final class NumericInput {
     }
 
     private static NumberFormatException invalid(Throwable cause) {
-        NumberFormatException error = new NumberFormatException("请输入有效的有限数值");
+        NumberFormatException error = new NumberFormatException("Introduce un número válido y finito.");
         if (cause != null) error.initCause(cause);
         return error;
     }

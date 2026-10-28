@@ -9,9 +9,9 @@ import java.util.Objects;
  * Inputs come from existing SystemUI callbacks. This class owns no Android
  * service, listener, timer, provider, View or subscription object. */
 final class BigClockSystemText {
-    static final String SIGNAL_UNAVAILABLE = "蜂窝信号暂无数据";
-    static final String NETWORK_UNAVAILABLE = "网络暂无数据";
-    static final String BATTERY_UNAVAILABLE = "电池暂无数据";
+    static final String SIGNAL_UNAVAILABLE = "Señal móvil sin datos";
+    static final String NETWORK_UNAVAILABLE = "Red sin datos";
+    static final String BATTERY_UNAVAILABLE = "Batería sin datos";
 
     enum Transport { UNKNOWN, NONE, WIFI, CELLULAR, ETHERNET, OTHER }
     enum Charging { UNKNOWN, CHARGING, DISCHARGING, NOT_CHARGING, FULL }
@@ -238,12 +238,12 @@ final class BigClockSystemText {
     }
 
     private static String signalText(Boolean airplaneMode, Boolean simAbsent, int subscription, Boolean inService, int bars) {
-        if (Boolean.TRUE.equals(airplaneMode)) return "飞行模式";
-        if (Boolean.TRUE.equals(simAbsent)) return "无SIM卡";
+        if (Boolean.TRUE.equals(airplaneMode)) return "Modo avión";
+        if (Boolean.TRUE.equals(simAbsent)) return "Sin tarjeta SIM";
         if (subscription < 0) return SIGNAL_UNAVAILABLE;
-        if (Boolean.FALSE.equals(inService)) return "无服务";
+        if (Boolean.FALSE.equals(inService)) return "Sin servicio";
         if (!Boolean.TRUE.equals(inService) || bars < 0) return SIGNAL_UNAVAILABLE;
-        return bars + "/4格";
+        return bars + "/4 barras";
     }
 
     private static String networkText() {
@@ -253,15 +253,15 @@ final class BigClockSystemText {
     private static String networkText(Transport transport, String dataGeneration, Boolean validated) {
         String text;
         switch (transport) {
-            case NONE: return "未联网";
+            case NONE: return "Sin conexión";
             case WIFI: text = "Wi-Fi"; break;
-            case CELLULAR: text = dataGeneration.isEmpty() ? "蜂窝网络" : dataGeneration; break;
-            case ETHERNET: text = "以太网"; break;
-            case OTHER: text = "其他网络"; break;
+            case CELLULAR: text = dataGeneration.isEmpty() ? "Red móvil" : dataGeneration; break;
+            case ETHERNET: text = "Ethernet"; break;
+            case OTHER: text = "Otra red"; break;
             default: return NETWORK_UNAVAILABLE;
         }
         return Boolean.TRUE.equals(validated) ? text
-                : Boolean.FALSE.equals(validated) ? text + "（受限）" : text + "（联网状态未知）";
+                : Boolean.FALSE.equals(validated) ? text + " (conectividad limitada)" : text + " (estado de conexión desconocido)";
     }
 
     private static String batteryText() {
@@ -281,10 +281,10 @@ final class BigClockSystemText {
         if (batteryPercent < 0) return BATTERY_UNAVAILABLE;
         String text = batteryPercent + "%";
         switch (charging) {
-            case CHARGING: return text + " 充电中";
-            case FULL: return text + " 已充满";
-            case NOT_CHARGING: return text + " 未充电";
-            case UNKNOWN: return text + " 充电状态未知";
+            case CHARGING: return text + " Cargando";
+            case FULL: return text + " Carga completa";
+            case NOT_CHARGING: return text + " Sin cargar";
+            case UNKNOWN: return text + " Estado de carga desconocido";
             default: return text;
         }
     }

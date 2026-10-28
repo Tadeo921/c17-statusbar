@@ -81,22 +81,22 @@ final class BigClockTextContent {
                             } else value = styled?"":actualWeather.description.isEmpty() ? SystemWeatherText.UNAVAILABLE : actualWeather.description;
                             break;
                         case "温度": value = actualWeather.temperatureText(); break;
-                        case "蜂窝信号":
+                        case "Señal móvil":
                             if(styled){icons.add(new Icon(output.length(),CELLULAR));output.append('\ufffc').append(' ');}
                             value = actualSystem.cellularSignal; break;
                         case "网络状态":
                             if(styled){icons.add(new Icon(output.length(),NETWORK));output.append('\ufffc').append(' ');}
                             value = actualSystem.networkStatus; break;
-                        case "电池":
+                        case "Batería":
                             if(styled){icons.add(new Icon(output.length(),BATTERY));output.append('\ufffc').append(' ');}
                             value = actualSystem.battery; break;
-                        case "时间":
+                        case "Hora":
                             if (time == null) time = TimeFormat.format("HH:mm", now, timeZone);
                             value = time; break;
-                        case "日期":
-                            if (date == null) date = TimeFormat.format("M月d日", now, timeZone);
+                        case "Fecha":
+                            if (date == null) date = TimeFormat.format("M d", now, timeZone);
                             value = date; break;
-                        case "星期":
+                        case "Día de la semana":
                             if (week == null) week = TimeFormat.format("{星期}", now, timeZone);
                             value = week; break;
                         default: {
@@ -198,9 +198,9 @@ final class BigClockTextContent {
             case "周": return TimeFormat.format("{周}", now, zone);
             case "12小时": return TimeFormat.format("hh:mm", now, zone);
             case "上午下午": return TimeFormat.format("{上午下午}", now, zone);
-            case "时段": return TimeFormat.format("{时段}", now, zone);
+            case "Franja horaria": return TimeFormat.format("{时段}", now, zone);
             case "农历": return TimeFormat.format("{农历}", now, zone);
-            case "农历日期": return TimeFormat.format("{农历日期}", now, zone);
+            case "Fecha lunar": return TimeFormat.format("{农历日期}", now, zone);
             case "干支": return TimeFormat.format("{干支}", now, zone);
             case "日期英文": return english("MMM d", now, zone);
             case "星期英文": return english("EEEE", now, zone);
@@ -230,14 +230,14 @@ final class BigClockTextContent {
 
     private static int tokenDependency(String token) {
         switch (token) {
-            case "时间": case "日期": case "星期": case "年": case "年月日": case "周": case "12小时": case "上午下午": case "时段":
-            case "农历": case "农历日期": case "干支": case "日期英文": case "星期英文": case "星期英文简": case "月份英文": return TIME;
+            case "Hora": case "Fecha": case "Día de la semana": case "年": case "年月日": case "周": case "12小时": case "上午下午": case "Franja horaria":
+            case "农历": case "Fecha lunar": case "干支": case "日期英文": case "星期英文": case "星期英文简": case "月份英文": return TIME;
             case "天气": case "天气中文": case "天气英文": case "天气原色": case "天气中文原色": case "天气英文原色": case "天气文字":
             case "天气文字中文": case "天气文字英文": case "天气描述": case "天气描述中文": case "天气描述英文": case "天气图标":
             case "天气图标原色": case "温度": return WEATHER;
-            case "蜂窝信号": return CELLULAR;
+            case "Señal móvil": return CELLULAR;
             case "网络状态": return NETWORK;
-            case "电池": return BATTERY;
+            case "Batería": return BATTERY;
             default: return formatPattern(token) != null ? TIME : ComponentFormat.category(token);
         }
     }

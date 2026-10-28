@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 public final class NativeStatusIconLayout {
     public static final String KEY=NativeStatusIcons.LAYOUT,DEFAULT="{}";
     private static final Pattern NUMBER=Pattern.compile("-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?");
-    private static final String ERROR="系统提示图标排列格式不正确";
+    private static final String ERROR="El formato de distribución de los iconos de aviso del sistema no es válido";
     private static final Snapshot EMPTY=new Snapshot(Collections.emptyMap());
     private NativeStatusIconLayout(){ }
     public static final class Placement {

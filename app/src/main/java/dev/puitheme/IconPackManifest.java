@@ -26,26 +26,26 @@ public final class IconPackManifest {
         this.icons=Collections.unmodifiableMap(new LinkedHashMap<>(icons));
     }
     public static IconPackManifest parse(byte[] bytes)throws IOException{
-        if(bytes==null||bytes.length==0||bytes.length>MAX_BYTES)throw new IOException("图标包 manifest.json 大小无效");
+        if(bytes==null||bytes.length==0||bytes.length>MAX_BYTES)throw new IOException("El tamaño de manifest.json del paquete de iconos no es válido");
         try{
             JSONObject json=new JSONObject(new String(bytes,StandardCharsets.UTF_8));
-            if(!FORMAT.equals(json.optString("format"))||!(json.opt("version") instanceof Number))throw new IOException("图标包规范版本不支持");
+            if(!FORMAT.equals(json.optString("format"))||!(json.opt("version") instanceof Number))throw new IOException("La versión de especificación del paquete de iconos no es compatible");
             double declared=json.getDouble("version");
-            if(declared!=VERSION&&declared!=NATIVE_FALLBACK_VERSION)throw new IOException("图标包规范版本不支持");
+            if(declared!=VERSION&&declared!=NATIVE_FALLBACK_VERSION)throw new IOException("La versión de especificación del paquete de iconos no es compatible");
             int version=(int)declared;
-            if(version==NATIVE_FALLBACK_VERSION&&!"native".equals(json.opt("fallback")))throw new IOException("部分状态图标包须声明 fallback 为 native");
-            if(version==VERSION&&json.has("fallback"))throw new IOException("原版本图标包不支持 fallback 字段");
+            if(version==NATIVE_FALLBACK_VERSION&&!"native".equals(json.opt("fallback")))throw new IOException("Algunos paquetes de iconos de estado deben declarar fallback=native");
+            if(version==VERSION&&json.has("fallback"))throw new IOException("Los paquetes de iconos de la versión original no admiten el campo fallback");
             String name=text(json,"name",64,true),author=text(json,"author",128,false),license=text(json,"license",128,true);
-            if(!"mask".equals(json.optString("render","mask")))throw new IOException("图标仅支持透明蒙版，render 必须为 mask");
+            if(!"mask".equals(json.optString("render","mask")))throw new IOException("Los iconos solo admiten máscaras transparentes; render debe ser mask");
             Object source=json.opt("icons");
-            if(!(source instanceof JSONObject))throw new IOException("图标包缺少 icons 映射");
+            if(!(source instanceof JSONObject))throw new IOException("Falta el mapa icons en el paquete de iconos");
             JSONObject items=(JSONObject)source;
-            if(items.length()==0||items.length()>MAX_ICONS)throw new IOException("图标包需包含 1–128 项图标");
+            if(items.length()==0||items.length()>MAX_ICONS)throw new IOException("El paquete de iconos debe contener entre 1 y 128 iconos");
             TreeMap<String,String> icons=new TreeMap<>();
             for(Iterator<String> it=items.keys();it.hasNext();){
                 String key=it.next();Object value=items.opt(key);
                 if(!validKey(key)||!(value instanceof String)||!validAsset((String)value))
-                    throw new IOException("图标标识或资源路径无效："+key);
+                    throw new IOException("El identificador del icono o la ruta del recurso no es válida: "+key);
                 icons.put(key,(String)value);
             }
             if(version==VERSION){
@@ -55,12 +55,12 @@ public final class IconPackManifest {
                 requireFamily(icons,"battery.charging.",batteryStates(""));
             }
             return new IconPackManifest(name,author,license,icons,version);
-        }catch(JSONException malformed){throw new IOException("图标包 manifest.json 格式错误",malformed);}
+        }catch(JSONException malformed){throw new IOException("El formato de manifest.json del paquete de iconos es incorrecto",malformed);}
     }
     private static String text(JSONObject json,String key,int limit,boolean required)throws IOException{
         Object value=json.opt(key);String result=value instanceof String?((String)value).trim():"";
         if((required&&result.isEmpty())||result.length()>limit||result.matches("(?s).*\\p{Cntrl}.*"))
-            throw new IOException("图标包 "+key+" 内容无效");
+            throw new IOException("Paquete de iconos "+key+" contenido no válido");
         return result;
     }
     private static String[] batteryStates(String prefix){
@@ -71,7 +71,7 @@ public final class IconPackManifest {
         for(String key:icons.keySet())if(key.startsWith(prefix)){declared=true;break;}
         if(!declared)return;
         for(String state:states)if(!icons.containsKey(prefix+state))
-            throw new IOException("图标状态不完整，缺少 "+prefix+state);
+            throw new IOException("El estado del icono está incompleto; falta "+prefix+state);
     }
     public static boolean validKey(String key){
         return key!=null&&(key.matches("hint\\.[a-z][a-z0-9_]{0,47}(?:\\.(?:on|off))?")

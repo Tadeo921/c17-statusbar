@@ -89,14 +89,14 @@ public final class RootAccess {
                     result = classify(process.exitValue(), output.text(), false);
                 }
             } catch (IOException missingRoot) {
-                result = new Result(State.UNAVAILABLE, "未找到可用的 Root 环境，请确认设备已 Root。" );
+                result = new Result(State.UNAVAILABLE, "No se encontró un entorno Root disponible. Comprueba que el dispositivo tenga acceso root." );
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
                 if (process != null) process.destroyForcibly();
-                result = new Result(State.FAILED, "Root 检测已中断，请重试。" );
+                result = new Result(State.FAILED, "La comprobación de root se interrumpió. Inténtalo de nuevo." );
             } catch (RuntimeException unavailable) {
                 if (process != null) process.destroyForcibly();
-                result = new Result(State.FAILED, "无法完成 Root 检测，请检查授权后重试。" );
+                result = new Result(State.FAILED, "No se pudo comprobar el acceso root. Revisa los permisos e inténtalo de nuevo." );
             } finally {
                 if (process != null) {
                     try { process.getInputStream().close(); } catch (IOException ignored) { }
@@ -112,11 +112,11 @@ public final class RootAccess {
     }
 
     static Result classify(int exit, String output, boolean timedOut) {
-        if (timedOut) return new Result(State.TIMEOUT, "Root 授权等待超时，请在 Root 管理器中允许本应用后重试。" );
+        if (timedOut) return new Result(State.TIMEOUT, "Se agotó el tiempo de espera de la autorización root. Permite esta aplicación en el gestor de root e inténtalo de nuevo." );
         if (exit == 0 && output != null) for (String line : output.split("\\R"))
             if ("C17_ROOT_UID:0".equals(line.trim()))
-                return new Result(State.GRANTED, "已获得 Root 权限，可保存配置和切换安全模式。" );
-        return new Result(State.DENIED, "未获得 Root 权限，请在 Root 管理器中允许本应用。" );
+                return new Result(State.GRANTED, "Se obtuvo acceso root; ahora puedes guardar la configuración y cambiar el modo seguro." );
+        return new Result(State.DENIED, "No se obtuvo acceso root. Permite esta aplicación en el gestor de root." );
     }
 
     /** Only the verified fixed-project installer calls this; no arbitrary command or URL API is exposed. */

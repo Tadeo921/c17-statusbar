@@ -147,10 +147,10 @@ public final class AppFrameworkStatus {
             try {
                 int api = service.getApiVersion();
                 String name = text(service.getFrameworkName(), "Xposed");
-                String version = text(service.getFrameworkVersion(), "未知版本");
+                String version = text(service.getFrameworkVersion(), "Versión desconocida");
                 long code = service.getFrameworkVersionCode();
-                String message = api >= REQUIRED_API ? "模块已启用 · " + name + " " + version
-                        : "框架服务已连接，但当前 API " + api + " 低于模块要求的 API " + REQUIRED_API;
+                String message = api >= REQUIRED_API ? "Módulo activado · " + name + " " + version
+                        : "El servicio del framework está conectado, pero la API actual " + api + " es inferior a la que requiere el módulo." + REQUIRED_API;
                 result = new Snapshot(State.CONNECTED, api, name, version, code, message);
             } catch (RuntimeException | LinkageError unavailable) {
                 result = error();
@@ -209,14 +209,14 @@ public final class AppFrameworkStatus {
     }
 
     private static Snapshot waiting() {
-        return new Snapshot(State.CHECKING, 0, "", "", 0L, "正在连接框架服务…");
+        return new Snapshot(State.CHECKING, 0, "", "", 0L, "Conectando con el servicio del framework…");
     }
     private static Snapshot disconnected() {
         return new Snapshot(State.NOT_CONNECTED, 0, "", "", 0L,
-                "尚未连接框架服务。若已启用模块，请完全关闭本应用后重新打开。");
+                "El servicio del framework aún no está conectado. Si el módulo está activado, cierra completamente la aplicación y vuelve a abrirla.");
     }
     private static Snapshot error() {
-        return new Snapshot(State.ERROR, 0, "", "", 0L, "框架服务状态读取失败，请重新打开本应用。");
+        return new Snapshot(State.ERROR, 0, "", "", 0L, "No se pudo leer el estado del servicio del framework. Vuelve a abrir la aplicación.");
     }
     private static String text(String value, String fallback) {
         if (value == null || value.trim().isEmpty()) return fallback;

@@ -271,19 +271,19 @@ public final class DiagnosticReport {
         return new JSONObject().put("report_schema",2).put("guide",guide()).put("app",app).put("device",device)
                 .put("packages",packages).put("diagnosis",diagnose(app,packages,events,values))
                 .put("latest_facts",latest).put("configuration",settings(values)).put("limitations",
-                        "文本与字体文件内容已脱敏；请补充故障出现的方向、操作顺序、快慢与录屏。配置与日志不足以精确重放任意手势。");
+                        "El texto y el contenido de los archivos de fuentes se han ocultado por privacidad. Añade la orientación del dispositivo, la secuencia de pasos, la velocidad del fallo y una grabación de pantalla. La configuración y los registros no bastan para reproducir con precisión cualquier gesto.");
     }
 
     /** What each part of the file means, so it can be read without a tool. */
     static JSONArray guide() {
         JSONArray result=new JSONArray();
         String[] lines={
-                "diagnosis：由本文件自动得出的初步判断，先看这里；status 为 warn 的条目最可能是原因。",
-                "device / packages：机型、ColorOS、系统界面与插件版本及更新时间；系统界面更新或模块更新后需对比 last_update_ms。",
-                "latest_facts：每个主题最后一次状态；scene=场景，clock=时钟，fluid=流体云与通知背景，ui=设置应用。",
-                "configuration：每个设置项的有效值(value)、是否已保存(saved)、原始存储值(stored)。文本内容已脱敏。",
-                "近期事件(JSONL)：timestamp 为 UTC。details.kind=fact 的 values 是结构化状态；runtime_applied 表示系统界面成功应用了一次配置。",
-                "常见判断：runtime_applied 缺失或 runtime 与 app.expected_runtime 不同=系统界面没有加载当前版本，需要在主页点“重启系统界面”。"};
+                "diagnosis: evaluación preliminar generada automáticamente por este archivo. Empieza aquí; los elementos con status=warn son las causas más probables.",
+                "device / packages: modelo, ColorOS, versiones y fechas de actualización de SystemUI y del módulo. Compara last_update_ms después de actualizar SystemUI o el módulo.",
+                "latest_facts: último estado de cada tema; scene=escena, clock=reloj, fluid=Fluid Cloud y fondo de notificaciones, ui=aplicación de ajustes.",
+                "configuration: valor efectivo (value), si el ajuste está guardado (saved) y valor original almacenado (stored). El contenido de texto se ha ocultado por privacidad.",
+                "Eventos recientes (JSONL): timestamp está en UTC. values dentro de details.kind=fact contiene estados estructurados; runtime_applied indica que SystemUI aplicó una configuración correctamente.",
+                "Interpretación habitual: si falta runtime_applied o runtime no coincide con app.expected_runtime, SystemUI no ha cargado la versión actual. Pulsa «Reiniciar SystemUI» en la pantalla principal."};
         for(String line:lines)result.put(line);
         return result;
     }
@@ -313,31 +313,31 @@ public final class DiagnosticReport {
         }
         JSONObject module=packages.optJSONObject(ModuleDiagnostics.PACKAGE_NAME);
         if(runtime == null) {
-            result.put(item("runtime_applied","warn","日志里没有系统界面应用配置的记录。可能刚开启日志、系统界面还没重启，或模块没有在系统界面里生效。"));
+            result.put(item("runtime_applied","warn","El registro no contiene ninguna aplicación de configuración en SystemUI. Puede que acabes de activar el registro, que SystemUI aún no se haya reiniciado o que el módulo no esté activo en SystemUI."));
         } else {
             String token=runtime.optString("runtime","");
             if(!ModuleRuntimeStatus.BUILD_TOKEN.equals(token))
-                result.put(item("runtime_token","warn","系统界面运行的是旧标识 "+token+"，当前模块是 "+ModuleRuntimeStatus.BUILD_TOKEN+"：请重启系统界面。"));
-            else result.put(item("runtime_token","ok","系统界面已加载当前版本："+token));
+                result.put(item("runtime_token","warn","SystemUI está ejecutando un identificador antiguo "+token+"; el módulo actual es "+ModuleRuntimeStatus.BUILD_TOKEN+". Reinicia SystemUI."));
+            else result.put(item("runtime_token","ok","SystemUI ha cargado la versión actual: "+token));
             double started=runtime.optDouble("process_start_ms",0d);
             long updated=module == null?0L:module.optLong("last_update_ms",0L);
             if(started > 0d && updated > 0L && started < updated)
-                result.put(item("systemui_older_than_module","warn","系统界面进程启动于模块更新之前，里面不可能是新代码，请重启系统界面。"));
+                result.put(item("systemui_older_than_module","warn","El proceso de SystemUI se inició antes de actualizar el módulo y, por tanto, no puede contener el código nuevo. Reinicia SystemUI."));
             String version=runtime.optString("systemui_version","");
             JSONObject systemui=packages.optJSONObject(ModuleRuntimeStatus.SYSTEM_UI);
             if(!version.isEmpty() && systemui != null && !version.equals(systemui.optString("version_name","")))
-                result.put(item("systemui_version_changed","warn","系统界面包版本在运行期间发生变化："+version+" → "+systemui.optString("version_name","")+"，需要重启。"));
+                result.put(item("systemui_version_changed","warn","La versión del paquete SystemUI cambió mientras estaba en ejecución: "+version+" → "+systemui.optString("version_name","")+". Es necesario reiniciar."));
         }
         if(StatusBarSettings.bool(values,StatusBarSettings.SAFE_MODE))
-            result.put(item("safe_mode","warn","安全模式已开启：所有修改暂停，这是自定义效果不出现的直接原因。"));
+            result.put(item("safe_mode","warn","El modo seguro está activado: todos los cambios están en pausa. Esta es la causa directa de que no aparezcan los efectos personalizados."));
         JSONObject latest=latestFacts(events);
         JSONObject clock=latest.optJSONObject("clock");
         if(clock != null) {
             JSONObject v=clock.optJSONObject("values");
             if(v != null && v.optBoolean("dual_enabled",false) && !v.optBoolean("dual_active",false))
-                result.put(item("dual_clock","warn","双排时钟已开启但没有生效，原因："+v.optString("reason","未知")+"。"));
+                result.put(item("dual_clock","warn","El reloj de doble línea está activado, pero no se aplica. Motivo: "+v.optString("reason","desconocido")+"。"));
             else if(v != null && v.optBoolean("dual_active",false))
-                result.put(item("dual_clock","ok","双排时钟已生效（下排布局已建立："+v.optBoolean("lower_ready",false)+"）。"));
+                result.put(item("dual_clock","ok","El reloj de doble línea está activo (diseño de la línea inferior creado: "+v.optBoolean("lower_ready",false)+" )."));
         }
         int healed=0;String healReason="";long healGap=0L;
         if(events != null)for(JSONObject event:events) {
@@ -349,9 +349,9 @@ public final class DiagnosticReport {
                 healed++;healReason=why;healGap=(long)v.optDouble("gap_ms",0d);
             }
         }
-        if(healed > 0)result.put(item("clock_tick","warn","时钟的秒数刷新停过并已自动恢复 "+healed+" 次，最近一次原因："+healReason
-                +"，停顿约 "+healGap+" ms。pending_lost=定时器丢失；screen_on_missed=漏收亮屏广播；draw_without_tick=界面还在绘制但没有定时器。"));
-        if(result.length() == 0)result.put(item("none","info","没有发现明显问题，请结合 latest_facts 与事件时间线分析。"));
+        if(healed > 0)result.put(item("clock_tick","warn","La actualización de los segundos del reloj se detuvo y se recuperó automáticamente "+healed+" veces; último motivo: "+healReason
+                +"; pausa aproximada de "+healGap+" ms. pending_lost=temporizador perdido; screen_on_missed=se perdió el evento de pantalla encendida; draw_without_tick=la interfaz seguía dibujándose, pero no tenía temporizador."));
+        if(result.length() == 0)result.put(item("none","info","No se detectaron problemas evidentes. Analiza latest_facts junto con la cronología de eventos."));
         return result;
     }
 

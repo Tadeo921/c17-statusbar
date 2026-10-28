@@ -49,12 +49,12 @@ final class EasterEggLottery {
 
     static String title(int theme) {
         switch (theme) {
-            case CYBERPUNK: return "赛博霓虹";
-            case PIXEL: return "像素街机";
-            case ANIME: return "樱花晴空";
-            case INK: return "水墨山河";
-            case COSMOS: return "星河漫游";
-            case LEGEND: return "鎏金传说";
+            case CYBERPUNK: return "Neón cibernético";
+            case PIXEL: return "Arcade de píxeles";
+            case ANIME: return "Cielo despejado y sakura";
+            case INK: return "Paisaje de tinta china";
+            case COSMOS: return "Paseo por la galaxia";
+            case LEGEND: return "Leyenda dorada";
             default: return "";
         }
     }

@@ -99,16 +99,16 @@ public final class GitHubUpdates {
                         connection.getHeaderField("Retry-After"), errorBody);
             }
             if (connection.getContentLengthLong() > MAX_RESPONSE_BYTES)
-                return error(Status.INVALID_RESPONSE, "更新信息过大，请到项目主页查看");
+                return error(Status.INVALID_RESPONSE, "La información de actualización es demasiado grande; consulta la página del proyecto.");
             return parseRelease(localVersion, readBounded(connection.getInputStream()));
         } catch (TooLargeException ignored) {
-            return error(Status.INVALID_RESPONSE, "更新信息过大，请到项目主页查看");
+            return error(Status.INVALID_RESPONSE, "La información de actualización es demasiado grande; consulta la página del proyecto.");
         } catch (SocketTimeoutException ignored) {
-            return error(Status.NETWORK_ERROR, "连接 GitHub 超时，请稍后再试");
+            return error(Status.NETWORK_ERROR, "Se agotó el tiempo de espera al conectar con GitHub. Inténtalo más tarde.");
         } catch (IOException ignored) {
-            return error(Status.NETWORK_ERROR, "无法连接 GitHub，请检查网络后重试");
+            return error(Status.NETWORK_ERROR, "No se pudo conectar con GitHub. Comprueba la conexión e inténtalo de nuevo.");
         } catch (SecurityException ignored) {
-            return error(Status.NETWORK_ERROR, "无法访问网络，请检查应用的联网权限");
+            return error(Status.NETWORK_ERROR, "No se puede acceder a Internet. Comprueba los permisos de red de la aplicación.");
         } finally {
             if (connection != null) connection.disconnect();
         }
@@ -130,26 +130,26 @@ public final class GitHubUpdates {
         if (code == 404) return noRelease();
         if (code == 429 || code == 403 && ("0".equals(remaining) || retryAfter != null
                 || nonNull(body).toLowerCase(Locale.ROOT).contains("rate limit")))
-            return error(Status.RATE_LIMITED, "GitHub 检查次数暂时受限，请稍后再试");
+            return error(Status.RATE_LIMITED, "GitHub ha limitado temporalmente las consultas. Inténtalo más tarde.");
         if (code >= 300 && code < 400)
-            return error(Status.HTTP_ERROR, "更新服务发生重定向，请到项目主页查看");
-        return error(Status.HTTP_ERROR, "GitHub 暂时无法提供更新信息（" + code + "），请稍后再试");
+            return error(Status.HTTP_ERROR, "El servicio de actualización redirigió la solicitud. Consulta la página del proyecto.");
+        return error(Status.HTTP_ERROR, "GitHub no puede proporcionar información de actualización por ahora (" + code + "). Inténtalo más tarde.");
     }
 
     /** Parses only stable public releases and safe links in this project's release paths. */
     public static Result parseRelease(String localVersion, String json) {
         if (json == null || json.length() > MAX_RESPONSE_BYTES)
-            return error(Status.INVALID_RESPONSE, "更新信息不完整，请稍后再试");
+            return error(Status.INVALID_RESPONSE, "La información de actualización está incompleta. Inténtalo más tarde.");
         try {
             JSONObject release = new JSONObject(json);
             if (Boolean.TRUE.equals(release.opt("draft")) || Boolean.TRUE.equals(release.opt("prerelease")))
                 return noRelease();
             if (!Boolean.FALSE.equals(release.opt("draft")) || !Boolean.FALSE.equals(release.opt("prerelease")))
-                return error(Status.INVALID_RESPONSE, "无法确认正式发布状态，请到项目主页查看");
+                return error(Status.INVALID_RESPONSE, "No se pudo confirmar el estado de la versión estable. Consulta la página del proyecto.");
             String tag = plainText(release.optString("tag_name", ""), 128).trim();
             String releaseUrl = release.optString("html_url", "");
             if (tag.length() == 0 || !isReleaseUrl(releaseUrl))
-                return error(Status.INVALID_RESPONSE, "更新信息不完整，请到项目主页查看");
+                return error(Status.INVALID_RESPONSE, "La información de actualización está incompleta. Consulta la página del proyecto.");
             String notes = plainText(release.optString("body", ""), MAX_BODY_CHARACTERS);
             String apk = "";
             long apkSize=0L;String apkSha256="";
@@ -171,13 +171,13 @@ public final class GitHubUpdates {
             }
             Integer compared = compareVersion(tag, localVersion);
             if (compared == null)
-                return new Result(Status.UNKNOWN_VERSION, "发现正式发布，但版本号无法自动比较，请手动查看", tag, notes, releaseUrl, apk,apkSize,apkSha256);
+                return new Result(Status.UNKNOWN_VERSION, "Se encontró una versión estable, pero no se pudieron comparar los números automáticamente. Compruébalo manualmente.", tag, notes, releaseUrl, apk,apkSize,apkSha256);
             if (compared > 0)
-                return new Result(Status.UPDATE_AVAILABLE, "发现新版本 " + tag, tag, notes, releaseUrl, apk,apkSize,apkSha256);
-            return new Result(Status.UP_TO_DATE, compared < 0 ? "当前本地版本高于最新正式发布（" + tag + "）"
-                    : "当前已是最新正式发布", tag, notes, releaseUrl, apk,apkSize,apkSha256);
+                return new Result(Status.UPDATE_AVAILABLE, "Nueva versión disponible " + tag, tag, notes, releaseUrl, apk,apkSize,apkSha256);
+            return new Result(Status.UP_TO_DATE, compared < 0 ? "La versión local es más reciente que la última versión estable publicada (" + tag + "）"
+                    : "Ya tienes la última versión estable.", tag, notes, releaseUrl, apk,apkSize,apkSha256);
         } catch (JSONException | IllegalArgumentException ignored) {
-            return error(Status.INVALID_RESPONSE, "无法读取更新信息，请稍后再试");
+            return error(Status.INVALID_RESPONSE, "No se pudo leer la información de actualización. Inténtalo más tarde.");
         }
     }
 
@@ -267,7 +267,7 @@ public final class GitHubUpdates {
     }
 
     private static Result noRelease() {
-        return error(Status.NO_RELEASE, "暂无正式发布，可在 GitHub 项目页查看进展");
+        return error(Status.NO_RELEASE, "Aún no hay versiones estables publicadas. Consulta el proyecto en GitHub para ver las novedades.");
     }
     private static Result error(Status status, String message) {
         return new Result(status, message, "", "", "", "");

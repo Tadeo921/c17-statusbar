@@ -85,7 +85,7 @@ final class ComponentFields {
     // ---- 天气 ----
 
     private static final class Weather implements ComponentFormat.Fields {
-        private static final List<String> NAMES = Arrays.asList("描述", "温度", "图标", "夜", "昼", "有数据", "有温度");
+        private static final List<String> NAMES = Arrays.asList("描述", "温度", "Iconos", "夜", "昼", "有数据", "有温度");
         private final SystemWeatherText.Snapshot w; private final int icons;
         Weather(SystemWeatherText.Snapshot weather, int icons) { w = weather; this.icons = icons; }
         @Override public String category() { return "天气"; }
@@ -94,7 +94,7 @@ final class ComponentFields {
             switch (name) {
                 case "描述": return ComponentFormat.TEXT;
                 case "温度": return ComponentFormat.NUMBER;
-                case "图标": return ComponentFormat.ICON;
+                case "Iconos": return ComponentFormat.ICON;
                 case "夜": case "昼": case "有数据": case "有温度": return ComponentFormat.BOOL;
                 default: return 0;
             }
@@ -103,7 +103,7 @@ final class ComponentFields {
             switch (name) {
                 case "描述": return choice(name, args, "中文", "英文", "系统");
                 case "温度": return choice(name, args, "数字", "单位");
-                case "图标": return choice(name, args, "原色");
+                case "Iconos": return choice(name, args, "原色");
                 default: return none(name, args);
             }
         }
@@ -148,16 +148,16 @@ final class ComponentFields {
     // ---- 电池 ----
 
     private static final class Battery implements ComponentFormat.Fields {
-        private static final List<String> NAMES = Arrays.asList("电量", "状态", "条", "图标", "充电", "满电", "未充电", "放电", "状态未知", "低电", "有数据");
+        private static final List<String> NAMES = Arrays.asList("电量", "状态", "条", "Iconos", "充电", "满电", "未充电", "放电", "状态未知", "低电", "有数据");
         private final BigClockSystemText.Snapshot s; private final int icons;
         Battery(BigClockSystemText.Snapshot system, int icons) { s = system; this.icons = icons; }
-        @Override public String category() { return "电池"; }
+        @Override public String category() { return "Batería"; }
         @Override public List<String> names() { return NAMES; }
         @Override public int kind(String name) {
             switch (name) {
                 case "电量": return ComponentFormat.NUMBER;
                 case "状态": case "条": return ComponentFormat.TEXT;
-                case "图标": return ComponentFormat.ICON;
+                case "Iconos": return ComponentFormat.ICON;
                 case "充电": case "满电": case "未充电": case "放电": case "状态未知": case "低电": case "有数据": return ComponentFormat.BOOL;
                 default: return 0;
             }
@@ -206,7 +206,7 @@ final class ComponentFields {
     // ---- 信号 ----
 
     private static final class Signal implements ComponentFormat.Fields {
-        private static final List<String> NAMES = Arrays.asList("格数", "总格", "状态", "条", "图标", "飞行", "无卡", "无服务", "有信号", "有数据");
+        private static final List<String> NAMES = Arrays.asList("格数", "总格", "状态", "条", "Iconos", "飞行", "无卡", "无服务", "有信号", "有数据");
         private final BigClockSystemText.Snapshot s; private final int icons;
         Signal(BigClockSystemText.Snapshot system, int icons) { s = system; this.icons = icons; }
         @Override public String category() { return "信号"; }
@@ -215,7 +215,7 @@ final class ComponentFields {
             switch (name) {
                 case "格数": case "总格": return ComponentFormat.NUMBER;
                 case "状态": case "条": return ComponentFormat.TEXT;
-                case "图标": return ComponentFormat.ICON;
+                case "Iconos": return ComponentFormat.ICON;
                 case "飞行": case "无卡": case "无服务": case "有信号": case "有数据": return ComponentFormat.BOOL;
                 default: return 0;
             }
@@ -265,7 +265,7 @@ final class ComponentFields {
     // ---- 网络 ----
 
     private static final class Network implements ComponentFormat.Fields {
-        private static final List<String> NAMES = Arrays.asList("类型", "制式", "状态", "WiFi格数", "条", "图标",
+        private static final List<String> NAMES = Arrays.asList("类型", "制式", "状态", "WiFi格数", "条", "Iconos",
                 "联网", "WiFi", "蜂窝", "有线", "离线", "受限", "有数据");
         private final BigClockSystemText.Snapshot s; private final int icons;
         Network(BigClockSystemText.Snapshot system, int icons) { s = system; this.icons = icons; }
@@ -275,7 +275,7 @@ final class ComponentFields {
             switch (name) {
                 case "类型": case "制式": case "状态": case "条": return ComponentFormat.TEXT;
                 case "WiFi格数": return ComponentFormat.NUMBER;
-                case "图标": return ComponentFormat.ICON;
+                case "Iconos": return ComponentFormat.ICON;
                 case "联网": case "WiFi": case "蜂窝": case "有线": case "离线": case "受限": case "有数据": return ComponentFormat.BOOL;
                 default: return 0;
             }

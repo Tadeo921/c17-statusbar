@@ -262,7 +262,7 @@ public final class NotificationBigClockSettings {
     public static final String FONT_NATIVE_DIGIT = "native_digit";
     public static final String FONT_NATIVE_SERIF = "native_serif";
     public static final String[] FONT_VALUES = {"native", FONT_NATIVE_SANS, FONT_NATIVE_DIGIT, FONT_NATIVE_SERIF, "system", "pingfang", "custom"};
-    public static final String[] FONT_LABELS = {"原生（跟随锁屏）", "原生 · OPPO Sans", "原生 · OPPO Digit", "原生 · OPPO Serif", "系统", "苹方", "自选"};
+    public static final String[] FONT_LABELS = {"Nativo (seguir la pantalla de bloqueo)", "Nativo · OPPO Sans", "Nativo · OPPO Digit", "Nativo · OPPO Serif", "Sistema", "PingFang", "Personalizado"};
 
     /** The phone's native clock families have the verified HGHT axis: the lock screen's current one, or one of the three. */
     public static boolean nativeHeightFont(Object mode) {

@@ -29,7 +29,7 @@ final class EasterEggMemento {
     }
 
     static String daysLine(int days) {
-        return "你与 C17 的第 " + days + " 天";
+        return "Llevas " + days + " días con C17";
     }
 
     static String serialLine(int serial) {

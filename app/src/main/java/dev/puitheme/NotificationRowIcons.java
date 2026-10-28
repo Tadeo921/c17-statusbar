@@ -107,7 +107,7 @@ public final class NotificationRowIcons {
         Object adapter=entryAdapter.invoke(owner),source=adapter==null?null:adapterSbn.invoke(adapter);
         if(!(source instanceof StatusBarNotification))return;
         String pkg=((StatusBarNotification)source).getPackageName();
-        try{NotificationIconOverrides.validatePackage(pkg,"通知应用包名无效");}catch(IllegalArgumentException unknown){return;}
+        try{NotificationIconOverrides.validatePackage(pkg,"El nombre de paquete de la aplicación de notificación no es válido");}catch(IllegalArgumentException unknown){return;}
         if(wrappers.size()>=MAX_BINDINGS)return;
         Binding binding=new Binding(identity,(View)owner,(View)root,(ImageView)candidate,pkg);
         wrappers.put(identity,binding);images.put((ImageView)candidate,binding);

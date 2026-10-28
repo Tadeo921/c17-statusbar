@@ -81,7 +81,7 @@ public final class ColorPickerDialog {
         titleView.setMaxLines(2);
         titleView.setEllipsize(TextUtils.TruncateAt.END);
         titleBlock.addView(titleView, match());
-        addSpace(titleBlock, text("调色 · 精确到 0.01", 12, MUTED), -2, 6);
+        addSpace(titleBlock, text("Selector de color · precisión de 0,01", 12, MUTED), -2, 6);
         shell.addView(titleBlock, match());
 
         LinearLayout content = column();
@@ -89,11 +89,11 @@ public final class ColorPickerDialog {
         LinearLayout previewCard = card();
         LinearLayout heading = row();
         preview = new Preview();
-        preview.setContentDescription("当前颜色预览");
+        preview.setContentDescription("Vista previa del color actual");
         heading.addView(preview, new LinearLayout.LayoutParams(dp(84), dp(84)));
         LinearLayout captions = column();
         captions.setPadding(dp(16), 0, 0, 0);
-        captions.addView(text("颜色预览", 12, MUTED));
+        captions.addView(text("Vista previa del color", 12, MUTED));
         summary = text("", 18, INK);
         summary.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         summary.setMaxLines(1);
@@ -109,21 +109,21 @@ public final class ColorPickerDialog {
         hex.setHint("#RRGGBB / #AARRGGBB");
         hex.setTypeface(Typeface.MONOSPACE);
         hex.setSelectAllOnFocus(true);
-        hex.setContentDescription("十六进制颜色，6 位 RGB 或 8 位 ARGB");
+        hex.setContentDescription("Color hexadecimal: RGB de 6 dígitos o ARGB de 8");
         addSpace(previewCard, hex, -2, 16);
-        addSpace(previewCard, text("6 位跟随系统透明度，8 位指定透明度", 12, MUTED), -2, 8);
+        addSpace(previewCard, text("Con 6 dígitos se usa la transparencia del sistema; con 8 se especifica la transparencia", 12, MUTED), -2, 8);
         addSpace(content, previewCard, -2, 0);
 
         LinearLayout colorCard = card();
-        colorCard.addView(sectionTitle("HSB 调色"), match());
-        addSpace(colorCard, text("拖动滑条，或点击右侧数值精确输入", 12, MUTED), -2, 6);
+        colorCard.addView(sectionTitle("Selector HSB"), match());
+        addSpace(colorCard, text("Arrastra los controles o toca el valor de la derecha para introducirlo con precisión", 12, MUTED), -2, 6);
         for (int i = 0; i < 3; i++) addSpace(colorCard, component(i), -2, i == 0 ? 16 : 8);
         addSpace(content, colorCard, -2, 14);
 
         LinearLayout alphaCard = card();
-        alphaCard.addView(sectionTitle("透明度"), match());
+        alphaCard.addView(sectionTitle("Transparencia"), match());
         systemAlpha = new Switch(context);
-        systemAlpha.setText("透明度跟随系统");
+        systemAlpha.setText("Seguir la transparencia del sistema");
         systemAlpha.setTextSize(14);
         systemAlpha.setTextColor(INK);
         systemAlpha.setMinHeight(dp(56));
@@ -132,14 +132,14 @@ public final class ColorPickerDialog {
         systemAlpha.setTrackTintList(new android.content.res.ColorStateList(
                 new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
                 new int[]{ACCENT, BORDER}));
-        systemAlpha.setContentDescription("透明度跟随系统");
+        systemAlpha.setContentDescription("Seguir la transparencia del sistema");
         addSpace(alphaCard, systemAlpha, -2, 6);
         LinearLayout alphaRow = row();
-        alphaRow.addView(text("自定义透明度", 14, INK), new LinearLayout.LayoutParams(0, -2, 1));
+        alphaRow.addView(text("Transparencia personalizada", 14, INK), new LinearLayout.LayoutParams(0, -2, 1));
         alphaRow.addView(valueButton(3));
         addSpace(alphaCard, alphaRow, -2, 10);
         palettes[3] = new Palette(3);
-        palettes[3].setContentDescription("透明度滑条，0 至 100 百分比");
+        palettes[3].setContentDescription("Control de transparencia, de 0 a 100 %");
         addSpace(alphaCard, palettes[3], 60, 4);
         alphaHint = text("", 12, MUTED);
         alphaHint.setLineSpacing(dp(3), 1);
@@ -147,9 +147,9 @@ public final class ColorPickerDialog {
         addSpace(content, alphaCard, -2, 14);
 
         LinearLayout presetsCard = card();
-        presetsCard.addView(sectionTitle("常用颜色"), match());
+        presetsCard.addView(sectionTitle("Colores frecuentes"), match());
         int[] presets = {0xff000000, 0xffffffff, 0xff64748b, 0xff3482ff, 0xff22c55e, 0xfff59e0b};
-        String[] names = {"黑色", "白色", "灰蓝", "蓝色", "绿色", "琥珀"};
+        String[] names = {"Negro", "Blanco", "Azul grisáceo", "Azul", "Verde", "Ámbar"};
         for (int r = 0; r < 2; r++) {
             LinearLayout swatches = row();
             for (int c = 0; c < 3; c++) {
@@ -161,7 +161,7 @@ public final class ColorPickerDialog {
             addSpace(presetsCard, swatches, -2, r == 0 ? 12 : 8);
         }
         addSpace(content, presetsCard, -2, 14);
-        addSpace(content, text("应用后保存；取消保留原来的颜色。", 12, MUTED), -2, 14);
+        addSpace(content, text("Al pulsar Aplicar se guarda; Cancelar conserva el color original.", 12, MUTED), -2, 14);
         BoundedScroll scroll = new BoundedScroll();
         scroll.setFillViewport(false);
         scroll.setVerticalScrollBarEnabled(false);
@@ -170,7 +170,7 @@ public final class ColorPickerDialog {
         scroll.addView(content);
         shell.addView(scroll, match());
         AlertDialog dialog = new AlertDialog.Builder(context).setView(shell)
-                .setNegativeButton("取消", null).setPositiveButton("应用", null).create();
+                .setNegativeButton("Cancelar", null).setPositiveButton("Aplicar", null).create();
         dialog.setView(shell,0,0,0,0);
         hex.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
@@ -192,7 +192,7 @@ public final class ColorPickerDialog {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 HsbColor parsed = new HsbColor(color.argb(), color.customAlpha());
                 if (!parsed.readHex(hex.getText().toString())) {
-                    hex.setError("请输入 6 位或 8 位十六进制色值");
+                    hex.setError("Introduce un color hexadecimal de 6 u 8 dígitos.");
                     hex.requestFocus();
                     return;
                 }
@@ -208,12 +208,12 @@ public final class ColorPickerDialog {
     private View component(int index) {
         LinearLayout box = column();
         LinearLayout heading = row();
-        heading.addView(text(new String[]{"色相 H", "饱和度 S", "亮度 B"}[index], 14, INK),
+        heading.addView(text(new String[]{"Tono H", "Saturación S", "Brillo B"}[index], 14, INK),
                 new LinearLayout.LayoutParams(0, -2, 1));
         heading.addView(valueButton(index));
         box.addView(heading, match());
         palettes[index] = new Palette(index);
-        palettes[index].setContentDescription(new String[]{"色相 H，0 至 360 度", "饱和度 S，0 至 100 百分比", "亮度 B，0 至 100 百分比"}[index]);
+        palettes[index].setContentDescription(new String[]{"Tono H, de 0 a 360 grados", "Saturación S, de 0 a 100 %", "Brillo B, de 0 a 100 %"}[index]);
         addSpace(box, palettes[index], 60, 3);
         return box;
     }
@@ -248,13 +248,13 @@ public final class ColorPickerDialog {
         labelParams.leftMargin = dp(6);
         tile.addView(label, labelParams);
         tile.setFocusable(true);
-        tile.setContentDescription(name + String.format(Locale.ROOT, "，预设颜色 #%06X", rgb & 0xffffff));
+        tile.setContentDescription(name + String.format(Locale.ROOT, ", color preestablecido #%06X", rgb & 0xffffff));
         tile.setOnClickListener(v -> { color.setRgb(rgb); update(true); });
         return tile;
     }
 
     private void editComponent(int index) {
-        String name = new String[]{"色相 H", "饱和度 S", "亮度 B", "透明度"}[index];
+        String name = new String[]{"Tono H", "Saturación S", "Brillo B", "Transparencia"}[index];
         double maximum = index == 0 ? 360 : 100;
         EditText field = new EditText(context);
         styleInput(field, 22);
@@ -262,7 +262,7 @@ public final class ColorPickerDialog {
         field.setFilters(new InputFilter[]{new InputFilter.LengthFilter(32)});
         field.setText(String.format(Locale.ROOT, "%.2f", value(index)));
         field.selectAll();
-        field.setContentDescription(name + "数值");
+        field.setContentDescription(name + "Valor");
         LinearLayout shell = column();
         shell.setBackground(rounded(BG, 24));
         LinearLayout title = column();
@@ -270,18 +270,18 @@ public final class ColorPickerDialog {
         TextView heading = text(name, 22, INK);
         heading.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         title.addView(heading, match());
-        addSpace(title, text("范围 0.00 ～ " + (index == 0 ? "360.00°" : "100.00%"), 12, MUTED), -2, 6);
+        addSpace(title, text("Intervalo 0,00 a " + (index == 0 ? "360.00°" : "100.00%"), 12, MUTED), -2, 6);
         shell.addView(title, match());
         LinearLayout body = column();
         body.setPadding(dp(22), dp(8), dp(22), dp(12));
         body.addView(field, match());
-        addSpace(body, text("确定后回填调色盘，最终点“应用”保存。", 12, MUTED), -2, 10);
+        addSpace(body, text("Al confirmar, el valor vuelve al selector; pulsa «Aplicar» al final para guardar.", 12, MUTED), -2, 10);
         BoundedScroll scroll = new BoundedScroll();
         scroll.setVerticalScrollBarEnabled(false);
         scroll.addView(body);
         shell.addView(scroll, match());
         AlertDialog dialog = new AlertDialog.Builder(context).setView(shell)
-                .setNegativeButton("取消", null).setPositiveButton("确定", null).create();
+                .setNegativeButton("Cancelar", null).setPositiveButton("Aceptar", null).create();
         dialog.setView(shell,0,0,0,0);
         dialog.setOnShowListener(ignored -> {
             styleDialog(dialog);
@@ -303,7 +303,7 @@ public final class ColorPickerDialog {
                     update(true);
                     hideKeyboard(field);
                     dialog.dismiss();
-                } catch (IllegalArgumentException | ArithmeticException error) { field.setError("请输入范围内的有效数值"); }
+                } catch (IllegalArgumentException | ArithmeticException error) { field.setError("Introduce un valor válido dentro del intervalo."); }
             });
         });
         dialog.setOnDismissListener(ignored -> hideKeyboard(field));
@@ -318,12 +318,12 @@ public final class ColorPickerDialog {
         updating = true;
         for (int i = 0; i < 4; i++) {
             values[i].setText(String.format(Locale.ROOT, "%.2f%s", value(i), i == 0 ? "°" : "%"));
-            values[i].setContentDescription(new String[]{"色相 H", "饱和度 S", "亮度 B", "透明度"}[i]
-                    + "，点击精确输入，" + values[i].getText());
+            values[i].setContentDescription(new String[]{"Tono H", "Saturación S", "Brillo B", "Transparencia"}[i]
+                    + "; toca para introducir un valor preciso, " + values[i].getText());
         }
         systemAlpha.setChecked(!color.customAlpha());
         summary.setText(color.hex());
-        alphaHint.setText(color.customAlpha() ? "0% 完全透明 · 100% 不透明" : "当前沿用系统透明度；调整滑条可改为自定义。");
+        alphaHint.setText(color.customAlpha() ? "0 % = totalmente transparente · 100 % = opaco" : "Se está usando la transparencia del sistema; mueve el control para personalizarla.");
         if (writeHex) { hex.setText(color.hex()); hex.setError(null); }
         preview.invalidate();
         for (Palette palette : palettes) palette.invalidate();
